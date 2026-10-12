@@ -1,0 +1,13 @@
+# Core
+pydantic>=2
+fastapi
+uvicorn[standard]
+jinja2
+python-dotenv
+httpx
+
+# Verify (fuzzy quote match)
+rapidfuzz
+
+# Test
+pytest
