@@ -1,16 +1,19 @@
 """
-cli.py — Pipeline CLI: `run` + `eval` (eval chỉ skeleton — sẽ hiện thực ở P2).
+cli.py — Pipeline CLI: `run` + `eval` (eval skeleton P1 — full ở P4).
 
 Cách chạy (theo AGENTS.md §3 + runbook/local-dev.md §2):
     python -m pipeline.cli run --meeting tc2
-        → ingest → extract → verify → runs/<meeting_id>/<ts>/state.json + llm_log.jsonl
+        → ingest → extract → resolve → verify → runs/<meeting_id>/<ts>/state.json + llm_log.jsonl
+
+    python -m pipeline.cli run --meeting tc2 --llm-fixture <path> --resolve-fixture <path>
+        → mock cả extract & resolve (test/demo không cần key).
 
     python -m pipeline.cli eval
-        → chạy 5 ca (P2) — placeholder P1.
+        → chạy 5 ca → eval/report.md (P4).
 
 Thiết kế:
 - Pipeline độc lập (ADR-0005). Chạy được không cần server.
-- Resolve + export + store sẽ thêm ở các phase sau; P1 chỉ ingest → extract → verify.
+- P2: thêm resolve (trọng tái xuyên chunk + entity-link) giữa extract và verify.
 """
 
 from __future__ import annotations
@@ -26,6 +29,7 @@ from dotenv import load_dotenv
 
 from .extract import extract
 from .ingest import parse_transcript
+from .resolve import resolve
 from .schema import Meeting, Participant
 from .verify import verify_state
 
@@ -36,8 +40,8 @@ if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 
-# Pipeline version — bump theo phase (P0 = 0.1.0 → P1 = 0.2.0).
-PIPELINE_VERSION = "0.2.0"
+# Pipeline version — bump theo phase (P0=0.1.0 → P1=0.2.0 → P2=0.3.0).
+PIPELINE_VERSION = "0.3.0"
 
 # Đường dẫn mặc định — resolve tương đối với project root (cwd khi `python -m`).
 DEFAULT_PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -146,8 +150,8 @@ def cmd_run(args: argparse.Namespace) -> int:
 
     log_path = out_dir / "llm_log.jsonl"
 
-    # Quyết định LLM: live (call_llm) hay fixture mock
-    llm_fn = None
+    # Quyết định LLM extract: live (call_llm) hay fixture mock
+    extract_llm_fn = None
     if args.llm_fixture:
         fixture_path = Path(args.llm_fixture)
         if not fixture_path.is_absolute():
@@ -155,15 +159,27 @@ def cmd_run(args: argparse.Namespace) -> int:
         if not fixture_path.exists():
             print(f"[cli] llm_fixture not found: {fixture_path}")
             return 2
-        print(f"[cli] using LLM fixture (mock): {fixture_path}")
-        llm_fn = _make_fixture_llm(fixture_path)
+        print(f"[cli] using LLM fixture (mock) for extract: {fixture_path}")
+        extract_llm_fn = _make_fixture_llm(fixture_path)
+
+    # Quyết định LLM resolve: mock qua --resolve-fixture, hoặc None → deterministic
+    resolve_llm_fn = None
+    if args.resolve_fixture:
+        fix_path = Path(args.resolve_fixture)
+        if not fix_path.is_absolute():
+            fix_path = (root / args.resolve_fixture).resolve()
+        if not fix_path.exists():
+            print(f"[cli] resolve_fixture not found: {fix_path}")
+            return 2
+        print(f"[cli] using LLM fixture (mock) for resolve: {fix_path}")
+        resolve_llm_fn = _make_fixture_llm(fix_path)
 
     # Extract
     try:
         extraction = extract(
             meta, turns,
             log_path=log_path,
-            llm_fn=llm_fn,
+            llm_fn=extract_llm_fn,
             chunk_size=args.chunk_size,
             overlap=args.overlap,
         )
@@ -177,6 +193,7 @@ def cmd_run(args: argparse.Namespace) -> int:
 
     print(
         f"[cli] extract: {len(extraction['items'])} items, "
+        f"{len(extraction['chunk_items'])} chunks, "
         f"{len(extraction['known_limitations'])} chunk failures"
     )
 
@@ -190,13 +207,26 @@ def cmd_run(args: argparse.Namespace) -> int:
         pipeline_version=PIPELINE_VERSION,
     )
 
+    # Resolve — trọng tài xuyên chunk + entity-link (P2)
+    resolution = resolve(
+        meta,
+        extraction["chunk_items"],
+        llm_fn=resolve_llm_fn,
+    )
+    print(
+        f"[cli] resolve: {len(resolution['items'])} items, "
+        f"{len(resolution['known_limitations'])} arbitration notes"
+    )
+
     # Verify
     state = verify_state(
         meeting=meeting,
-        items_raw=extraction["items"],
+        items_raw=resolution["items"],
         conf_llm_map=extraction["conf_llm_map"],
         turns=turns,
-        limitations=list(ingest_limitations) + extraction["known_limitations"],
+        limitations=list(ingest_limitations)
+        + extraction["known_limitations"]
+        + resolution["known_limitations"],
     )
 
     # Save state.json
@@ -222,9 +252,9 @@ def cmd_run(args: argparse.Namespace) -> int:
 
 
 def cmd_eval(args: argparse.Namespace) -> int:
-    print("[cli] eval: skeleton P1 — hiện thực đầy đủ ở P2.")
-    print("[cli]     P2 sẽ chạy 5 ca tc1..tc5 + so với data/golden/")
-    print("[cli]     ghi report vào eval/report.md (theo spec/eval-plan.md).")
+    print("[cli] eval: skeleton P1 — full eval runner ở P4 (5 ca + golden).")
+    print("[cli]     P2 đã thêm resolve giữa extract và verify.")
+    print("[cli]     P3 sẽ chạy JSON + UI + export → P4 eval chạy 5 ca → report.md.")
     return 0
 
 
@@ -236,7 +266,7 @@ def cmd_eval(args: argparse.Namespace) -> int:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="pipeline",
-        description="meet2note pipeline CLI (P1: ingest → extract → verify).",
+        description="meet2note pipeline CLI (P2: ingest → extract → resolve → verify).",
     )
     sub = parser.add_subparsers(dest="cmd", required=True)
 
@@ -261,8 +291,16 @@ def build_parser() -> argparse.ArgumentParser:
         "--llm-fixture",
         default=None,
         help=(
-            "đường dẫn tới JSON fixture cảu LLM response "
+            "đường dẫn tới JSON fixture cảu LLM response cho extract "
             "(mock — không cần .env). Ví dụ: data/fixtures/tc2_llm.json"
+        ),
+    )
+    p_run.add_argument(
+        "--resolve-fixture",
+        default=None,
+        help=(
+            "đường dẫn tới JSON fixture của LLM pass-2 resolve (mock — không cần .env). "
+            "Mặc định None → resolve chạy deterministic (đủ cho CI)."
         ),
     )
     p_run.add_argument(

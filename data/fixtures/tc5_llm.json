@@ -1,0 +1,51 @@
+[
+  {
+    "items": [
+      {
+        "id": "D_SB",
+        "type": "decision",
+        "content": "Chốt Spring Boot cho module thanh toán backend",
+        "status": "final",
+        "decided_by": "Lan",
+        "reason": "CHỐT sau khi thảo luận cân bằng",
+        "supersedes": [],
+        "objections": ["Spring Boot sờ chậm 2 sprint cho team Python — Hà, 00:02:18"],
+        "confidence": 0.6,
+        "confidence_reason": "chốt rõ nhưng có đối lập từ Hà",
+        "evidence": [
+          {"quote": "(cut) Ok, hai bên đều có lý. Mình CHỐT Spring Boot nhé.", "timestamp": "00:08:18", "speaker": "Lan", "turn": 40, "role_in_discussion": "decide"}
+        ]
+      },
+      {
+        "id": "D_FA",
+        "type": "decision",
+        "content": "Chốt FastAPI cho module thanh toán Python",
+        "status": "final",
+        "decided_by": "Lan",
+        "reason": "sau break 30p đổi ý — boilerplate nhiều",
+        "supersedes": [],
+        "objections": [],
+        "confidence": 0.55,
+        "confidence_reason": "đổi chiều sau break",
+        "evidence": [
+          {"quote": "Spring Boot có quá nhiều boilerplate, mình CHUYỂN sang FastAPI nhé.", "timestamp": "00:13:12", "speaker": "Lan", "turn": 60, "role_in_discussion": "decide"}
+        ]
+      },
+      {
+        "id": "D_REV",
+        "type": "decision",
+        "content": "Quay lại Spring Boot cho module thanh toán",
+        "status": "final",
+        "decided_by": "Lan",
+        "reason": "cộng đảo lần 3",
+        "supersedes": [],
+        "objections": [],
+        "confidence": 0.5,
+        "confidence_reason": "đảo chiều lần 3",
+        "evidence": [
+          {"quote": "Vũ quay lại Spring Boot.", "timestamp": "00:15:46", "speaker": "Lan", "turn": 70, "role_in_discussion": "decide"}
+        ]
+      }
+    ]
+  }
+]

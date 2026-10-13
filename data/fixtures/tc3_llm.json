@@ -1,0 +1,42 @@
+[
+  {
+    "items": [
+      {
+        "id": "O1",
+        "type": "open_issue",
+        "content": "Chưa chốt hướng tích hợp thanh toán (Stripe vs VNPay)",
+        "next_step": "Hẹn họp lại sau khi có thêm dữ liệu từ KH",
+        "next_step_owner": "Lan",
+        "confidence": 0.5,
+        "confidence_reason": "chưa rõ ý kiến, họp lại sau",
+        "evidence": [{
+          "quote": "Sẽ xem xét thêm, cần ý kiến KH",
+          "timestamp": "00:09:42",
+          "speaker": "Lan",
+          "turn": 33,
+          "role_in_discussion": "info"
+        }]
+      },
+      {
+        "id": "T1",
+        "type": "task",
+        "what": "Triển khai research thanh toán",
+        "owner": "TBD",
+        "owner_source": "tbd",
+        "due": "TBD",
+        "due_source": "tbd",
+        "due_hint": "sớm nhé",
+        "link_to_decision": null,
+        "confidence": 0.3,
+        "confidence_reason": "owner + due mơ hồ — không ai cam kết",
+        "evidence": [{
+          "quote": "Anh em triển khai nhé",
+          "timestamp": "00:04:50",
+          "speaker": "Lan",
+          "turn": 24,
+          "role_in_discussion": "info"
+        }]
+      }
+    ]
+  }
+]

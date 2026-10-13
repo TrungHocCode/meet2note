@@ -1,0 +1,15 @@
+{
+  "id": "tc5",
+  "title": "Họp thay đổi tech stack (căng)",
+  "date": "2026-10-14",
+  "participants": [
+    {"name": "Lan", "role": "PM", "aliases": ["chị Lan", "Lan"]},
+    {"name": "Nam", "role": "BA", "aliases": ["Nam", "em Nam"]},
+    {"name": "Hà", "role": "Dev", "aliases": ["em Hà", "Hà"]}
+  ],
+  "glossary": {
+    "KH": "khách hàng",
+    "POC": "proof of concept",
+    "boilerplate": "code mẫu lặp đi lặp lại"
+  }
+}

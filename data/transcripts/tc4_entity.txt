@@ -1,0 +1,60 @@
+[00:00:05] Lan: Chào team, hôm nay mình họp kỹ thuật về module checkout nhé.
+[00:00:14] Nam: Em chào chị Lan, em đã có research.
+[00:00:22] Hà: Em chào chị, em cũng chuẩn bị rồi.
+[00:00:32] Lan: Mục tiêu: chốt được flow thanh toán cuối chứa cho sprint tới.
+[00:00:42] Nam: Em so sánh Stripe và VNPay rồi ạ.
+[00:01:00] Hà: Em thì lo phần integration ạ.
+[00:01:14] Lan: Ok, em Nam trình bày đi.
+[00:01:24] Nam: Stripe fee 2.9% + 30k/giao dịch, support quốc tế tốt.
+[00:01:38] Nam: VNPay fee 1.8%, support nội địa tốt, có KH lớn dùng.
+[00:01:52] Hà: Em note thêm, Stripe có webhook tốt, VNPay callback ổn.
+[00:02:04] Lan: Mình cần chọn 1 bên. Anh em nghĩ sao?
+[00:02:18] Nam: Em nghiêng về Stripe vì KH có account nước ngoài ạ.
+[00:02:28] Hà: Em thiên về VNPay vì 80% KH nội địa ạ.
+[00:02:42] Lan: Ừ, 80% là con số lớn. Mình hướng về VNPay nhé.
+[00:02:54] Nam: Dạ em đồng ý ạ.
+[00:03:06] Lan: Chốt dùng VNPay cho phase lập trình.
+[00:03:18] Hà: Dạ em nhận task.
+[00:03:32] Nam: Em sẽ support test plan ạ.
+[00:03:42] Lan: Em Hà làm lead integration, deadline thứ 6 tuần này nhé.
+[00:03:54] Hà: Dạ em làm lead, deadline thứ 6 tuần này.
+[00:04:02] Lan: Em Nam viết test plan, deadline cuối tháng.
+[00:04:14] Nam: Dạ em viết test plan, cuối tháng.
+[00:04:28] Lan: Còn task update docs, em Hà phụ trách, deadline thứ 2 tuần sau.
+[00:04:36] Hà: Dạ em update docs, thứ 2 tuần sau.
+[00:04:50] Lan: Anh em confirm owner chưa? Hà lead, Nam test, em nào cũng được cho docs.
+[00:05:04] Nam: Dạ em confirm.
+[00:05:18] Hà: Em cũng confirm.
+[00:05:32] Lan: Mình note lại: SLA VNPay 99.5%, response time SLA 3 giây. Lưu ý khi tích hợp.
+[00:05:46] Nam: Dạ em note ạ.
+[00:05:58] Hà: Em note.
+[00:06:14] Lan: Tiếp theo, mình bàn xử lý refund flow. VNPay có API refund riêng.
+[00:06:30] Nam: Em research rồi, API refund VNPay có sẵn, không cần custom.
+[00:06:44] Hà: Tốt, vậy mình khỏi custom middleware refund.
+[00:06:58] Lan: Ừ, KH confirm flow refund standard 1 cần ghi vào docs.
+[00:07:08] Nam: Dạ em ghi vào docs.
+[00:07:22] Hà: Em review khi xong.
+[00:07:36] Lan: Mình lưu ý KH SLA standard 1 phải báo trước 7 ngày.
+[00:07:50] Nam: Dạ em note.
+[00:07:64] Hà: Em note.
+[00:08:04] Lan: VG (vòng gọi) refund cần test với edge cases: timeout, duplicate request.
+[00:08:18] Hà: Em phụ trách test plan edge cases, deadline thứ 4 tuần sau.
+[00:08:34] Nam: Dạ em phối hợp.
+[00:08:50] Lan: Ok, em Hà test edge cases thứ 4 tuần sau.
+[00:09:02] Lan: Tiếp: vụ cập nhật documentation. Em nào phụ trách?
+[00:09:16] Hà: Em chịu trách nhiệm, deadline thứ 2 tuần sau.
+[00:09:32] Lan: Được, thứ 2 tuần sau.
+[00:09:42] Nam: Em hỗ trợ review.
+[00:09:58] Lan: Ai có thắc nào không?
+[00:10:12] Hà: Câu hỏ, nếu VNPay lỗi thì fallback sang Stripe hay treo?
+[00:10:26] Lan: Mình mở Open Issue cho vụ fallback. Em Hà làm proposal.
+[00:10:40] Hà: Dạ em làm proposal, deadline thứ 4 tuần sau.
+[00:10:58] Lan: Ừ, Open Issue về fallback.
+[00:11:14] Nam: Em note Nghiêm.
+[00:11:28] Hà: Dạ em hiểu.
+[00:11:42] Lan: Chốt task: Hà lead integration thứ 6 tuần này, Nam test plan cuối tháng, Hà update docs thứ 2 tuần sau, Hà test edge cases thứ 4 tuần sau.
+[00:11:58] Nam: Dạ em note.
+[00:12:14] Hà: Em note.
+[00:12:28] Lan: Ừ, mình kết thúc nhé. Cảm ơn team.
+[00:12:42] Nam: Cảm ơn chị.
+[00:12:58] Hà: Cảm ơn chị Lan.

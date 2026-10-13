@@ -8,7 +8,9 @@ Triết lý (AGENTS.md §1, §5):
 Hợp đồng input/output:
 - Input: meta (dict), turns (output của parse_transcript).
 - Output: dict {
-    "items": list[dict] raw items (đã pass JSON parse + Pydantic structure check),
+    "items": list[dict] raw items (đã pass JSON parse + Pydantic structure check,
+           dedup TRONG chunk + xuyên chunk — backward compat),
+    "chunk_items": list[list[dict]] raw items PER CHUNK (P2 — resolve merge xuyên chunk),
     "conf_llm_map": dict[item_id, float] — confidence gốc từ LLM để verify áp công thức,
     "known_limitations": list[str]
   }
@@ -370,6 +372,9 @@ def extract(
     Returns:
         dict {
           "items": list[dict] raw items (Pydantic-valid structure, chưa enforce R1/R2),
+          "chunk_items": list[list[dict]] raw items PER CHUNK (P2 — resolve merge xuyên chunk).
+                          Mỗi chunk_items[i] = list raw dicts TRƯỚC khi dedup xuyên chunk
+                          (nhưng ĐÃ dedup TRONG chunk).
           "conf_llm_map": dict[item_id, float],
           "known_limitations": list[str]
         }
@@ -385,6 +390,7 @@ def extract(
 
     try:
         all_items: list[dict[str, Any]] = []
+        chunk_items: list[list[dict[str, Any]]] = []  # P2: per-chunk raw (intra-chunk dedup)
         conf_llm_map: dict[str, float] = {}
         limitations: list[str] = []
         seen_ids: set[str] = set()
@@ -447,9 +453,13 @@ def extract(
                     f"chunk {chunk_idx}: LLM không trả JSON hợp lệ sau "
                     f"{max_retries + 1} lần ({last_err})"
                 )
+                chunk_items.append([])  # empty placeholder
                 continue
 
-            # Dedup theo `id` (vượt chunk + trong chunk)
+            # Dedup TRONG chunk (giữ bản đầu trong cùng chunk)
+            # Cross-chunk dedup do resolve.py xử lý (P2) — cần evidence để phân xử.
+            seen_in_chunk: set[str] = set()
+            chunk_kept: list[dict[str, Any]] = []
             for raw in success_items:
                 item_id = raw.get("id")
                 if not isinstance(item_id, str) or not item_id:
@@ -457,20 +467,25 @@ def extract(
                         f"chunk {chunk_idx}: bỏ item thiếu id: {str(raw)[:120]}"
                     )
                     continue
-                if item_id in seen_ids:
-                    # Duplicate id (do overlap hoặc LLM lặp) → bỏ, lấy bản đầu
+                if item_id in seen_in_chunk:
                     continue
-                seen_ids.add(item_id)
-                all_items.append(raw)
+                seen_in_chunk.add(item_id)
+                chunk_kept.append(raw)
+                # backward compat: `items` vẫn dedup xuyên chunk (giữ bản đầu)
+                if item_id not in seen_ids:
+                    seen_ids.add(item_id)
+                    all_items.append(raw)
                 # Capture conf_llm từ raw — Pydantic đã chặn ngoài [0,1] ở validate
                 # trên, nên giá trị ở đây luôn hợp lệ. Defensive: fallback 0.5.
                 try:
                     conf_llm_map[item_id] = float(raw["confidence"])
                 except (KeyError, TypeError, ValueError):
                     conf_llm_map[item_id] = 0.5
+            chunk_items.append(chunk_kept)
 
         return {
             "items": all_items,
+            "chunk_items": chunk_items,
             "conf_llm_map": conf_llm_map,
             "known_limitations": limitations,
         }

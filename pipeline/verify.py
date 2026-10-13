@@ -431,6 +431,14 @@ def verify_state(
         if has_contradiction and item_type == "decision" and item_dict.get("status") == "final":
             final_conf = max(0.0, final_conf - 0.20)
             conf_reason += "; contradiction -0.20"
+        # unresolved_reversal penalty (P2 R4) — đã được resolve flag + O_REV
+        if (
+            item_type == "decision"
+            and item_dict.get("status") == "final"
+            and item_dict.get("unresolved_reversal") is True
+        ):
+            final_conf = max(0.0, final_conf - 0.20)
+            conf_reason += "; unresolved_reversal -0.20"
 
         item_dict["confidence"] = final_conf
         item_dict["confidence_reason"] = conf_reason

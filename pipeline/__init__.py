@@ -1,10 +1,10 @@
 """meet2note pipeline — core domain (root, ADR-0005).
 
-P1 surface: ingest → extract → verify → cli.
+P2 surface: ingest → extract → resolve → verify → cli.
 """
 
 from __future__ import annotations
 
-from . import extract, ingest, verify  # noqa: F401
+from . import extract, ingest, resolve, verify  # noqa: F401
 
-__all__ = ["ingest", "extract", "verify"]
+__all__ = ["ingest", "extract", "resolve", "verify"]

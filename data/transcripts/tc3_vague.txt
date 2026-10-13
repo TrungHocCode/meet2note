@@ -1,0 +1,66 @@
+[00:00:05] Lan: Chào cả nhóm, hôm nay mình brainstorm sơ bộ về hướng tích hợp thanh toán nhé.
+[00:00:14] Nam: Em chào chị, em có vài ý tưởng nhưng chưa chốt được.
+[00:00:22] Hà: Em cũng có suy nghĩ, nhưng cần team xem lại.
+[00:00:32] Lan: Ok, mình cứ thảo luận tự do, chưa cần quyết định gì hết nhé.
+[00:00:42] Nam: Em nghĩ nên dùng Stripe, vì support tốt, nhưng cần xem xét thêm.
+[00:01:00] Hà: Em thì thiên về VNPay, nhưng chưa chắc có phù hợp không.
+[00:01:14] Lan: Hai bên đều có lý, mình sẽ xem xét thêm nhé.
+[00:01:24] Nam: Stripe có fee 2.9% + 30k/giao dịch, em sẽ check kỹ hơn.
+[00:01:38] Hà: VNPay fee 1.8%, em cũng cần xem chi tiết.
+[00:01:52] Lan: Ok, anh em cứ tìm hiểu, chưa cần chốt gì hôm nay.
+[00:02:04] Nam: Dạ em sẽ research thêm trong tuần.
+[00:02:18] Hà: Em cũng vậy, tìm hiểu thêm đã.
+[00:02:28] Lan: Chưa ai quyết định, mình xem bên nào hợp lý rồi tính tiếp nhé.
+[00:02:42] Nam: Em sẽ xem xét nhé.
+[00:02:54] Hà: Em sẽ xem xét nhé.
+[00:03:06] Lan: Sớm nhé anh em, cần chốt trước sprint tới.
+[00:03:18] Nam: Dạ sớm nhé.
+[00:03:32] Hà: Sớm nhé chị.
+[00:03:42] Lan: Stripe có documentation tốt, nhưng VNPay rẻ hơn — chưa biết chọn bên nào.
+[00:03:54] Nam: Em note cả hai phương án để xem xét thêm.
+[00:04:02] Hà: Em cũng note, cần ý kiến thêm từ KH.
+[00:04:14] Lan: Ừ, mình hẹn họp lại sau khi có đủ thông tin nhé.
+[00:04:28] Nam: Dạ hẹn họp sau.
+[00:04:36] Hà: Em sẽ triển khai research nhé (chưa chốt task cụ thể).
+[00:04:50] Lan: Ok, anh em triển khai nhé (chưa giao deadline).
+[00:05:04] Nam: Dạ em triển khai nhé.
+[00:05:18] Hà: Em cũng triển khai nhé.
+[00:05:32] Lan: Mình chưa quyết được hôm nay, để tuần sau họp lại.
+[00:05:46] Nam: Dạ tuần sau họp lại.
+[00:05:58] Hà: Em cũng nghĩ vậy.
+[00:06:14] Lan: Cảm ơn cả nhóm, ai có ý tưởng gì thì note lại sharepoint nhé.
+[00:06:30] Nam: Dạ em note.
+[00:06:44] Hà: Em cũng note.
+[00:06:58] Lan: Một ý nữa, có nên kết hợp Stripe quốc tế + VNPay nội địa không?
+[00:07:08] Nam: Ý hay đó, nhưng cần phân tích kỹ.
+[00:07:22] Hà: Em đồng ý thảo luận tiếp.
+[00:07:36] Lan: Sẽ xem xét nhé, chưa quyết.
+[00:07:50] Nam: Dạ sẽ xem xét.
+[00:08:04] Hà: Em cũng vậy.
+[00:08:18] Lan: Cần xác nhận với KH về volume nội địa vs quốc tế.
+[00:08:34] Nam: Dạ, em hỏi KH trong tuần.
+[00:08:50] Hà: Em hỗ trợ phân tích.
+[00:09:02] Lan: Chưa quyết gì hôm nay, mình note open issue rồi họp lại.
+[00:09:16] Nam: Dạ open issue.
+[00:09:32] Hà: Em note.
+[00:09:42] Lan: Sẽ xem xét thêm, cần ý kiến KH.
+[00:09:58] Nam: Dạ sẽ xem xét.
+[00:10:12] Hà: Em hỗ trợ.
+[00:10:26] Lan: Anh em triển khai nhé (chưa có deadline cụ thể).
+[00:10:40] Nam: Dạ triển khai.
+[00:10:58] Hà: Em triển khai.
+[00:11:14] Lan: Chốt là chưa chốt gì nhé, cần thêm dữ liệu.
+[00:11:28] Nam: Dạ em hiểu.
+[00:11:44] Hà: Em cũng hiểu.
+[00:11:58] Lan: Ai có câu hỏi gì không?
+[00:12:14] Nam: Em không có ạ.
+[00:12:28] Hà: Em cũng không.
+[00:12:42] Lan: Vậy mình end meeting, cảm ơn cả nhóm.
+[00:12:58] Nam: Cảm ơn chị.
+[00:13:12] Hà: Em cảm ơn.
+[00:13:26] Lan: Hẹn gặp tuần sau nhé.
+[00:13:40] Nam: Dạ hẹn gặp.
+[00:13:54] Hà: Hẹn gặp chị.
+[00:14:08] Lan: Bye cả nhóm.
+[00:14:22] Nam: Bye chị.
+[00:14:36] Hà: Bye mọi người.
