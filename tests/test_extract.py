@@ -26,6 +26,7 @@ from pipeline.extract import (
     call_llm,
     chunk_turns,
     extract,
+    extract_brief,
     fill_meta_placeholders,
     load_prompt,
 )
@@ -769,3 +770,39 @@ def test_extract_tc2_shaped_mock() -> None:
     assert result["conf_llm_map"]["D1"] == pytest.approx(0.9)
     assert result["conf_llm_map"]["T1"] == pytest.approx(0.85)
     assert result["known_limitations"] == []
+
+
+# ──────────────────────────────────────────────────────────────────────
+# extract_brief (taxonomy §8 — 1 call toàn transcript)
+# ──────────────────────────────────────────────────────────────────────
+
+
+def test_extract_brief_mock_ok(tc1_meta, small_turns) -> None:
+    """Mock trả brief hợp lệ → dict nguyên vẹn (verify kiểm ref sau)."""
+    def llm_fn(messages):
+        assert messages[0]["role"] == "system"
+        return json.dumps({
+            "problem": "Chọn vendor",
+            "outcomes": [{"text": "Chốt B", "ref_ids": ["D1"]}],
+        })
+
+    out = extract_brief(tc1_meta, small_turns, llm_fn=llm_fn)
+    assert out is not None
+    assert out["problem"] == "Chọn vendor"
+    assert out["outcomes"][0]["ref_ids"] == ["D1"]
+
+
+def test_extract_brief_parse_fail_returns_none(tc1_meta, small_turns) -> None:
+    """LLM trả rác → None (verify bỏ brief, pipeline vẫn chạy)."""
+    def llm_fn(messages):
+        return "không phải json {{{"
+
+    assert extract_brief(tc1_meta, small_turns, llm_fn=llm_fn) is None
+
+
+def test_extract_brief_llm_error_returns_none(tc1_meta, small_turns) -> None:
+    """LLM raise → None, không chặn pipeline."""
+    def llm_fn(messages):
+        raise RuntimeError("API down")
+
+    assert extract_brief(tc1_meta, small_turns, llm_fn=llm_fn) is None

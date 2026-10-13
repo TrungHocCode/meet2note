@@ -513,3 +513,40 @@ def test_review_log_schema_shape() -> None:
     assert log["entries"][0]["action"] in {"agree", "edit", "remove"}
     assert "ts" in log["entries"][0]
     assert "reviewer" in log["entries"][0]
+
+
+# ──────────────────────────────────────────────────────────────────────
+# Brief trong minutes.md (taxonomy §8)
+# ──────────────────────────────────────────────────────────────────────
+
+
+def _state_with_brief() -> dict:
+    return {
+        "meeting": {
+            "id": "tc2", "title": "Chọn vendor", "date": "2026-10-12",
+            "participants": [], "source_file": "x.txt",
+            "pipeline_version": "0.4.0",
+        },
+        "items": [],
+        "brief": {
+            "problem": "Chọn vendor tích hợp CRM giữa A rẻ và B an toàn",
+            "outcomes": [{"text": "Chốt B", "ref_ids": ["D1"]}],
+        },
+        "known_limitations": [],
+    }
+
+
+def test_minutes_renders_brief() -> None:
+    """minutes.md mở đầu bằng Vấn đề + kết quả có ref ID."""
+    md = render_minutes(_state_with_brief())
+    assert "Vấn đề:" in md
+    assert "Chọn vendor tích hợp CRM" in md
+    assert "Chốt B" in md and "D1" in md
+
+
+def test_minutes_no_brief_section_when_missing() -> None:
+    """Không có brief → không render mục Vấn đề (không crash StrictUndefined)."""
+    st = _state_with_brief()
+    st["brief"] = None
+    md = render_minutes(st)
+    assert "Vấn đề:" not in md

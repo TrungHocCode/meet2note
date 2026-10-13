@@ -188,6 +188,7 @@ def put_review(meeting: str, body: ReviewPutBody) -> JSONResponse:
         confirmed_path,
         {
             "meeting": meeting_env,
+            "brief": base.get("brief"),
             "items": body.items,
             "no_decision": base.get("no_decision", False),
             "known_limitations": base.get("known_limitations", []),

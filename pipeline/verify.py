@@ -25,10 +25,12 @@ from collections import Counter
 from typing import Any
 
 from .schema import (
+    BriefOutcome,
     Decision,
     Item,
     ItemTypeAdapter,
     Meeting,
+    MeetingBrief,
     MeetingState,
     OpenIssue,
     Participant,
@@ -288,6 +290,35 @@ def compute_confidence(
 # ──────────────────────────────────────────────────────────────────────
 
 
+def _verify_brief(
+    brief_raw: dict[str, Any] | None,
+    validated_items: list[Item],
+    limitations: list[str],
+) -> MeetingBrief | None:
+    """Kiểm brief (taxonomy §8): problem bắt buộc; outcome chỉ giữ khi có
+    ≥1 ref_id tồn tại trong items đã validate. Không ref = phát biểu đó chưa
+    thành Decision/OpenIssue = không được ghi nhận là kết quả."""
+    if not brief_raw:
+        return None
+    try:
+        brief = MeetingBrief.model_validate(brief_raw)
+    except Exception as e:
+        limitations.append(f"brief: parse fail ({e}) — bỏ brief")
+        return None
+    valid_ids = {i.id for i in validated_items}
+    kept: list[BriefOutcome] = []
+    for oc in brief.outcomes:
+        good_refs = [r for r in oc.ref_ids if r in valid_ids]
+        if not good_refs:
+            limitations.append(
+                f"brief: outcome không trỏ tới ID đã chốt → bỏ "
+                f"({oc.text[:60]!r}, refs={oc.ref_ids})"
+            )
+            continue
+        kept.append(BriefOutcome(text=oc.text, ref_ids=good_refs))
+    return MeetingBrief(problem=brief.problem.strip(), outcomes=kept)
+
+
 def verify_state(
     *,
     meeting: Meeting,
@@ -295,6 +326,7 @@ def verify_state(
     conf_llm_map: dict[str, float],
     turns: list[dict[str, Any]],
     limitations: list[str] | None = None,
+    brief_raw: dict[str, Any] | None = None,
 ) -> MeetingState:
     """Build MeetingState: validate items + enforce R1/R2/R5 + compute badges.
 
@@ -528,9 +560,14 @@ def verify_state(
             "(resolve phase sẽ xử lý A→B→A / 2 final cùng chủ đề ở P2)"
         )
 
+    # ─── 7. Brief ref-check (taxonomy §8): outcome phải trỏ tới ID đã chốt.
+    # "Nói ra" ≠ "chốt" — outcome không có ref tương ứng thì không tồn tại.
+    brief = _verify_brief(brief_raw, validated_items, limitations)
+
     return MeetingState(
         meeting=meeting,
         items=validated_items,
+        brief=brief,
         no_decision=no_decision,
         stats=stats,
         known_limitations=limitations,

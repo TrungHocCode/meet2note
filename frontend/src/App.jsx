@@ -470,6 +470,24 @@ export default function App() {
               )}
             </header>
 
+            {state.brief && (
+              <div className="brief">
+                <p>
+                  <strong>Vấn đề:</strong> {state.brief.problem}
+                </p>
+                {(state.brief.outcomes ?? []).length > 0 && (
+                  <ul>
+                    {(state.brief.outcomes ?? []).map((o, i) => (
+                      <li key={i}>
+                        {o.text}{' '}
+                        <code>→ {(o.ref_ids ?? []).join(', ')}</code>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
+
             <div className="columns">
               {/* Quyết định */}
               <section className="col">

@@ -18,3 +18,5 @@
 | Unresolved reversal | Đảo A→B→A hoặc 2 final mâu thuẫn — hệ thống không tự chọn, đẩy cho host |
 | Known limitations | Danh sách hạn chế đã biết, ghi trung thực vào output, không che giấu |
 | Glossary (dự án) | Từ điển viết tắt/riêng của từng dự án (KH, VG, SLA...) đưa vào prompt context |
+| Meeting brief | 2–3 dòng đầu biên bản: VẤN ĐỀ họp giải quyết + các KẾT QUẢ (mỗi kết quả trỏ tới Decision/OpenIssue ID — không ID thì không phải kết quả) |
+| Chốt vs nói chơi | Chỉ là "chốt" khi có câu chốt rõ + người chốt + (ngầm/hiển) đồng thuận. Nói suông, ví dụ, đùa → không thành Decision (confidence thấp hoặc loại) |

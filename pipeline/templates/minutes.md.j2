@@ -7,6 +7,13 @@
 # Biên bản họp - {{ meeting.title }} — {{ meeting.date }}
 **Trạng thái:** Đã confirm · Pipeline {{ meeting.pipeline_version }}
 
+{% if brief %}
+> **Vấn đề:** {{ brief.problem }}
+{% for o in brief.outcomes %}
+> - {{ o.text }} (→ {{ o.ref_ids | join(', ') }})
+{% endfor %}
+
+{% endif %}
 ## ✅ Quyết định
 {% for d in decisions %}
 - **{{ d.id }} - {{ d.content }}** (bởi {{ d.decided_by or "?" }} · {{ "%.2f"|format(d.confidence) }} {{ d.badge }}){% if d.reason %} - Lý do: {{ d.reason }}{% endif %}{% if d.supersedes %} - Thay thế {{ d.supersedes | join(', ') }}{% endif %}.

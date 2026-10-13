@@ -867,3 +867,67 @@ def test_verify_state_includes_ingest_limitations() -> None:
         limitations=["txt line 5: malformed, skipped -> '...'"],
     )
     assert any("malformed" in lim for lim in state.known_limitations)
+
+
+# ──────────────────────────────────────────────────────────────────────
+# Brief ref-check (taxonomy §8)
+# ──────────────────────────────────────────────────────────────────────
+
+
+def _brief_items() -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    raw = [{
+        "id": "D1", "type": "decision",
+        "content": "Chốt B",
+        "status": "final", "decided_by": "Lan",
+        "confidence": 0.9, "confidence_reason": "rõ",
+        "evidence": [{
+            "quote": "Vậy chốt B nhé.", "timestamp": "00:45:30",
+            "speaker": "Lan", "turn": 65, "role_in_discussion": "decide",
+        }],
+    }]
+    turns = [{"turn": 65, "t_start": "00:45:30", "t_end": "00:45:30",
+              "speaker": "Lan", "text": "Vậy chốt B nhé."}]
+    return raw, turns
+
+
+def test_verify_brief_keeps_valid_refs_drops_ghost() -> None:
+    """Outcome có ref tồn tại → giữ; ref ma → bỏ + limitation (nói≠chốt)."""
+    raw, turns = _brief_items()
+    state = verify_state(
+        meeting=_meeting(),
+        items_raw=raw,
+        conf_llm_map={"D1": 0.9},
+        turns=turns,
+        brief_raw={
+            "problem": "Chọn vendor",
+            "outcomes": [
+                {"text": "Chốt B", "ref_ids": ["D1"]},
+                {"text": "Ý tưởng suông", "ref_ids": ["DX"]},
+            ],
+        },
+    )
+    assert state.brief is not None
+    assert [o.text for o in state.brief.outcomes] == ["Chốt B"]
+    assert any("không trỏ tới ID" in lim for lim in state.known_limitations)
+
+
+def test_verify_brief_none_when_missing() -> None:
+    """Không có brief_raw → brief None, pipeline vẫn chạy."""
+    raw, turns = _brief_items()
+    state = verify_state(
+        meeting=_meeting(), items_raw=raw,
+        conf_llm_map={"D1": 0.9}, turns=turns,
+    )
+    assert state.brief is None
+
+
+def test_verify_brief_dropped_when_problem_empty() -> None:
+    """Problem trắng → schema reject → parse fail + brief None."""
+    raw, turns = _brief_items()
+    state = verify_state(
+        meeting=_meeting(), items_raw=raw,
+        conf_llm_map={"D1": 0.9}, turns=turns,
+        brief_raw={"problem": "  ", "outcomes": []},
+    )
+    assert state.brief is None
+    assert any("parse fail" in lim for lim in state.known_limitations)

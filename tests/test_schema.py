@@ -16,6 +16,7 @@ import pytest
 from pydantic import TypeAdapter, ValidationError
 
 from pipeline.schema import (
+    BriefOutcome,
     Decision,
     DecisionStatus,
     Evidence,
@@ -23,6 +24,7 @@ from pipeline.schema import (
     ItemTypeAdapter,
     Knowledge,
     Meeting,
+    MeetingBrief,
     MeetingState,
     OpenIssue,
     Participant,
@@ -407,3 +409,18 @@ def test_role_in_discussion_literal_values() -> None:
         assert adapter.validate_python(v) == v
     with pytest.raises(ValidationError):
         adapter.validate_python("nope")
+
+
+def test_meeting_brief_valid() -> None:
+    """Brief hợp lệ: problem + outcomes có ref_ids."""
+    b = MeetingBrief(
+        problem="Chọn vendor tích hợp CRM",
+        outcomes=[BriefOutcome(text="Chốt B", ref_ids=["D1"])],
+    )
+    assert b.problem and b.outcomes[0].ref_ids == ["D1"]
+
+
+def test_meeting_brief_problem_required() -> None:
+    """problem rỗng → reject (brief vô nghĩa)."""
+    with pytest.raises(ValidationError):
+        MeetingBrief(problem="  ", outcomes=[])
