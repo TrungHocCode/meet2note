@@ -2,15 +2,17 @@
   "decisions_final": [
     {
       "content": "Dùng VNPay cho phase 1",
+      "content_any": ["VNPay"],
       "decided_by": "Lan",
-      "evidence_ts": "00:03:06"
+      "evidence_ts": "00:03:06",
+      "evidence_ts_any": ["00:02:42", "00:03:06"]
     }
   ],
   "tasks": [
-    {"what": "Lead integration VNPay", "owner": "Hà", "due": "2026-10-16", "due_hint": "thứ 6 tuần này"},
-    {"what": "Viết test plan thanh toán", "owner": "Nam", "due": "2026-10-31", "due_hint": "cuối tháng"},
-    {"what": "Update documentation", "owner": "Hà", "due": "2026-10-19", "due_hint": "thứ 2 tuần sau"},
-    {"what": "Test edge cases refund", "owner": "Hà", "due": "2026-10-21", "due_hint": "thứ 4 tuần sau"}
+    {"what": "Lead integration VNPay", "content_any": ["lead integration", "lead"], "owner": "Hà", "due": "2026-10-16", "due_hint": "thứ 6 tuần này"},
+    {"what": "Viết test plan thanh toán", "content_any": ["test plan"], "owner": "Nam", "due": "2026-10-31", "due_hint": "cuối tháng"},
+    {"what": "Update documentation", "content_any": ["update docs", "documentation"], "owner": "Hà", "due": "2026-10-19", "due_hint": "thứ 2 tuần sau"},
+    {"what": "Test edge cases refund", "content_any": ["edge cases"], "owner": "Hà", "due": "2026-10-21", "due_hint": "thứ 4 tuần sau"}
   ],
   "no_decision": false,
   "rationale": "Entity-link: 'em/anh/chị + Tên' → tên trong participants; 'thứ 6 tuần này'/'cuối tháng'/'thứ 2 tuần sau'/'thứ 4 tuần sau' → ISO date tính từ meeting.date (2026-10-15 → 2026-10-16 / 2026-10-31 / 2026-10-19 / 2026-10-21)."

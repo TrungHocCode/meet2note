@@ -353,6 +353,14 @@ def verify_state(
                 # Lưu chữ gốc mơ hồ vào due_hint
                 if not item_dict.get("due_hint"):
                     item_dict["due_hint"] = old_due
+                # Ta đã ép TBD → force source = tbd (như owner).
+                item_dict["due_source"] = "tbd"
+            hint = item_dict.get("due_hint")
+            if isinstance(hint, str) and (
+                not hint.strip() or hint.strip().upper() == TBD_SENTINEL
+            ):
+                # hint 'tbd'/rỗng của model = không thông tin → None cho sạch.
+                item_dict["due_hint"] = None
                 item_dict["due_source"] = "tbd"
             elif item_dict.get("due_source") not in ("explicit", "inferred", "tbd"):
                 item_dict["due_source"] = due_src

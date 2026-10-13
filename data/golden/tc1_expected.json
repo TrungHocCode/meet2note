@@ -2,9 +2,11 @@
   "decisions_final": [
     {
       "content": "Chốt dùng FastAPI + JWT (không dùng Auth0)",
+      "content_any": ["FastAPI", "JWT"],
       "decided_by": "Lan",
       "supersedes": [],
-      "evidence_ts": "00:02:30"
+      "evidence_ts": "00:02:30",
+      "evidence_ts_any": ["00:02:30", "00:02:40"]
     }
   ],
   "tasks": [

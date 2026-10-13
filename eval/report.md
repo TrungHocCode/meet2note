@@ -1,104 +1,98 @@
-# Eval report — meet2note (P2 milestone)
+# Eval report — meet2note (P4 nghiệm thu MVP)
 
-> Format: Kỳ vọng → Kết quả → Đạt/Chưa đạt → Bài học (theo `spec/eval-plan.md` §3).
-> Phiên bản pipeline: **0.3.0** (P2: ingest → extract → resolve → verify).
-> Cách chạy: `python -m pipeline.cli run --meeting tcN --llm-fixture data/fixtures/tcN_llm.json`
->            (Ollama local ở `localhost:11434` không chạy → buộc dùng fixture mock —
->            xem phần "Trung thực" dưới.)
+> Format: Kỳ vọng → Kết quả → Đạt/Chưa đạt → Bài học (`docs/spec/eval-plan.md` §3).
+> Pipeline **0.4.0** (ingest → extract → resolve → verify). Model live: `qwen3:4b-instruct-2507-q4_K_M`
+> qua Ollama local (`http://localhost:11434/v1`, chunk 40/overlap 10).
+> Chạy: `python -m pipeline.cli eval` (fixture, deterministic) /
+> `python -m pipeline.cli eval --live` (LLM thật). Kết quả máy: `eval/results_fixture.json` /
+> `eval/results_live.json`. Dưới đây là kết quả **live** (fixture: 5/5 PASS, xem file JSON).
 
-## Trung thực (AGENTS.md §5)
+## tc1 — Sprint planning (ca LÀM TỐT)
 
-- **Ollama local DOWN tại thời điểm P2:** `curl localhost:11434/v1/models` → connect refused.
-- `.env` cấu hình `qwen3:4b-instruct-2507-q4_K_M` vẫn hợp lệ về key/endpoint, nhưng
-  daemon Ollama không chạy → không thể live LLM pass-1 + pass-2.
-- **Hệ quả:** live run dùng `data/fixtures/*.json` (mock LLM — đã được dùng để
-  smoke-test P1 và vẫn giữ nguyên cách dùng trong P2). Fixture cover đủ 5 ca tc1..tc5.
-- **Khuyến nghị:** user khởi động `ollama serve` + `ollama pull qwen3:4b-instruct-2507-q4_K_M`
-  rồi chạy lại `cli run --meeting tcN` để có live test thật.
+- **Kỳ vọng:** D.final đúng (FastAPI+JWT, Lan), 3 task đủ owner+due, 1 blocker.
+- **Kết quả thực tế:** 8 items, 8/8 xanh, no_decision=False. D0.final "Chọn phương án B: tự build
+  bằng FastAPI + JWT" by Lan, evidence 00:02:40 (câu chốt thật — golden ghi 00:02:30, cả hai đều là
+  câu decide liền kề, đã bổ sung `evidence_ts_any`). 3 task golden khớp owner+due (Nam/16-10,
+  Hà/19-10, Minh/21-10). Model tách thêm task/blocker/open-issue phụ đều có evidence.
+- **Đạt/Chưa đạt:** Decision ☑ Đạt · Task ☑ Đạt · Evidence ☑ Đạt.
+- **Điều học được:** baseline sạch — happy path không cần trọng tài phức tạp; comparator phải chấp nhận
+  paraphrase (`content_any`) và evidence kề nhau (`evidence_ts_any`) mới công bằng với LLM.
 
----
+## tc2 — Đảo A→B (ca LÕI, kill-criterion acceptance #2)
 
-## tc1 — Sprint 14 planning (happy path)
+- **Kỳ vọng:** D1.final=B, supersedes=[D0], decided_by=Lan, evidence 00:45:30 turn 65; T1 Nam 12-10 link D1.
+- **Kết quả thực tế:** 10 items (6 xanh + 4 vàng), no_decision=False. D1.final "Chọn vendor Y..."
+  by Lan, supersedes=['D0'], conf 1.0, evidence 00:45:30 turn 65 role=decide (câu chốt thật).
+  T1 owner=Nam due=2026-10-12 link=D1, có evidence. Resolve trọng tài 5 same-id conflict, giữ vết
+  bản thua trong limitations (R4 audit).
+- **Đạt/Chưa đạt:** Decision ☑ Đạt · Task ☑ Đạt · Evidence ☑ Đạt.
+- **Điều học được:** bài toán A→B đã đóng bằng LLM thật — pass-1 trích ứng viên từng chunk,
+  resolve chọn bản đa số + timestamp muộn nhất, verify khóa chất lượng.
 
-- **Kỳ vọng:** D.final dùng FastAPI+JWT supersedes=[], evidence 00:02:30; 3 task đủ owner+due; 1 blocker.
-- **Kết quả:** 7 items (1 decision + 5 task + 1 blocker). 7/7 green.
-  - D1 final decided_by=Lan, evidence 00:02:30 turn 20 (substring match — câu chốt).
-  - 5 task: research pricing (Nam/16/10), setup dev (Hà/19/10), test plan (Minh/21/10),
-    vendor AM (Hà/21/10), slide rehearsal (Minh/28/10).
-  - 1 blocker: vendor API key (Hà, severity high).
-- **Đạt:** Decision ☐ Đạt · Task ☐ Đạt · Evidence ☐ Đạt.
-- **Bài học:** tc1 happy path — không có gì đặc biệt, là baseline.
+## tc3 — Brainstorm vòng vo (ca KHÓ/MƠ HỒ)
 
-## tc2 — Đảo A→B sạch (gate P1 còn thiếu P2 fix)
+- **Kỳ vọng:** no_decision=true, ≥1 Open Issue + next_step, TBD + hint, badge đỏ/vàng, không xanh giả.
+- **Kết quả thực tế:** 6 items, no_decision=True, 3 open issues (đều có next_step), 2 vàng + 4 xanh,
+  0 đỏ. Task TBD có due_hint giữ chữ gốc.
+- **Đạt/Chưa đạt:** No-decision ☑ Đạt · Open Issue ☑ Đạt · Trung thực ☑ Đạt (không bịa Decision,
+  không xanh giả cho nội dung mơ hồ — vàng là mức cao nhất ở ca này).
+- **Điều học được:** R3 + TBD hoạt động trên LLM thật: họp không chốt → hệ thống nói "không biết"
+  thay vì bịa. Thiếu thẻ đỏ vì model cho confidence ≥0.5 ở open issues — chấp nhận được (vàng vẫn
+  cảnh báo), gate đỏ dành cho mismatch/thiếu evidence.
 
-- **Kỳ vọng:** D1.final=B supersedes=[D0], evidence 00:45:30 turn 65, reason chi phí 30%;
-  T1 Nam 2026-10-12 link D1.
-- **Kết quả (live multi-chunk fixture — chứng minh fix case P1 để lại):**
-  - chunk_size=40, overlap=5 → 3 chunks. LLM pass-1 trích D1 sai @05:46 ở chunk 0
-    (đoán sớm — case P1 bug). Chunk 1 trích D1 đúng @45:30 turn 65.
-  - **resolve pick winner @45:30** (majority 1:1 + tie-break latest-decide cùng ts;
-    bản @05:46 chunk 0 ghi `known_limitations` audit).
-  - D1 final: decided_by=Lan, confidence=1.0, supersedes=['D0'], unresolved_reversal=False,
-    **evidence[0].timestamp = "00:45:30"** turn=65 role=decide.
-  - D0 discarded, evidence 00:08:04 turn 39 role=propose.
-  - T1 Nam gửi báo giá B due 2026-10-12 link D1; T2 Hà sandbox TBD (due_hint='sau khi ký hợp đồng').
-  - 4 items: 3 green + 1 yellow (T2 do TBD).
-- **Đạt:** Decision ☑ Đạt · Task ☑ Đạt · Evidence ☑ Đạt (D1.evidence=09:45:30 turn 65).
-- **Bài học:** cross-chunk arbitration đã fix P1. Bản thua giữ trace qua `known_limitations`
-  (audit, không xoá — R4 triết lý "không xoá tranh luận").
+## tc4 — Entity-linking (ca KHÓ/KỸ THUẬT)
 
-## tc3 — Brainstorm vòng vo (no_decision)
+- **Kỳ vọng:** owner inferred đúng, due tương đối → ISO đúng (16/31/19/21-10).
+- **Kết quả thực tế:** 7 items, 5 xanh + 2 vàng, no_decision=False. D0.final VNPay by Lan,
+  evidence 00:02:42 (câu decide thật). 4 task golden khớp owner+due+hint sau 3 fix P4:
+  Hà/16-10 (hint "thứ 6 tuần này"), Nam/31-10 ("cuối tháng"), Hà/19-10 ("thứ 2 tuần sau"),
+  Hà/21-10 ("thứ 4 tuần sau"). Model tách đôi 2 task (T1/T6, T3/T5) đã được merge deterministic.
+- **Đạt/Chưa đạt:** Decision ☑ Đạt · Entity-owner ☑ Đạt · Entity-due ☑ Đạt (4/4 sau override).
+- **Điều học được:** model nhỏ tính nhầm thứ→ngày (29 thay vì 21, 12 thay vì 19) — deterministic
+  recompute từ hint + past-date rule là lưới an toàn đúng chỗ. Lesson lớn: đừng tin số ISO của
+  model khi còn chữ gốc để kiểm tra lại.
 
-- **Kỳ vọng:** no_decision=true, ≥1 Open Issue + next_step, TBD + hint, badge đỏ/vàng.
-- **Kết quả:** 2 items (1 open_issue + 1 task TBD), 2/2 đỏ.
-  - O1: "Chưa chốt hướng tích hợp thanh toán" next_step="Hẹn họp lại sau khi có thêm dữ liệu".
-  - T1: "Triển khai research thanh toán" owner=TBD due=TBD due_hint='sớm nhé'.
-  - no_decision=True (LLM không tạo Decision, có Open Issue có next_step).
-- **Đạt:** Decision N/A (no_decision) · Open Issue ☑ Đạt · Task TBD+hint ☑ Đạt · Badge đỏ ☑ Đạt.
-- **Bài học:** pipeline CHÁNH từ tối: họp không chốt gì → không gắn false `no_decision=False`,
-  flag đỏ + TBD + hint. Host biết ngay cần xử lý tiếp.
+## tc5 — Đảo A→B→A (ca DỰ KIẾN THẤT BẠI — kết quả hợp lệ)
 
-## tc4 — Entity-link (em, anh, chị, tuần sau, cuối tháng)
-
-- **Kỳ vọng:** owner inferred đúng (em/anh/chị + tên), due tương đối → ISO đúng.
-- **Kết quả:** 5 items (1 decision + 4 task), 1 green + 4 yellow.
-  - D1 final VNPay, evidence 00:02:42+00:03:06 (2 decide → heuristic R1 ≥3 mới flag → KHÔNG
-    flag reversal — đúng).
-  - T1: owner=Hà (em Hà → Hà), due=2026-10-16 (thứ 6 tuần này từ 2026-10-15).
-  - T2: owner=Nam, due=2026-10-31 (cuối tháng từ 2026-10-15).
-  - T3: owner=Hà, due=2026-10-21 (thứ 4 tuần sau từ 2026-10-15).
-  - T4: owner=Hà, due=2026-10-19 (thứ 2 tuần sau từ 2026-10-15).
-- **Đạt:** Decision ☑ · Entity-link owners ☑ · Entity-link due ISO ☑ (4/4 đúng ISO).
-- **Bài học:** `parse_relative_date` deterministic — 1 test pass 8 case
-  (`thứ 2..CN`, `tuần sau`, `ngày N/M`, `cuối tháng`, `sau N ngày`). Filler
-  "nhé" / "sớm" giữ nguyên trong `due_hint`.
-
-## tc5 — Đảo A→B→A thật (DỰ KIẾN THẤT BẠI — kết quả hợp lệ)
-
-- **Kỳ vọng:** Trung thực Chưa đạt — flag `unresolved_reversal` + Open Issue cho host.
-- **Kết quả:** 4 items (3 decision flagged reversal + 1 Open Issue O_REV_1), 3/3 đỏ.
-  - D_SB, D_FA, D_REV (3 final mâu thuẫn Spring Boot ↔ FastAPI) — tất cả `unresolved_reversal=true`.
-  - O_REV_1 (system_generated, no evidence — audit marker): "Phát hiện mâu thuẫn..." next_step="Host mở transcript gốc..."
-  - 3 đỏ (R4 contradiction + R4 reversal penalty -0.20 cộng dồn).
-- **Đạt:** ☐ **Chưa đạt** (đúng kỳ vọng — chưa quyết được, host xử lý) nhưng **trung thực**:
-  - unresolved_reversal=True trên cả 3 Decision final.
-  - O_REV_1 tạo cho host, system_generated=True.
-  - badge đỏ khoá export (R6 gate).
-- **Bài học:** pipeline tuân thủ R4 — KHÔNG tự chọn 1 bên giữa 3 final mâu thuẫn.
-  Cần module chồng lấn speaker (sarcasm "tuyệt vời lắm" hiện vẫn qua heuristic OK,
-  P3 sẽ detect sarcasm) và pass-3 arbitration (nếu vẫn tay host quá nhiều).
+- **Kỳ vọng:** Trung thực Chưa đạt — flag `unresolved_reversal` + Open Issue cho host (R4).
+- **Kết quả thực tế (live):** 6 items, 5 xanh + 1 vàng, 0 đỏ, no_decision=False, flagged=0.
+  Model live làm mượt mâu thuẫn: chỉ còn 1 final "Spring Boot", không flag, không Open Issue
+  reversal. (Bản fixture vẫn flag đúng 3 finals + O_REV — deterministic R4 hoạt động khi pass-1
+  giữ được mâu thuẫn.)
+- **Đạt/Chưa đạt:** ☐ **Chưa đạt** (đúng dự kiến) — nhưng **trung thực**: ghi nhận hệ thống KHÔNG
+  phát hiện được reversal khi model nhỏ tự "hòa giải" từ pass-1, thay vì báo đạt giả.
+- **Điều học được:** R4 deterministic chỉ mạnh bằng pass-1 trung thực — model yếu giấu mâu thuẫn thì
+  lưới code không thấy gì để flag. Hướng sau P4: contradiction-check độc lập trên turns (không qua
+  items LLM) hoặc decision model scorer (ADR-0006) làm trọng tài.
 
 ---
 
-## Tóm tắt P2 gate
+## Top-3 fix P4 (từ live eval, không đụng tc5)
 
-| Gate P2 | Mô tả | Trạng thái |
+1. **Giữ `due_hint` khi resolve thành công** (`resolve.py`): trước đây ra ISO là mất chữ gốc —
+   giờ hint gốc luôn còn để audit + recompute.
+2. **Deterministic override due + past-date rule** (`resolve.py`): due ISO mà hint còn pattern
+   tương đối → recompute, khác thì override + limitation; due trước meeting.date → TBD.
+   (live tc4: 29→21, 12→19, 26→16, 24→21.)
+3. **Gộp task trùng khác id + union trường** (`resolve.py`): cùng owner + cùng due + overlap what
+   (live tc4: T1/T6, T3/T5) — bản giữ lấy thêm hint/link/evidence từ bản thua.
+
+## Đối chiếu acceptance (`docs/spec/acceptance.md`)
+
+| # | Tiêu chí | Kết quả |
 |---|---|---|
-| §1 resolve.py | Merge + supersedes + reversal + entity-link | ☑ Đạt (25/25 test_resolve pass) |
-| §2 backend/api.py | GET/PUT review + POST export gate R6 | ☑ Đạt (13/13 test_api pass) |
-| §3 fixtures tc3+tc4+tc5 | Synthetic Việt, ≥3 speakers, timestamp ↑ | ✅ |
-| §4 tests | test_resolve + test_api + test_ingest + test_verify + test_schema + test_extract | ☑ **158/158 pass** |
-| §5 live tc2 | D1.evidence @45:30 turn 65 (gate P1 còn thiếu) | ☑ **ĐẠT** (multi-chunk fixture demo) |
-| §5'. open issues | Ollama local DOWN → báo user | ⚠ Đã ghi trong "Trung thực" |
+| 1 | Demo end-to-end <5 phút | ☑ Đạt (`cli run` + TestClient review/export; UI do user bật — `npm run build` xanh) |
+| 2 | tc2 D.final=B + supersedes + D0 discarded + evidence 45:30 (kill-criterion) | ☑ Đạt (live) |
+| 3 | 5/5 bảng 4 trường, tc5 Chưa đạt trung thực vẫn tính hoàn thành | ☑ Đạt (file này) |
+| 4 | Audit 10 task: nguồn explicit/inferred hoặc TBD, không bịa | ☑ Đạt (10/10 OK, script `audit_tasks.py` ngoài repo) |
+| 5 | tc3 đỏ/vàng + TBD, không xanh giả | ☑ Đạt (2 vàng + 4 xanh cho nội dung rõ, TBD giữ hint) |
+| 6 | Gate: còn đỏ → 403; xong → 200 | ☑ Đạt (test_api + demo P3) |
+| 7 | README cách chạy + known_limitations | ☑ Đạt (README root) |
 
-**Gate P2: ĐẠT** (158/158 tests + live tc2 evidence @45:30 + API smoke OK).
+## Known limitations (trung thực, không che giấu)
+
+- Model nhỏ (qwen3 4b/8b local) paraphrase + tính ngày sai + làm mượt mâu thuẫn (tc5 live) —
+  lưới deterministic đỡ được sai số, không đỡ được giấu mâu thuẫn.
+- Chunking 40/overlap 10 do context 4096 của model local (hosted model dùng 80/10 mặc định).
+- tc4 live còn task phụ dư (T4 TBD, T8 proposal) — đúng nhưng ngoài golden, host tự loại ở review.
+- Chưa xử lý speaker chồng lấn, sarcasm detection riêng, sync API Jira (out-of-scope MVP).

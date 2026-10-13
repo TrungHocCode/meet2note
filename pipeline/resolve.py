@@ -578,12 +578,42 @@ def _entity_link_due(
     meeting_date_iso: str,
     limitations: list[str],
 ) -> None:
-    """Resolve due tương đối trong Task → ISO (R2)."""
+    """Resolve due tương đối trong Task → ISO (R2) + kiểm tra chéo due model đã cho.
+
+    3 việc (đều deterministic, đều ghi limitation để audit):
+    1. due tương đối ("thứ 6 tuần này") → ISO từ meeting.date, giữ chữ gốc vào due_hint.
+    2. due đã ISO nhưng due_hint còn pattern tương đối → recompute; khác thì OVERRIDE
+       (model local hay tính nhầm thứ→ngày, vd "thứ 4 tuần sau" ra 10-29 thay vì 10-21).
+    3. due ISO trước meeting.date → bất khả thi → TBD + limitation.
+    """
     for it in items:
         if it.get("type") != "task":
             continue
         due = it.get("due", "")
-        if not due or _is_iso_like(due):
+        if not due:
+            continue
+        if _is_iso_like(due):
+            hint = (it.get("due_hint") or "").strip()
+            if hint and hint.upper() != "TBD":
+                iso2, _ = parse_relative_date(hint, meeting_date_iso)
+                if iso2 and iso2 != due:
+                    limitations.append(
+                        f"due model {due} != deterministic {iso2} từ hint "
+                        f"{hint!r} → dùng {iso2} (item {it.get('id')})"
+                    )
+                    it["due"] = iso2
+                    it["due_source"] = "inferred"
+                    due = iso2
+            if due < meeting_date_iso:
+                # Due trước ngày họp = bất khả thi (model bịa/nhầm năm).
+                limitations.append(
+                    f"due {due} trước meeting.date {meeting_date_iso} → TBD "
+                    f"(item {it.get('id')})"
+                )
+                it["due"] = "TBD"
+                it["due_source"] = "tbd"
+                if not it.get("due_hint"):
+                    it["due_hint"] = due
             continue
         # Không phải ISO + không phải TBD → thử parse due_hint hoặc due_hint
         # (LLM có thể ghi due='thứ 6 tuần sau' nhưng cũng có thể để TBD + hint).
@@ -598,6 +628,9 @@ def _entity_link_due(
 
         iso, src = parse_relative_date(hint_text, meeting_date_iso)
         if iso:
+            if not it.get("due_hint"):
+                # Giữ chữ gốc để audit (vd "thứ 6 tuần này" → ISO + hint gốc).
+                it["due_hint"] = due
             it["due"] = iso
             it["due_source"] = src
         # else: giữ nguyên TBD + hint (R2)
@@ -678,6 +711,11 @@ def resolve(
     meeting_date_iso = meta.get("date", "1970-01-01")
     _entity_link_due(items_after_reversal, meeting_date_iso, limitations)
 
+    # Bước 5b: gộp task trùng khác id (model local hay tách đôi 1 việc:
+    # "giao" + "nhận" thành 2 task). Cùng owner + cùng due ISO + overlap
+    # what → giữ bản đầu, ghi limitation (P4 live tc4: T1/T6, T3/T5).
+    _merge_duplicate_tasks(items_after_reversal, limitations)
+
     # Bước 6: optional LLM pass-2 (mock được qua llm_fn).
     # Hiện tại LLM pass-2 chỉ dùng khi llm_fn != None; deterministic đã cover
     # P2 gate. _try_parse_items re-used từ extract (chịu think-tag/fence).
@@ -703,6 +741,57 @@ def resolve(
         "items": items_after_reversal,
         "known_limitations": limitations,
     }
+
+
+def _what_tokens(what: str) -> set[str]:
+    """Tokens significant của what (lowercase, len≥4, unicode-aware)."""
+    return {t for t in re.findall(r"[a-z0-9à-ỹ]+", (what or "").lower()) if len(t) >= 4}
+
+
+def _merge_duplicate_tasks(
+    items: list[dict[str, Any]], limitations: list[str]
+) -> None:
+    """Gộp task trùng khác id (in-place).
+
+    Điều kiện (cả 3): cùng owner (non-TBD) + cùng due ISO (non-TBD) +
+    ≥2 shared tokens (len≥4) trong `what`. Giữ bản đầu, ghi limitation.
+    Không đụng task TBD (thiếu thông tin để kết luận trùng).
+    """
+    tasks = [it for it in items if it.get("type") == "task"]
+    drop_ids: set[str] = set()
+    for i, a in enumerate(tasks):
+        if a.get("id") in drop_ids:
+            continue
+        ta = _what_tokens(a.get("what", ""))
+        for b in tasks[i + 1 :]:
+            if b.get("id") in drop_ids:
+                continue
+            owner_a, owner_b = a.get("owner"), b.get("owner")
+            due_a, due_b = a.get("due"), b.get("due")
+            if not owner_a or owner_a == "TBD" or owner_a != owner_b:
+                continue
+            if not due_a or due_a == "TBD" or due_a != due_b:
+                continue
+            shared = ta & _what_tokens(b.get("what", ""))
+            if len(shared) >= 2:
+                drop_ids.add(b.get("id"))
+                # Union trường bổ sung từ bản thua (hint/link/evidence) —
+                # bản giữ thiếu gì thì lấy đó, confidence giữ nguyên bản giữ.
+                if not a.get("due_hint") and b.get("due_hint"):
+                    a["due_hint"] = b["due_hint"]
+                if not a.get("link_to_decision") and b.get("link_to_decision"):
+                    a["link_to_decision"] = b["link_to_decision"]
+                seen_ev = {(e.get("timestamp"), e.get("quote"))
+                           for e in (a.get("evidence") or [])}
+                for e in b.get("evidence") or []:
+                    if (e.get("timestamp"), e.get("quote")) not in seen_ev:
+                        a.setdefault("evidence", []).append(e)
+                limitations.append(
+                    f"merge: task {b.get('id')} trùng {a.get('id')} "
+                    f"(owner+due+overlap {sorted(shared)}) → gộp, giữ {a.get('id')}"
+                )
+    if drop_ids:
+        items[:] = [it for it in items if it.get("id") not in drop_ids]
 
 
 def _apply_llm_hints(
