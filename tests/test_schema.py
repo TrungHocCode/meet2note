@@ -28,6 +28,7 @@ from pipeline.schema import (
     Participant,
     Requirement,
     RoleInDiscussion,
+    Stats,
     Task,
     TBD_SENTINEL,
 )
@@ -358,10 +359,37 @@ def test_meeting_state_r3_ok_with_open_issue(
         meeting=meeting,
         items=[oi],
         no_decision=True,
-        stats={"open_issue": 1},
+        stats=Stats(by_type={"open_issue": 1}, items_total=1),
         known_limitations=[],
     )
     assert state.no_decision is True
+
+
+def test_open_issue_system_generated_allows_empty_evidence() -> None:
+    """O_SYS (system_generated) được miễn evidence (R5 + R3-fallback)."""
+    oi = OpenIssue(
+        id="O_SYS",
+        content="Không xác định được trạng thái",
+        next_step="Host kiểm tra lại",
+        confidence=0.0,
+        confidence_reason="system fallback",
+        evidence=[],
+        system_generated=True,
+    )
+    assert oi.system_generated is True
+
+
+def test_open_issue_llm_requires_evidence() -> None:
+    """OpenIssue từ LLM thiếu evidence → reject (R5)."""
+    with pytest.raises(ValidationError):
+        OpenIssue(
+            id="O1",
+            content="Chưa chốt",
+            next_step="Hẹn lại",
+            confidence=0.5,
+            confidence_reason="mơ hồ",
+            evidence=[],
+        )
 
 
 def test_decision_status_literal_values() -> None:

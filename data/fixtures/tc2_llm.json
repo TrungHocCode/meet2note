@@ -1,0 +1,105 @@
+[
+  {
+    "items": [
+      {
+        "id": "D0",
+        "type": "decision",
+        "content": "Đề xuất phương án A (vendor X)",
+        "status": "discarded",
+        "decided_by": null,
+        "reason": null,
+        "supersedes": [],
+        "objections": [
+          "A tiết kiệm 15 triệu/năm nhưng có 3 rủi ro: rate limit, support tiếng Việt, downtime — Hà, 00:08:18",
+          "A best-effort, vendor có thể từ chối đền bù — deal-breaker — Lan, 00:12:42"
+        ],
+        "confidence": 0.7,
+        "confidence_reason": "đề xuất ban đầu, bị thay thế bởi D1",
+        "evidence": [
+          {
+            "quote": "Em đề xuất phương án A, bên X rẻ hơn 20%.",
+            "timestamp": "00:08:04",
+            "speaker": "Nam",
+            "turn": 39,
+            "role_in_discussion": "propose"
+          }
+        ]
+      },
+      {
+        "id": "D1",
+        "type": "decision",
+        "content": "Chốt phương án B (vendor Y, gói premium, SLA 99.9%, support tiếng Việt)",
+        "status": "final",
+        "decided_by": "Lan",
+        "reason": "A rủi ro vượt 30% nếu phát sinh; B có SLA cam kết + support tiếng Việt",
+        "supersedes": ["D0"],
+        "objections": [],
+        "confidence": 0.95,
+        "confidence_reason": "chốt rõ, cả team đồng ý, có lý do cụ thể, supersedes giữ vết A→B",
+        "evidence": [
+          {
+            "quote": "A rủi ro vượt 30% nếu phát sinh. Vậy chốt B nhé, cả team đồng ý không?",
+            "timestamp": "00:45:30",
+            "speaker": "Lan",
+            "turn": 65,
+            "role_in_discussion": "decide"
+          }
+        ]
+      },
+      {
+        "id": "T1",
+        "type": "task",
+        "what": "Gửi báo giá B cho khách",
+        "owner": "Nam",
+        "owner_source": "explicit",
+        "due": "2026-10-12",
+        "due_source": "explicit",
+        "due_hint": null,
+        "link_to_decision": "D1",
+        "confidence": 0.9,
+        "confidence_reason": "owner + due + link đều rõ trong transcript",
+        "evidence": [
+          {
+            "quote": "Dạ em gửi báo giá B cho khách trước 12/10.",
+            "timestamp": "00:46:05",
+            "speaker": "Nam",
+            "turn": 69,
+            "role_in_discussion": "confirm"
+          }
+        ]
+      },
+      {
+        "id": "T2",
+        "type": "task",
+        "what": "Chuẩn bị sandbox test Y để bàn giao team dev",
+        "owner": "Hà",
+        "owner_source": "explicit",
+        "due": "TBD",
+        "due_source": "tbd",
+        "due_hint": "sau khi ký hợp đồng",
+        "link_to_decision": "D1",
+        "confidence": 0.6,
+        "confidence_reason": "owner rõ, due phụ thuộc ký hợp đồng",
+        "evidence": [
+          {
+            "quote": "Em sẽ chuẩn bị sandbox test Y để bàn giao team dev sau khi ký hợp đồng ạ.",
+            "timestamp": "00:46:32",
+            "speaker": "Hà",
+            "turn": 71,
+            "role_in_discussion": "confirm"
+          }
+        ]
+      },
+      {
+        "id": "K1",
+        "type": "knowledge",
+        "content": "Vendor X không support tiếng Việt — chỉ có hotline tiếng Anh. KH nội địa cần tiếng Việt → loại X.",
+        "context": "Rút ra từ thảo luận chọn vendor CRM",
+        "tags": ["vendor", "lesson-learned", "tc2"],
+        "confidence": 0.85,
+        "confidence_reason": "thông tin khẳng định rõ trong transcript",
+        "evidence": []
+      }
+    ]
+  }
+]

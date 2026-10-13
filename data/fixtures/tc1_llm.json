@@ -1,0 +1,155 @@
+[
+  {
+    "items": [
+      {
+        "id": "D1",
+        "type": "decision",
+        "content": "Chốt dùng FastAPI + JWT (không dùng Auth0)",
+        "status": "final",
+        "decided_by": "Lan",
+        "reason": "rủi ro bảo mật B cao + team đã có kinh nghiệm JWT",
+        "supersedes": [],
+        "objections": [],
+        "confidence": 0.9,
+        "confidence_reason": "chốt rõ, cả team đồng ý, có lý do",
+        "evidence": [
+          {
+            "quote": "Vậy mình chốt B nhé: tự build bằng FastAPI + JWT, không dùng Auth0.",
+            "timestamp": "00:02:30",
+            "speaker": "Lan",
+            "turn": 20,
+            "role_in_discussion": "decide"
+          }
+        ]
+      },
+      {
+        "id": "T1",
+        "type": "task",
+        "what": "Research vendor pricing",
+        "owner": "Nam",
+        "owner_source": "explicit",
+        "due": "2026-10-16",
+        "due_source": "explicit",
+        "due_hint": null,
+        "link_to_decision": null,
+        "confidence": 0.85,
+        "confidence_reason": "owner + due rõ trong transcript",
+        "evidence": [
+          {
+            "quote": "Dạ, em làm research vendor pricing, deadline thứ Sáu tuần này nhé chị.",
+            "timestamp": "00:03:04",
+            "speaker": "Nam",
+            "turn": 24,
+            "role_in_discussion": "confirm"
+          }
+        ]
+      },
+      {
+        "id": "T2",
+        "type": "task",
+        "what": "Setup môi trường dev cho module mới",
+        "owner": "Hà",
+        "owner_source": "explicit",
+        "due": "2026-10-19",
+        "due_source": "explicit",
+        "due_hint": null,
+        "link_to_decision": null,
+        "confidence": 0.85,
+        "confidence_reason": "owner + due rõ trong transcript",
+        "evidence": [
+          {
+            "quote": "Dạ em setup môi trường dev, deadline thứ Hai tuần sau ạ.",
+            "timestamp": "00:03:22",
+            "speaker": "Hà",
+            "turn": 26,
+            "role_in_discussion": "confirm"
+          }
+        ]
+      },
+      {
+        "id": "T3",
+        "type": "task",
+        "what": "Viết test plan thanh toán",
+        "owner": "Minh",
+        "owner_source": "explicit",
+        "due": "2026-10-21",
+        "due_source": "explicit",
+        "due_hint": null,
+        "link_to_decision": null,
+        "confidence": 0.85,
+        "confidence_reason": "owner + due rõ trong transcript",
+        "evidence": [
+          {
+            "quote": "Dạ em viết test plan thanh toán, deadline thứ Tư ạ.",
+            "timestamp": "00:03:38",
+            "speaker": "Minh",
+            "turn": 28,
+            "role_in_discussion": "confirm"
+          }
+        ]
+      },
+      {
+        "id": "T4",
+        "type": "task",
+        "what": "Liên hệ vendor account manager",
+        "owner": "Hà",
+        "owner_source": "explicit",
+        "due": "2026-10-21",
+        "due_source": "explicit",
+        "due_hint": null,
+        "link_to_decision": null,
+        "confidence": 0.85,
+        "confidence_reason": "owner + due rõ trong transcript",
+        "evidence": [
+          {
+            "quote": "Được, em Hà chủ động liên hệ vendor account manager để đẩy nhanh, deadline thứ Tư 21/10.",
+            "timestamp": "00:04:18",
+            "speaker": "Lan",
+            "turn": 33,
+            "role_in_discussion": "decide"
+          }
+        ]
+      },
+      {
+        "id": "T5",
+        "type": "task",
+        "what": "Chuẩn bị slide rehearsal",
+        "owner": "Minh",
+        "owner_source": "explicit",
+        "due": "2026-10-28",
+        "due_source": "explicit",
+        "due_hint": null,
+        "link_to_decision": null,
+        "confidence": 0.8,
+        "confidence_reason": "owner + due rõ trong transcript",
+        "evidence": [
+          {
+            "quote": "Em chuẩn bị slide rehearsal trước 28/10 nhé chị.",
+            "timestamp": "00:05:42",
+            "speaker": "Minh",
+            "turn": 44,
+            "role_in_discussion": "confirm"
+          }
+        ]
+      },
+      {
+        "id": "B1",
+        "type": "blocker",
+        "content": "Vendor API chưa trả key test — sandbox không đầy đủ flow refund",
+        "needs_action_from": "Hà",
+        "severity": "high",
+        "confidence": 0.8,
+        "confidence_reason": "blocker rõ ràng, owner được giao",
+        "evidence": [
+          {
+            "quote": "Sandbox vendor không đầy đủ flow refund. Em note đây là blocker cần gỡ.",
+            "timestamp": "00:04:02",
+            "speaker": "Lan",
+            "turn": 31,
+            "role_in_discussion": "info"
+          }
+        ]
+      }
+    ]
+  }
+]
