@@ -36,3 +36,30 @@ Mọi item có `confidence 0–1` + `confidence_reason`. Ngưỡng: đỏ <0.50 
 | R5 | Mọi item (trừ Knowledge) ≥1 evidence khớp fuzzy ≥85% (difflib trên text normalize) | Không khớp ⇒ `evidence_mismatch`, thẻ đỏ |
 | R6 | Không tự sync: export chỉ sau confirm | Gate ở React + backend check |
 | R7 | Không xóa tranh luận | Phản đối vào `objections` của Decision |
+
+## 5. Công thức confidence (VERIFY — deterministic)
+
+```
+conf_final = clamp01(
+  conf_llm
+  + 0.10  nếu quote khớp transcript
+  - 0.30  nếu evidence_mismatch
+  - 0.15  mỗi trường TBD
+  - 0.10  mỗi trường inferred
+  - 0.20  nếu có mâu thuẫn (unresolved_reversal)
+)
+```
+
+- Ngưỡng badge: đỏ `<0.50` (khoá export) · vàng `0.50-0.75` · xanh `≥0.75`.
+- Quote verify: normalize (bỏ dấu câu + khoảng trắng dư) → `difflib.ratio ≥ 0.85`;
+  thử lân cận ≤2 lượt; fail → `evidence_mismatch` (đỏ). Trừ Knowledge — không bắt buộc evidence.
+
+## 6. Resolve rules (pass-2 — deterministic, không để LLM tự chọn)
+
+- **Merge trùng:** cùng chủ đề + speaker + bằng chứng → gộp 1, ghi `merged_ids`.
+- **Nối supersedes xuyên chunk:** mỗi vấn đề tối đa 1 `final`; cũ → `discarded` (R4).
+- **A→B→A hoặc 2 final cùng chủ đề** → `unresolved_reversal=true` + Open Issue cho host — không tự chọn (R4).
+- **Entity-link người:** chỉ chấp nhận `name`/`aliases` trong `participants` (em/anh/chị → name,
+  source=inferred); không khớp → TBD. Tên ngoài participants là SAI.
+- **Entity-link ngày** (regex + Python, từ `meeting.date`): `thứ 2..CN`, `tuần sau`, `ngày N/M`,
+  `cuối tháng` → ISO deterministic; mơ hồ → `due=TBD` + `due_hint` giữ nguyên gốc (R2).

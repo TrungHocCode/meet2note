@@ -15,5 +15,10 @@
 | 6 | `spec/taxonomy.md` | Hợp đồng 6 loại thông tin + 7 quy tắc cứng R1–R7 |
 | 7 | `spec/eval-plan.md` | 5 kịch bản test + tiêu chí Đạt/Chưa đạt |
 | 8 | `runbook/` | Setup local + kịch bản demo 5 phút |
+| 9 | `spec/io-formats.md` | Định dạng transcript/turns/meta/golden + parse .txt/.srt (P0) |
+| 10 | `prompts/` | system_extract, system_resolve, fewshot_atob — code load trực tiếp (P1) |
+| 11 | `spec/api-contract.md` | GET/PUT /review, POST /export + gate R6 (P2) |
+| 12 | `spec/export-format.md` | Template minutes.md + tasks_jira.csv + review_log + UI tối thiểu (P3) |
+| 13 | `spec/acceptance.md` | Tiêu chí nghiệm thu MVP (P4) |
 
 Spec thực thi MVP: `private/PLAN_MVP.md` (local-only, không push).
