@@ -32,3 +32,6 @@ Thumbs.db
 # ── Logs ───────────────────────────────────────────────────────
 *.log
 llm_log.jsonl
+*.out
+*.err
+nohup.out

@@ -83,3 +83,11 @@ Chi tiết đầy đủ: `docs/spec/taxonomy.md`. Tóm tắt:
 - GitHub Flow: main luôn xanh, mọi thay đổi qua branch + PR, không push thẳng main.
 - **KHÔNG bao giờ commit:** `.env`, transcript thật, `docs/private/`, `runs/`.
 - Dữ liệu trong `data/` luôn synthetic (repo public).
+
+## 9. Cấm treo terminal (bài học P3)
+
+- **KHÔNG bao giờ bật server blocking** (`uvicorn --reload`, `npm run dev`, `ollama serve`)
+  trong terminal của agent — chúng chạy mãi không tự dừng.
+- Verify backend bằng `fastapi.testclient.TestClient` (pytest), frontend bằng `npm run build`.
+- Demo tay có server = user tự bật trong terminal riêng; agent chỉ hướng dẫn lệnh.
+- File log rác của server (`uvicorn.out`, `*.err`, `nohup.out`) không commit (đã ignore).
