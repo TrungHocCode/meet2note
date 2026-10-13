@@ -161,6 +161,7 @@ def _ensure_render_context(state: dict[str, Any]) -> dict[str, Any]:
 
     return {
         "meeting": meeting,
+        "brief": state.get("brief"),
         "decisions": decisions,
         "tasks": tasks,
         "blockers": blockers,

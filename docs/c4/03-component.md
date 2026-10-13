@@ -22,6 +22,7 @@ sequenceDiagram
 |---|---|---|---|
 | (1) INGEST | `ingest.py` | Không | Parse txt/srt → `turns.json` [{turn, t_start, t_end, speaker, text}] |
 | (2) EXTRACT | `extract.py` | Có (pass-1) | Trích 6 loại + evidence + conf_llm, temp 0, JSON mode, retry ≤2 |
+| (2b) BRIEF | `extract_brief` + `system_brief.md` | Có (1 call toàn transcript) | Vấn đề + kết quả có ref_ids (taxonomy §8); fail → None, pipeline vẫn chạy |
 | (3) RESOLVE | `resolve.py` | Có (pass-2) + rules Python | Nối supersedes xuyên chunk, merge trùng, entity-link tên/ngày, flag `unresolved_reversal` |
 | (4) VERIFY | `verify.py` | Không | Quote fuzzy ≥85%, công thức confidence, ép TBD (R1/R2/R5) |
 | (5) REVIEW | React + API | Người | Đồng ý/Sửa/Loại, gate R6, ghi review_log |

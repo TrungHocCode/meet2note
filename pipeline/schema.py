@@ -252,6 +252,43 @@ Item = Annotated[
 ItemTypeAdapter = TypeAdapter(Item)
 
 
+class BriefOutcome(BaseModel):
+    """Một kết quả của họp — BẮT BUỘC trỏ tới ID đã chốt (taxonomy §8).
+
+    Không ref_id tương ứng = phát biểu đó chưa thành Decision/OpenIssue
+    = không được ghi nhận là kết quả (verify bỏ + limitation).
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    text: str = Field(..., min_length=1)
+    ref_ids: list[str] = Field(
+        default_factory=list,
+        description="ID Decision/OpenIssue chứng minh kết quả này.",
+    )
+
+
+class MeetingBrief(BaseModel):
+    """Vấn đề + kết quả họp (LLM tổng hợp, verify kiểm ref — taxonomy §8)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    problem: str = Field(
+        ...,
+        min_length=1,
+        description="Vấn đề họp giải quyết.",
+    )
+
+    @field_validator("problem")
+    @classmethod
+    def _problem_not_blank(cls, v: str) -> str:
+        v = v.strip()
+        if not v:
+            raise ValueError("brief.problem không được rỗng/trắng.")
+        return v
+    outcomes: list[BriefOutcome] = Field(default_factory=list)
+
+
 # ──────────────────────────────────────────────────────────────────────
 # 4. Envelope — Meeting + MeetingState
 # ──────────────────────────────────────────────────────────────────────
@@ -304,6 +341,10 @@ class MeetingState(BaseModel):
 
     meeting: Meeting
     items: list[Item] = Field(default_factory=list)
+    brief: MeetingBrief | None = Field(
+        default=None,
+        description="Vấn đề + kết quả (taxonomy §8). None = LLM không trích được.",
+    )
     no_decision: bool = Field(
         default=False,
         description="R3: True khi họp không chốt được gì.",
@@ -362,6 +403,8 @@ __all__ = [
     "Meeting",
     "Stats",
     "MeetingState",
+    "BriefOutcome",
+    "MeetingBrief",
     # union
     "Item",
     "ItemTypeAdapter",

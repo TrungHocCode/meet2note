@@ -197,6 +197,30 @@ def cmd_run(args: argparse.Namespace) -> int:
         f"{len(extraction['known_limitations'])} chunk failures"
     )
 
+    # Brief — 1 call toàn transcript (taxonomy §8). Live: luôn gọi.
+    # Fixture: chỉ gọi khi có --brief-fixture (tránh ăn response của extract).
+    from .extract import extract_brief
+
+    brief_raw: dict[str, Any] | None = None
+    if args.llm_fixture:
+        if args.brief_fixture:
+            bp = Path(args.brief_fixture)
+            if not bp.is_absolute():
+                bp = (root / args.brief_fixture).resolve()
+            if bp.exists():
+                print(f"[cli] using LLM fixture (mock) for brief: {bp}")
+                brief_raw = _make_fixture_llm(bp)([])
+            else:
+                print(f"[cli] brief_fixture not found: {bp} — bỏ brief")
+        else:
+            print("[cli] brief: skipped (fixture mode, thiếu --brief-fixture)")
+    else:
+        try:
+            brief_raw = extract_brief(meta, turns)
+            print(f"[cli] brief: {'ok' if brief_raw else 'LLM fail → verify bỏ'}")
+        except RuntimeError as e:
+            print(f"[cli] brief FAILED (không chặn pipeline): {e}")
+
     # Build Meeting
     meeting = Meeting(
         id=meta["id"],
@@ -227,6 +251,7 @@ def cmd_run(args: argparse.Namespace) -> int:
         limitations=list(ingest_limitations)
         + extraction["known_limitations"]
         + resolution["known_limitations"],
+        brief_raw=brief_raw,
     )
 
     # Save state.json
@@ -308,6 +333,14 @@ def build_parser() -> argparse.ArgumentParser:
         help=(
             "đường dẫn tới JSON fixture của LLM pass-2 resolve (mock — không cần .env). "
             "Mặc định None → resolve chạy deterministic (đủ cho CI)."
+        ),
+    )
+    p_run.add_argument(
+        "--brief-fixture",
+        default=None,
+        help=(
+            "đường dẫn tới JSON fixture của meeting brief (mock). "
+            "Mặc định None → fixture mode bỏ brief; live mode luôn gọi LLM."
         ),
     )
     p_run.add_argument(

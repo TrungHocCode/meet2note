@@ -494,14 +494,103 @@ def extract(
             log_fp.close()
 
 
+# ──────────────────────────────────────────────────────────────────────
+# Brief: 1 LLM call trên TOÀN transcript (sau pass-1) — taxonomy §8
+# ──────────────────────────────────────────────────────────────────────
+
+SYSTEM_BRIEF_FILE = "system_brief.md"
+
+
+def build_brief_messages(
+    meta: dict[str, Any],
+    turns: list[dict[str, Any]],
+    *,
+    system_template: str | None = None,
+    max_turns: int = 200,
+) -> list[dict[str, str]]:
+    """Build messages cho brief: system (filled) + user (toàn transcript).
+
+    Brief cần nhìn TOÀN cuộc họp (vấn đề xuyên suốt) nên không chunk.
+    Transcript dài quá `max_turns` thì lấy 30 đầu + 60 cuối + note số lượt bỏ.
+    """
+    system = fill_meta_placeholders(
+        system_template or load_prompt(SYSTEM_BRIEF_FILE), meta
+    )
+    shown = turns
+    skipped_note = ""
+    if len(turns) > max_turns:
+        shown = turns[:30] + turns[-60:]
+        skipped_note = (
+            f"\n(Lược {len(turns) - 90} turns giữa để vừa context — "
+            f"vấn đề chính thường ở mở đầu + chốt ở cuối.)\n"
+        )
+    lines = [
+        f"Meeting id: {meta.get('id', '?')}",
+        f"Title: {meta.get('title', '?')}",
+        f"Date: {meta.get('date', '?')}",
+        "",
+        "FULL TRANSCRIPT (turns, 1-indexed):",
+        skipped_note,
+    ]
+    for t in shown:
+        lines.append(f"[turn {t['turn']}] [{t['t_start']}] {t['speaker']}: {t['text']}")
+    return [
+        {"role": "system", "content": system},
+        {"role": "user", "content": "\n".join(lines)},
+    ]
+
+
+def extract_brief(
+    meta: dict[str, Any],
+    turns: list[dict[str, Any]],
+    *,
+    llm_fn: Callable[..., str] | None = None,
+) -> dict[str, Any] | None:
+    """Trích meeting brief (problem + outcomes có ref_ids) — taxonomy §8.
+
+    1 call duy nhất trên toàn transcript. Parse fail → None (verify bỏ brief
+    + limitation, pipeline vẫn chạy). Không retry ở đây — brief là nice-to-have,
+    retry tốn call mà giá trị thấp hơn items.
+    """
+    from .schema import MeetingBrief
+
+    call = llm_fn if llm_fn is not None else call_llm
+    messages = build_brief_messages(meta, turns)
+    try:
+        content = call(messages)
+    except Exception:
+        return None
+    text = _strip_llm_wrappers(content)
+    try:
+        data = json.loads(text)
+    except json.JSONDecodeError:
+        start, end = text.find("{"), text.rfind("}")
+        if start < 0 or end <= start:
+            return None
+        try:
+            data = json.loads(text[start : end + 1])
+        except json.JSONDecodeError:
+            return None
+    if not isinstance(data, dict):
+        return None
+    try:
+        MeetingBrief.model_validate(data)
+    except Exception:
+        return None
+    return data
+
+
 __all__ = [
     "PROMPTS_DIR",
     "SYSTEM_PROMPT_FILE",
     "FEWSHOT_FILE",
+    "SYSTEM_BRIEF_FILE",
     "load_prompt",
     "fill_meta_placeholders",
     "build_messages",
+    "build_brief_messages",
     "chunk_turns",
     "call_llm",
     "extract",
+    "extract_brief",
 ]

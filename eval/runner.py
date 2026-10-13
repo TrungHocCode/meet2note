@@ -102,6 +102,15 @@ def run_case(
         meta, turns, log_path=None, llm_fn=llm_fn,
         chunk_size=chunk_size, overlap=overlap,
     )
+    # Brief: live mode gọi LLM 1 call toàn transcript; fixture mode bỏ qua.
+    brief_raw = None
+    if live:
+        from pipeline.extract import extract_brief
+
+        try:
+            brief_raw = extract_brief(meta, turns)
+        except RuntimeError:
+            brief_raw = None
     meeting = Meeting(
         id=meta["id"],
         title=meta.get("title", tc_id),
@@ -119,6 +128,7 @@ def run_case(
         limitations=list(ingest_lims)
         + extraction["known_limitations"]
         + resolution["known_limitations"],
+        brief_raw=brief_raw,
     )
     return {"state": state, "turns": len(turns)}
 
@@ -217,6 +227,16 @@ def compare(tc_id: str, state, golden: dict[str, Any]) -> dict[str, Any]:
         reds = sum(1 for i in items if _badge(float(i.confidence)) == "red")
         put("red_count", reds == golden["expected_red_count"],
             f"red={reds} (expect {golden['expected_red_count']})")
+
+    # brief (taxonomy §8): có thì outcomes phải trỏ ID tồn tại (verify đã enforce).
+    # Golden chưa có brief → chỉ ghi nhận thông tin, không tính fail.
+    brief = getattr(state, "brief", None)
+    if brief is not None:
+        ids = {i.id for i in items}
+        bad_refs = [r for o in brief.outcomes for r in (o.ref_ids or []) if r not in ids]
+        put("brief", not bad_refs,
+            f"problem={bool(brief.problem.strip())} outcomes={len(brief.outcomes)} "
+            f"bad_refs={bad_refs or 'không có'}")
 
     badges = {"red": 0, "yellow": 0, "green": 0}
     for i in items:

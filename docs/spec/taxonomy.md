@@ -78,3 +78,15 @@ conf_final = clamp01(
   source=inferred); không khớp → TBD. Tên ngoài participants là SAI.
 - **Entity-link ngày** (regex + Python, từ `meeting.date`): `thứ 2..CN`, `tuần sau`, `ngày N/M`,
   `cuối tháng` → ISO deterministic; mơ hồ → `due=TBD` + `due_hint` giữ nguyên gốc (R2).
+
+## 8. Meeting brief (vấn đề + kết quả — tư duy business)
+
+- Họp người thật hiếm khi tuyên bố mục đích rõ ràng — brief do LLM tổng hợp từ toàn transcript:
+  `problem` (1–2 câu: vấn đề họp giải quyết, không phải agenda chung chung) +
+  `outcomes[]` (mỗi kết quả 1 dòng + `ref_ids` trỏ tới Decision/OpenIssue ID).
+- **Luật business cốt lõi:** "nói ra" ≠ "chốt". Một phát biểu chỉ thành Decision khi có câu chốt rõ +
+  người chốt + đồng thuận (ngầm/hiển) — nói suông/ví dụ/đùa không thành item.
+  Cơ chế enforce: outcome MUỐN ghi nhận kết quả nào thì BẮT BUỘC trỏ tới ID đã chốt —
+  không ID tương ứng thì outcome đó không tồn tại (verify bỏ + limitation).
+- Verify: mỗi `ref_id` phải tồn tại trong items đã validate; outcome rỗng ref hoặc ref ma → bỏ
+  outcome + limitation. Brief không có evidence riêng (nó là tổng hợp từ items đã có evidence).
