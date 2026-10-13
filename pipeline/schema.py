@@ -19,6 +19,7 @@ from pydantic import (
     StringConstraints,
     TypeAdapter,
     field_validator,
+    model_validator,
 )
 
 # ──────────────────────────────────────────────────────────────────────
@@ -197,7 +198,25 @@ class OpenIssue(BaseModel):
     )
     confidence: float = Field(..., ge=0.0, le=1.0)
     confidence_reason: str = Field(..., min_length=1)
-    evidence: list[Evidence] = Field(..., min_length=1)
+    evidence: list[Evidence] = Field(
+        default_factory=list,
+        description="Bắt buộc ≥1 trừ khi system_generated (R5 + R3-fallback).",
+    )
+    system_generated: bool = Field(
+        default=False,
+        description="True = verify.py tự tổng hợp khi LLM trắng final "
+        "(R3-fallback). Item này luôn confidence thấp (đỏ) để host xử lý.",
+    )
+
+    @model_validator(mode="after")
+    def _evidence_required_unless_system(self) -> "OpenIssue":
+        """R5: OpenIssue từ LLM phải có evidence; system-fallback được miễn
+        (nó không trích từ transcript nên không thể có quote)."""
+        if not self.system_generated and not self.evidence:
+            raise ValueError(
+                "R5: open_issue (LLM) phải có ≥1 evidence."
+            )
+        return self
 
 
 class Knowledge(BaseModel):
@@ -257,6 +276,17 @@ class Meeting(BaseModel):
     pipeline_version: str = Field(..., min_length=1)
 
 
+class Stats(BaseModel):
+    """Thống kê meeting — model tường minh thay dict phẳng (ADR: type-safe,
+    API/P2 đọc trực tiếp không cần parse prefix `by_badge_*`)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    by_type: dict[str, int] = Field(default_factory=dict)
+    items_total: int = Field(default=0, ge=0)
+    by_badge: dict[str, int] = Field(default_factory=dict)
+
+
 class MeetingState(BaseModel):
     """Output envelope: meeting + items + stats + known_limitations.
 
@@ -271,9 +301,9 @@ class MeetingState(BaseModel):
         default=False,
         description="R3: True khi họp không chốt được gì.",
     )
-    stats: dict[str, int] = Field(
-        default_factory=dict,
-        description="Đếm theo type, theo confidence badge, ...",
+    stats: Stats = Field(
+        default_factory=Stats,
+        description="Đếm theo type, tổng items, đếm theo confidence badge.",
     )
     known_limitations: list[str] = Field(
         default_factory=list,
@@ -323,6 +353,7 @@ __all__ = [
     "Evidence",
     "Participant",
     "Meeting",
+    "Stats",
     "MeetingState",
     # union
     "Item",

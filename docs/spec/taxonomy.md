@@ -53,8 +53,23 @@ conf_final = clamp01(
 - Ngưỡng badge: đỏ `<0.50` (khoá export) · vàng `0.50-0.75` · xanh `≥0.75`.
 - Quote verify: normalize (bỏ dấu câu + khoảng trắng dư) → `difflib.ratio ≥ 0.85`;
   thử lân cận ≤2 lượt; fail → `evidence_mismatch` (đỏ). Trừ Knowledge — không bắt buộc evidence.
+- **Substring fallback** (vì ratio 0.85 sai toán học với quote ngắn trong turn dài):
+  quote ≥10 ký tự nằm nguyên trong turn + coverage ≥30% → tính khớp.
+- **Role normalize:** `role_in_discussion` ngoài 5 giá trị → `"info"` + ghi limitation
+  (accept-with-flag: role là metadata phụ, không đáng reject chunk; khác silent default
+  vì có vết audit trong `known_limitations`).
+- **Stats shape** (`Stats` model, không dict phẳng): `by_type{type: count}`,
+  `items_total`, `by_badge{red|yellow|green: count}`.
 
-## 6. Resolve rules (pass-2 — deterministic, không để LLM tự chọn)
+## 6. R3-fallback khi LLM trắng final (system OpenIssue)
+
+- Trắng final + không Open Issue → verify tự tổng hợp `O_SYS`
+  (`system_generated=true`, confidence 0.0 = đỏ, `next_step` cho host).
+  `O_SYS` được miễn evidence (không trích từ transcript nên không thể có quote).
+- `no_decision=True` hợp lệ nhờ O_SYS → export bị KHÓA (thẻ đỏ) tới khi host xử lý.
+  Đây là phía đúng: trắng trạng thái mà gắn `False` là nói dối nhẹ.
+
+## 7. Resolve rules (pass-2 — deterministic, không để LLM tự chọn)
 
 - **Merge trùng:** cùng chủ đề + speaker + bằng chứng → gộp 1, ghi `merged_ids`.
 - **Nối supersedes xuyên chunk:** mỗi vấn đề tối đa 1 `final`; cũ → `discarded` (R4).
