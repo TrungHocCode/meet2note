@@ -16,6 +16,7 @@ tạo ADR mới và đánh status file cũ thành `Superseded by NNNN`.
 | 0003 | Pydantic v2 làm hợp đồng schema duy nhất | Proposed |
 | 0004 | Filesystem versioned thay DB ở MVP | Proposed |
 | 0005 | Pipeline ở root, API là adapter mỏng | Accepted |
+| 0006 | Decision model làm arbitration scorer sau MVP (chưa chọn model) | Proposed |
 
 ## Mẫu file ADR
 
