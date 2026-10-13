@@ -1,0 +1,78 @@
+[00:00:05] Lan: Chào cả nhóm, hôm nay mình họp chọn vendor cho module tích hợp CRM nhé.
+[00:00:14] Nam: Em chào chị Lan, em đã research 3 vendor rồi ạ.
+[00:00:22] Hà: Em chào chị, em cũng có kinh nghiệm làm với 2 vendor trong số này ạ.
+[00:00:32] Lan: Ok, vậy mình nghe trình bày đã nhé. Em Nam bắt đầu đi.
+[00:00:42] Nam: Em so sánh ba vendor: bên X, bên Y và bên Z. Hôm nay em xin đề xuất phương án A trước ạ.
+[00:01:00] Nam: Bên X có giá rẻ nhất, bao gồm 3 user và module cơ bản.
+[00:01:14] Hà: Bên X em đã làm dự án cũ, API documentation đầy đủ ạ.
+[00:01:24] Nam: Bên Y giá cao hơn X khoảng 25%, nhưng cam kết SLA 99.9% và support 24/7.
+[00:01:38] Nam: Bên Z giá ngang Y nhưng track record mỏng hơn, em không khuyến nghị ạ.
+[00:01:52] Lan: Tại sao em nghiêng về A vậy? Ngoài giá rẻ còn lý do nào không?
+[00:02:04] Nam: Dạ, team đã quen làm với X, ramp-up nhanh, tiết kiệm 1 tuần onboarding ạ.
+[00:02:18] Lan: Hợp đồng với X có ràng buộc gì đặc biệt không em?
+[00:02:28] Nam: Hợp đồng 12 tháng, trả trước 1 lần, có phí huỷ 50% nếu huỷ trước 6 tháng ạ.
+[00:02:42] Hà: Bên X chỉ support tiếng Anh ạ, nếu KH cần tiếng Việt thì không đáp ứng được.
+[00:02:54] Nam: À đúng rồi, em quên đề cập, vendor chỉ có support tiếng Anh ạ.
+[00:03:06] Lan: KH của mình có 2 account nước ngoài và 3 account nội địa, support tiếng Việt quan trọng.
+[00:03:18] Nam: Dạ chị nhắc đúng ạ, đây là rủi ro em đã bỏ sót.
+[00:03:32] Lan: Em Hà, bên Y support tiếng Việt không em?
+[00:03:42] Hà: Dạ Y có hotline tiếng Việt và account manager riêng ạ.
+[00:03:54] Lan: Bên Y SLA cam kết bao nhiêu?
+[00:04:02] Nam: Bên Y cam kết 99.9% uptime, đền bù nếu dưới 99.5% ạ.
+[00:04:14] Hà: Em đã làm Y cho dự án trước, 6 tháng chưa bao giờ dưới 99.9% ạ.
+[00:04:28] Lan: Vậy giá Y cao hơn X bao nhiêu?
+[00:04:36] Nam: Y cao hơn X khoảng 25%, tức là thêm khoảng 15 triệu/năm ạ.
+[00:04:50] Lan: 15 triệu cho uptime 99.9% và support tiếng Việt, em thấy hợp lý không?
+[00:05:04] Nam: Dạ... em vẫn nghĩ giá là yếu tố quan trọng nhất ạ.
+[00:05:18] Lan: Rẻ mà downtime 1 tuần thì KH mất bao nhiêu? Tính chi phí cơ hội đi em.
+[00:05:32] Hà: Em bổ sung, downtime 1 tuần có thể ảnh hưởng uy tín với KH lớn ạ.
+[00:05:46] Lan: Mình chuyển sang bàn phương án B nhé. Em Nam trình bày đi.
+[00:05:58] Nam: Phương án B là chọn bên Y với gói premium có SLA 99.9% và support tiếng Việt.
+[00:06:14] Nam: Chi phí cao hơn A khoảng 25%, nhưng giảm rủi ro downtime và overhead support.
+[00:06:30] Hà: Em confirm Y từng làm 6 tháng, không có sự cố lớn nào ạ.
+[00:06:44] Nam: Bên Y có cam kết onboard 2 tuần với team mình ạ.
+[00:06:58] Lan: Onboard 2 tuần là quá nhanh, em check kỹ chưa?
+[00:07:08] Nam: Dạ theo proposal mới nhất, tại họ cam kết chính thức ạ.
+[00:07:22] Hà: Em có thể giới thiệu account manager Y để chị hỏi trực tiếp ạ.
+[00:07:36] Lan: Ok, mình sẽ book call với Y trong tuần này.
+[00:07:50] Lan: Trước khi đi xa, em nhắc lại đề xuất A của em đi đã.
+[00:08:04] Nam: Em đề xuất phương án A, bên X rẻ hơn 20%.
+[00:08:18] Hà: Em nhắc lại, A tiết kiệm 15 triệu/năm nhưng có 3 rủi ro: rate limit, support tiếng Việt, downtime.
+[00:08:34] Lan: Em note lại rủi ro của A giúp chị: rate limit 100 RPS, không support tiếng Việt, downtime không cam kết.
+[00:08:50] Nam: Dạ em note ạ.
+[00:09:02] Lan: Giờ mình discuss kỹ hơn về cost overrun của A nhé. Hà em không?
+[00:09:16] Hà: Dạ em nhớ dự án cũ, lúc peak bên X trả về 503 hai lần, phải custom middleware mất 5 ngày dev ạ.
+[00:09:32] Lan: 5 ngày dev tương đương bao nhiêu tiền em?
+[00:09:42] Nam: Dạ 5 ngày dev khoảng 10 triệu ạ, cộng vào thì A không còn rẻ hơn nhiều ạ.
+[00:09:58] Lan: Cộng thêm rủi ro KH không dùng tiếng Anh support, mình có thể mất account nội địa.
+[00:10:12] Nam: Em đề xuất phương án A, bên X rẻ hơn 20%.
+[00:10:26] Lan: Em Lan tính tổng chi phí sở hữu 3 năm của A và B giúp chị.
+[00:10:40] Nam: A: giá 60 triệu/năm, middleware dev 1 lần 10 triệu, tổng 3 năm khoảng 190 triệu ạ.
+[00:10:58] Nam: B: giá 75 triệu/năm, không phát sinh, tổng 3 năm khoảng 225 triệu ạ.
+[00:11:14] Hà: A có thêm chi phí custom integration tiếng Việt, em quên đề cập ạ.
+[00:11:28] Nam: À đúng rồi, em thêm 15 triệu cho middleware tiếng Việt, A tổng 3 năm khoảng 205 triệu ạ.
+[00:11:44] Lan: 205 so với 225, chênh 10% thôi, A không còn hấp dẫn như em nói.
+[00:12:00] Nam: Dạ em thừa nhận A không rẻ hơn nhiều như em tính ban đầu ạ.
+[00:12:16] Lan: Còn vụ downtime, A không cam kết con số cụ thể nào đúng không?
+[00:12:28] Nam: Dạ đúng ạ, A chỉ cam kết best-effort ạ.
+[00:12:42] Lan: Best-effort nghĩa là vendor có thể từ chối đền bù. Đây là rủi ro lớn.
+[00:12:58] Hà: Em đồng ý với chị, best-effort là deal-breaker với em ạ.
+[00:13:12] Nam: Dạ em cũng thấy vậy ạ.
+[00:13:26] Lan: Vậy mình tạm dừng 5 phút, ai muốn suy nghĩ thêm không?
+[00:13:40] Hà: Em đồng ý tạm dừng ạ.
+[00:13:44] Nam: Em đồng ý ạ.
+[00:13:54] Lan: Mọi người nghỉ 5 phút, 13:59 quay lại nhé.
+[00:45:30] Lan: A rủi ro vượt 30% nếu phát sinh. Vậy chốt B nhé, cả team đồng ý không?
+[00:45:42] Hà: Dạ em đồng ý B ạ.
+[00:45:46] Nam: Em đồng ý B ạ.
+[00:45:54] Lan: Ok mình chốt: chọn vendor Y, gói premium, SLA 99.9%, support tiếng Việt.
+[00:46:05] Nam: Dạ em gửi báo giá B cho khách trước 12/10.
+[00:46:18] Lan: Tốt. Em Nam gửi báo giá Y và confirm scope trước 12/10 nhé.
+[00:46:32] Hà: Em sẽ chuẩn bị sandbox test Y để bàn giao team dev sau khi ký hợp đồng ạ.
+[00:46:48] Nam: Dạ em làm báo giá, deadline 12/10 ạ.
+[00:47:00] Lan: Em update proposal vào sharepoint giúp cả nhóm nhé.
+[00:47:12] Nam: Dạ em update trong hôm nay ạ.
+[00:47:24] Lan: Còn câu hỏi nào khác không?
+[00:47:30] Hà: Em hết ạ.
+[00:47:34] Nam: Em hết ạ.
+[00:47:42] Lan: Vậy mình end meeting nhé. Cảm ơn cả nhóm.

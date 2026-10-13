@@ -1,0 +1,16 @@
+{
+  "id": "tc1",
+  "title": "Sprint 14 planning",
+  "date": "2026-10-13",
+  "participants": [
+    {"name": "Lan", "role": "PM", "aliases": ["chị Lan", "Lan"]},
+    {"name": "Nam", "role": "BA", "aliases": ["Nam", "em Nam"]},
+    {"name": "Hà", "role": "Dev", "aliases": ["em Hà", "Hà"]},
+    {"name": "Minh", "role": "QA", "aliases": ["em Minh", "Minh"]}
+  ],
+  "glossary": {
+    "sprint": "chu kỳ phát triển 2 tuần",
+    "story": "đơn vị công việc trong sprint",
+    "blocker": "vướng mắc cần hỗ trợ gỡ"
+  }
+}

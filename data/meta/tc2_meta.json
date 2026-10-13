@@ -1,0 +1,17 @@
+{
+  "id": "tc2",
+  "title": "Chọn vendor tích hợp CRM",
+  "date": "2026-10-12",
+  "participants": [
+    {"name": "Lan", "role": "PM", "aliases": ["chị Lan", "Lan"]},
+    {"name": "Nam", "role": "BA", "aliases": ["Nam", "em Nam"]},
+    {"name": "Hà", "role": "Dev", "aliases": ["em Hà", "Hà"]}
+  ],
+  "glossary": {
+    "CRM": "hệ thống quản lý quan hệ khách hàng",
+    "SLA": "service level agreement - cam kết mức dịch vụ",
+    "RPS": "request per second - giới hạn lưu lượng API",
+    "downtime": "thời gian hệ thống ngừng hoạt động",
+    "middleware": "lớp trung gian xử lý giữa client và server"
+  }
+}

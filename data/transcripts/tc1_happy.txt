@@ -1,0 +1,53 @@
+[00:00:05] Lan: Chào mọi người, hôm nay mình họp planning sprint 14 nhé.
+[00:00:11] Nam: Em chào chị Lan, em đã chuẩn bị deck rồi ạ.
+[00:00:16] Hà: Chào cả nhóm, em có việc lúc 11h xin phép họp nhanh ạ.
+[00:00:22] Minh: Em ngồi đây rồi, sẵn sàng ạ.
+[00:00:30] Lan: Ok, mình bắt đầu nhé. Sprint 13 mình đã release bản beta đúng hạn, kudos team.
+[00:00:38] Nam: Báo cáo nhanh ạ: 14/16 story done, 2 story delay do chờ vendor API.
+[00:00:46] Lan: Ừ, vendor API là blocker mình sẽ bàn sau. Sang sprint 14 nhé.
+[00:00:54] Lan: Goal sprint 14: hoàn thiện flow thanh toán và chuẩn bị demo KH cuối tháng.
+[00:01:03] Hà: Flow thanh toán em estimate 5 ngày với điều kiện có API key test.
+[00:01:11] Minh: Em cần test plan thanh toán trước khi code xong 2 ngày ạ.
+[00:01:20] Lan: Đồng ý. Giờ mình bàn chọn thư viện xác thực cho module user nhé.
+[00:01:28] Nam: Em so sánh hai phương án:
+[00:01:31] Nam: Phương án A - dùng Auth0, tốn 200 USD/tháng nhưng có sẵn SSO và MFA.
+[00:01:42] Nam: Phương án B - tự build bằng FastAPI + JWT, miễn phí nhưng team phải tự handle security.
+[00:01:54] Lan: Rủi ro bảo mật của B cao không em?
+[00:02:00] Hà: B em tự tin vì đã làm ở dự án cũ, có snippet sẵn, thời gian ước 3 ngày thôi ạ.
+[00:02:10] Minh: Bên em cũng đã quen pattern JWT, không cần học lại tool mới ạ.
+[00:02:20] Nam: Em nghiêng về B vì chi phí hợp lý và team đã có kinh nghiệm ạ.
+[00:02:30] Lan: Vậy mình chốt B nhé: tự build bằng FastAPI + JWT, không dùng Auth0.
+[00:02:40] Hà: Dạ em đồng ý ạ.
+[00:02:43] Minh: Em同意 ạ.
+[00:02:48] Nam: Em note lại: chốt dùng FastAPI + JWT, không dùng Auth0.
+[00:02:56] Lan: Ok. Tiếp theo phân task nhé. Nam em phụ trám research vendor pricing trước nhé.
+[00:03:04] Nam: Dạ, em làm research vendor pricing, deadline thứ Sáu tuần này nhé chị.
+[00:03:12] Lan: Được, thứ Sáu nghĩa là 16/10. Em Hà setup môi trường dev cho module mới.
+[00:03:22] Hà: Dạ em setup môi trường dev, deadline thứ Hai tuần sau ạ.
+[00:03:30] Lan: Thứ Hai tuần sau là 19/10. Em Minh draft test plan thanh toán.
+[00:03:38] Minh: Dạ em viết test plan thanh toán, deadline thứ Tư ạ.
+[00:03:44] Lan: 16/10... à không, thứ Tư tuần sau là 21/10 nhé.
+[00:03:52] Nam: Chị ơi, vendor API vẫn chưa trả key test, mình còn dùng sandbox được không ạ?
+[00:04:02] Lan: Sandbox vendor không đầy đủ flow refund. Em note đây là blocker cần gỡ.
+[00:04:12] Hà: Em có thể liên hệ trực tiếp vendor account manager không chị?
+[00:04:18] Lan: Được, em Hà chủ động liên hệ vendor account manager để đẩy nhanh, deadline thứ Tư 21/10.
+[00:04:30] Minh: Chị ơi, nếu tuần sau chưa có key thì test plan em viết theo assumption sandbox có được không ạ?
+[00:04:40] Lan: Được, nhưng em phải document rõ assumption trong test plan nhé.
+[00:04:48] Nam: Em xin phép recap task đã giao nhé.
+[00:04:52] Nam: Một: em research vendor pricing, due 16/10.
+[00:04:58] Nam: Hai: em Hà setup môi trường dev, due 19/10.
+[00:05:05] Nam: Ba: em Minh viết test plan thanh toán, due 21/10.
+[00:05:12] Nam: Bốn: em Hà liên hệ vendor account manager, due 21/10.
+[00:05:20] Lan: Ok em note chính xác nhé.
+[00:05:26] Hà: Chị ơi, demo cuối tháng mình có cần rehearsal không ạ?
+[00:05:33] Lan: Có. 30/10 mình rehearsal 1 lần, 31/10 demo KH chính thức.
+[00:05:42] Minh: Em chuẩn bị slide rehearsal trước 28/10 nhé chị.
+[00:05:50] Lan: Được, em Minh nhài slide rehearsal 28/10.
+[00:05:58] Nam: Mọi người ơi, dependency giữa task mình có rủi ro gì không ạ?
+[00:06:06] Hà: Có ạ, test plan của Minh phụ thuộc API key, nếu chậm thì test plan delay theo.
+[00:06:16] Minh: Em note risk này, nếu 21/10 chưa có key em sẽ escalate chị Lan.
+[00:06:26] Lan: Đồng ý. Ai có câu hỏi thêm không?
+[00:06:33] Nam: Em không có ạ.
+[00:06:36] Hà: Em hết ạ.
+[00:06:39] Minh: Em cũng hết ạ.
+[00:06:44] Lan: Vậy mình end meeting nhé. Cảm ơn cả nhóm.
