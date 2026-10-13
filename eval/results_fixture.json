@@ -1,0 +1,188 @@
+{
+  "mode": "fixture",
+  "chunk_size": 40,
+  "overlap": 10,
+  "results": [
+    {
+      "case": "tc1",
+      "items_total": 7,
+      "badges": {
+        "red": 0,
+        "yellow": 0,
+        "green": 7
+      },
+      "no_decision": false,
+      "limitations": [
+        "merge: id=D1 có 2 bản trùng khít (chunk0,chunk1) → gộp thành 1 (giữ bản đầu).",
+        "merge: id=T1 có 2 bản trùng khít (chunk0,chunk1) → gộp thành 1 (giữ bản đầu).",
+        "merge: id=T2 có 2 bản trùng khít (chunk0,chunk1) → gộp thành 1 (giữ bản đầu).",
+        "merge: id=T3 có 2 bản trùng khít (chunk0,chunk1) → gộp thành 1 (giữ bản đầu).",
+        "merge: id=T4 có 2 bản trùng khít (chunk0,chunk1) → gộp thành 1 (giữ bản đầu).",
+        "merge: id=T5 có 2 bản trùng khít (chunk0,chunk1) → gộp thành 1 (giữ bản đầu).",
+        "merge: id=B1 có 2 bản trùng khít (chunk0,chunk1) → gộp thành 1 (giữ bản đầu)."
+      ],
+      "checks": {
+        "no_decision": {
+          "pass": true,
+          "detail": "expected=False actual=False"
+        },
+        "decision[0]": {
+          "pass": true,
+          "detail": "D1 content~ok; decided_by=Lan (expect Lan); evidence_ts~['00:02:30'] (expect một trong ['00:02:30', '00:02:40'] ở ≥1 evidence)"
+        },
+        "task[0]": {
+          "pass": true,
+          "detail": "T1 what~ok; owner=Nam (expect Nam); due=2026-10-16 (expect 2026-10-16)"
+        },
+        "task[1]": {
+          "pass": true,
+          "detail": "T2 what~ok; owner=Hà (expect Hà); due=2026-10-19 (expect 2026-10-19)"
+        },
+        "task[2]": {
+          "pass": true,
+          "detail": "T3 what~ok; owner=Minh (expect Minh); due=2026-10-21 (expect 2026-10-21)"
+        }
+      },
+      "pass": true,
+      "turns": 53
+    },
+    {
+      "case": "tc2",
+      "items_total": 4,
+      "badges": {
+        "red": 0,
+        "yellow": 1,
+        "green": 3
+      },
+      "no_decision": false,
+      "limitations": [
+        "same-id conflict id=D1: chọn bản @00:45:30 (1 winner-majority hoặc latest-decide). Bản thua: ['chunk0@00:05:46/decide'] — giữ không xoáy (R4 audit)."
+      ],
+      "checks": {
+        "no_decision": {
+          "pass": true,
+          "detail": "expected=False actual=False"
+        },
+        "decision[0]": {
+          "pass": true,
+          "detail": "D1 content~ok; decided_by=Lan (expect Lan); supersedes=['D0'] (expect ['D0']); evidence_ts~['00:45:30'] (expect một trong ['00:45:30'] ở ≥1 evidence)"
+        },
+        "task[0]": {
+          "pass": true,
+          "detail": "T1 what~ok; owner=Nam (expect Nam); due=2026-10-12 (expect 2026-10-12); link=D1 (expect D1)"
+        }
+      },
+      "pass": true,
+      "turns": 78
+    },
+    {
+      "case": "tc3",
+      "items_total": 2,
+      "badges": {
+        "red": 2,
+        "yellow": 0,
+        "green": 0
+      },
+      "no_decision": true,
+      "limitations": [
+        "merge: id=O1 có 2 bản trùng khít (chunk0,chunk1) → gộp thành 1 (giữ bản đầu).",
+        "merge: id=T1 có 2 bản trùng khít (chunk0,chunk1) → gộp thành 1 (giữ bản đầu).",
+        "item O1 (open_issue): evidence_mismatch (R5)"
+      ],
+      "checks": {
+        "no_decision": {
+          "pass": true,
+          "detail": "expected=True actual=True"
+        },
+        "open_issues_min": {
+          "pass": true,
+          "detail": "found=1"
+        }
+      },
+      "pass": true,
+      "turns": 66
+    },
+    {
+      "case": "tc4",
+      "items_total": 5,
+      "badges": {
+        "red": 0,
+        "yellow": 4,
+        "green": 1
+      },
+      "no_decision": false,
+      "limitations": [
+        "txt line 39: malformed, skipped -> '[00:07:64] Hà: Em note.'",
+        "merge: id=D1 có 2 bản trùng khít (chunk0,chunk1) → gộp thành 1 (giữ bản đầu).",
+        "merge: id=T1 có 2 bản trùng khít (chunk0,chunk1) → gộp thành 1 (giữ bản đầu).",
+        "merge: id=T2 có 2 bản trùng khít (chunk0,chunk1) → gộp thành 1 (giữ bản đầu).",
+        "merge: id=T3 có 2 bản trùng khít (chunk0,chunk1) → gộp thành 1 (giữ bản đầu).",
+        "merge: id=T4 có 2 bản trùng khít (chunk0,chunk1) → gộp thành 1 (giữ bản đầu)."
+      ],
+      "checks": {
+        "no_decision": {
+          "pass": true,
+          "detail": "expected=False actual=False"
+        },
+        "decision[0]": {
+          "pass": true,
+          "detail": "D1 content~ok; decided_by=Lan (expect Lan); evidence_ts~['00:02:42', '00:03:06'] (expect một trong ['00:02:42', '00:03:06'] ở ≥1 evidence)"
+        },
+        "task[0]": {
+          "pass": true,
+          "detail": "T1 what~ok; owner=Hà (expect Hà); due=2026-10-16 (expect 2026-10-16); due_hint~'thứ 6 tuần này' (expect~'thứ 6 tuần này')"
+        },
+        "task[1]": {
+          "pass": true,
+          "detail": "T2 what~ok; owner=Nam (expect Nam); due=2026-10-31 (expect 2026-10-31); due_hint~'cuối tháng' (expect~'cuối tháng')"
+        },
+        "task[2]": {
+          "pass": true,
+          "detail": "T4 what~ok; owner=Hà (expect Hà); due=2026-10-19 (expect 2026-10-19); due_hint~'thứ 2 tuần sau' (expect~'thứ 2 tuần sau')"
+        },
+        "task[3]": {
+          "pass": true,
+          "detail": "T3 what~ok; owner=Hà (expect Hà); due=2026-10-21 (expect 2026-10-21); due_hint~'thứ 4 tuần sau' (expect~'thứ 4 tuần sau')"
+        }
+      },
+      "pass": true,
+      "turns": 59
+    },
+    {
+      "case": "tc5",
+      "items_total": 3,
+      "badges": {
+        "red": 3,
+        "yellow": 0,
+        "green": 0
+      },
+      "no_decision": false,
+      "limitations": [
+        "merge: id=D_SB có 3 bản trùng khít (chunk0,chunk1,chunk2) → gộp thành 1 (giữ bản đầu).",
+        "merge: id=D_FA có 3 bản trùng khít (chunk0,chunk1,chunk2) → gộp thành 1 (giữ bản đầu).",
+        "merge: id=D_REV có 3 bản trùng khít (chunk0,chunk1,chunk2) → gộp thành 1 (giữ bản đầu).",
+        "unresolved_reversal: ['D_FA', 'D_REV', 'D_SB'] — flagged + Open Issue O_REV_1 (host xử lý, R4).",
+        "item D_REV (decision): evidence_mismatch (R5)",
+        "item O_REV_1 (open_issue): thiếu evidence — bỏ",
+        "R4: 3 Decision có status=final — mâu thuẫn tiềm ẩn (resolve phase sẽ xử lý A→B→A / 2 final cùng chủ đề ở P2)"
+      ],
+      "checks": {
+        "no_decision": {
+          "pass": true,
+          "detail": "expected=False actual=False"
+        },
+        "unresolved_reversal": {
+          "pass": true,
+          "detail": "flagged=3 finals (expect≥2, tc5 DỰ KIẾN không chốt được)"
+        },
+        "red_count": {
+          "pass": true,
+          "detail": "red=3 (expect 3)"
+        }
+      },
+      "pass": true,
+      "turns": 91
+    }
+  ],
+  "all_pass": true
+}

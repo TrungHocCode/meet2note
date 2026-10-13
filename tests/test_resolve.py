@@ -662,3 +662,77 @@ def test_resolve_skips_empty_chunks() -> None:
                   chunk_items)
     assert len(out["items"]) == 1
     assert out["items"][0]["id"] == "D1"
+
+
+# ──────────────────────────────────────────────────────────────────────
+# P4: deterministic due override + past-date + merge khác id (live tc4)
+# ──────────────────────────────────────────────────────────────────────
+
+
+def _t(task_id: str, what: str, owner: str, due: str,
+       hint: str | None = None) -> dict[str, Any]:
+    return {
+        "id": task_id, "type": "task",
+        "what": what, "owner": owner, "owner_source": "explicit",
+        "due": due, "due_source": "explicit",
+        "due_hint": hint, "link_to_decision": None,
+        "confidence": 0.8, "confidence_reason": "ok",
+        "evidence": [],
+    }
+
+
+def test_resolve_iso_due_overridden_by_hint() -> None:
+    """due ISO sai của model + hint tương đối → recompute deterministic thắng.
+
+    Live tc4: T2 due=2026-10-29 + hint 'thứ 4 tuần sau' (meeting 2026-10-15)
+    → override 2026-10-21 + limitation.
+    """
+    t = _t("T2", "Test edge cases", "Hà", "2026-10-29", "thứ 4 tuần sau")
+    out = resolve({"id": "tc4", "date": "2026-10-15", "participants": []}, [[t]])
+    assert out["items"][0]["due"] == "2026-10-21"
+    assert out["items"][0]["due_hint"] == "thứ 4 tuần sau"
+    assert any("deterministic 2026-10-21" in lim for lim in out["known_limitations"])
+
+
+def test_resolve_iso_due_kept_when_matches_hint() -> None:
+    """due ISO khớp recompute → giữ nguyên, không limitation thừa."""
+    t = _t("T1", "Lead integration", "Hà", "2026-10-16", "thứ 6 tuần này")
+    out = resolve({"id": "tc4", "date": "2026-10-15", "participants": []}, [[t]])
+    assert out["items"][0]["due"] == "2026-10-16"
+    assert not any("deterministic" in lim for lim in out["known_limitations"])
+
+
+def test_resolve_past_due_becomes_tbd() -> None:
+    """due ISO trước meeting.date, không hint recompute được → TBD + limitation."""
+    t = _t("T7", "Update docs", "Hà", "2026-10-12", None)
+    out = resolve({"id": "tc4", "date": "2026-10-15", "participants": []}, [[t]])
+    assert out["items"][0]["due"] == TBD_SENTINEL
+    assert any("trước meeting.date" in lim for lim in out["known_limitations"])
+
+
+def test_resolve_merge_duplicate_tasks_different_ids() -> None:
+    """Cùng owner + cùng due + overlap what → gộp, giữ bản đầu (live tc4 T1/T6)."""
+    a = _t("T1", "Viết test plan cho flow refund", "Nam", "2026-10-31", "cuối tháng")
+    b = _t("T6", "Test plan cuối tháng", "Nam", "2026-10-31", "cuối tháng")
+    out = resolve({"id": "tc4", "date": "2026-10-15", "participants": []}, [[a, b]])
+    ids = [i["id"] for i in out["items"]]
+    assert ids == ["T1"]
+    assert any("trùng T1" in lim for lim in out["known_limitations"])
+
+
+def test_resolve_no_merge_distinct_tasks() -> None:
+    """Khác owner hoặc khác due → KHÔNG gộp (bảo vệ tc1: 5 task riêng biệt)."""
+    a = _t("T1", "Research vendor pricing", "Nam", "2026-10-16")
+    b = _t("T2", "Setup môi trường dev", "Hà", "2026-10-19")
+    out = resolve({"id": "tc1", "date": "2026-10-13", "participants": []}, [[a, b]])
+    assert sorted(i["id"] for i in out["items"]) == ["T1", "T2"]
+
+
+def test_resolve_merge_unions_hint_from_dropped() -> None:
+    """Gộp: bản giữ thiếu due_hint thì lấy từ bản thua (live tc4 T1/T6)."""
+    a = _t("T1", "Viết test plan cho flow refund", "Nam", "2026-10-31", None)
+    b = _t("T6", "Test plan cuối tháng", "Nam", "2026-10-31", "cuối tháng")
+    out = resolve({"id": "tc4", "date": "2026-10-15", "participants": []}, [[a, b]])
+    ids = [i["id"] for i in out["items"]]
+    assert ids == ["T1"]
+    assert out["items"][0]["due_hint"] == "cuối tháng"

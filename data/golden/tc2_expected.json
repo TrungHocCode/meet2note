@@ -2,6 +2,7 @@
   "decisions_final": [
     {
       "content": "Chốt phương án B",
+      "content_any": ["phương án B", "vendor Y"],
       "decided_by": "Lan",
       "supersedes": ["D0"],
       "evidence_ts": "00:45:30"

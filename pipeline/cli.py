@@ -40,8 +40,8 @@ if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 
-# Pipeline version — bump theo phase (P0=0.1.0 → P1=0.2.0 → P2=0.3.0).
-PIPELINE_VERSION = "0.3.0"
+# Pipeline version — bump theo phase (P0=0.1.0 → P1=0.2.0 → P2=0.3.0 → P4=0.4.0).
+PIPELINE_VERSION = "0.4.0"
 
 # Đường dẫn mặc định — resolve tương đối với project root (cwd khi `python -m`).
 DEFAULT_PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -247,15 +247,22 @@ def cmd_run(args: argparse.Namespace) -> int:
 
 
 # ──────────────────────────────────────────────────────────────────────
-# `eval` command (skeleton — full ở P2)
+# `eval` command (P4: eval/runner.py — 5 ca + golden)
 # ──────────────────────────────────────────────────────────────────────
 
 
 def cmd_eval(args: argparse.Namespace) -> int:
-    print("[cli] eval: skeleton P1 — full eval runner ở P4 (5 ca + golden).")
-    print("[cli]     P2 đã thêm resolve giữa extract và verify.")
-    print("[cli]     P3 sẽ chạy JSON + UI + export → P4 eval chạy 5 ca → report.md.")
-    return 0
+    from eval.runner import main as eval_main
+
+    argv = []
+    if getattr(args, "live", False):
+        argv.append("--live")
+    if getattr(args, "cases", None):
+        argv += ["--cases", args.cases]
+    argv += ["--chunk-size", str(getattr(args, "chunk_size", 40))]
+    argv += ["--overlap", str(getattr(args, "overlap", 10))]
+    argv += ["--out", getattr(args, "out", "eval/results.json")]
+    return eval_main(argv)
 
 
 # ──────────────────────────────────────────────────────────────────────
@@ -316,7 +323,12 @@ def build_parser() -> argparse.ArgumentParser:
         help="số turns overlap giữa 2 chunk (default 10)",
     )
 
-    sub.add_parser("eval", help="chạy 5 ca → eval/report.md (P2)")
+    p_eval = sub.add_parser("eval", help="chạy 5 ca → eval/results.json (P4)")
+    p_eval.add_argument("--live", action="store_true", help="dùng LLM thật thay vì fixture")
+    p_eval.add_argument("--cases", default="tc1,tc2,tc3,tc4,tc5")
+    p_eval.add_argument("--chunk-size", type=int, default=40)
+    p_eval.add_argument("--overlap", type=int, default=10)
+    p_eval.add_argument("--out", default="eval/results.json")
 
     return parser
 
