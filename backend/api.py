@@ -1,14 +1,15 @@
 """
-backend/api.py — FastAPI layer mỏng (ADR-0005) cho P2 review workflow.
+backend/api.py — FastAPI layer mỏng (ADR-0005) cho P2 review workflow + P3 export.
 
 Đọc/ghi trực tiếp `runs/<meeting>/<ts>/state.json` + `review_log.json`.
 KHÔNG chứa logic pipeline — chỉ adapter theo `docs/spec/api-contract.md`.
+Export gọi `pipeline.export.export_meeting` (P3) — không tự render.
 
 Endpoints (theo spec §1-§3):
 - GET  /health
 - GET  /api/v1/review?meeting=tc2              → 200 state.json | 404
 - PUT  /api/v1/review?meeting=tc2              → ghi confirmed_state.json + append review_log
-- POST /api/v1/export?meeting=tc2              → 403 gate_red_items | 501 P3 gate (P2 test đạt)
+- POST /api/v1/export?meeting=tc2              → 403 gate_red_items | 200 files | 404
 
 CORS chỉ http://localhost:5173 (React dev theo AGENTS.md §2).
 """
@@ -27,6 +28,8 @@ from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
+
+from pipeline.export import export_meeting
 
 logger = logging.getLogger(__name__)
 
@@ -118,7 +121,7 @@ def _red_items(state: dict[str, Any]) -> list[str]:
 
 app = FastAPI(
     title="meet2note API",
-    version="0.3.0",
+    version="0.4.0",
     description="Lớp mỏng đọc/ghi runs/ — không chứa logic pipeline (ADR-0005).",
 )
 
@@ -173,13 +176,21 @@ def put_review(meeting: str, body: ReviewPutBody) -> JSONResponse:
             content={"detail": "meeting not found"},
         )
 
-    # 1. Ghi confirmed_state.json
+    # 1. Ghi confirmed_state.json — GIỮ envelope meeting + known_limitations
+    # từ state.json (export cần title/date/version; PUT body chỉ có items).
     confirmed_path = run_dir / "confirmed_state.json"
+    state_path = run_dir / "state.json"
+    base: dict[str, Any] = _read_json(state_path) if state_path.exists() else {}
+    meeting_env = base.get("meeting", {"id": meeting})
+    if not isinstance(meeting_env, dict):
+        meeting_env = {"id": meeting}
     _write_json(
         confirmed_path,
         {
-            "meeting": meeting,
+            "meeting": meeting_env,
             "items": body.items,
+            "no_decision": base.get("no_decision", False),
+            "known_limitations": base.get("known_limitations", []),
             "updated_at": _TS_ISO(),
         },
     )
@@ -224,9 +235,10 @@ def put_review(meeting: str, body: ReviewPutBody) -> JSONResponse:
 def post_export(meeting: str) -> JSONResponse:
     """Gate R6: chỉ export khi hết thẻ đỏ (api-contract §3).
 
-    - Còn thẻ đỏ → 403 + `gate_red_items` (P2 test đạt — gate R6 enforcement).
-    - Hết đỏ → 501 + ghi chú export file ở P3 (gate MỚI là phần test được).
-      P2 chỉ verify gate đỏ hoạt động; file export thực ra P3.
+    - Còn thẻ đỏ → 403 + `gate_red_items` (gate R6 enforcement).
+    - Hết đỏ + có `confirmed_state.json` → 200 + `{"files": [...]}`.
+    - Chưa confirm → 400 (export yêu cầu host đã review).
+    - Không tìm thấy meeting / state.json → 404.
     """
     run_dir = _latest_run_dir(meeting)
     if run_dir is None:
@@ -248,19 +260,26 @@ def post_export(meeting: str) -> JSONResponse:
             content={"error": "gate_red_items", "red_items": reds},
         )
 
-    # Hết thẻ đỏ — export file là P3.
+    # Gate pass → gọi export_meeting (P3).
+    try:
+        result = export_meeting(meeting, PROJECT_ROOT / "runs")
+    except FileNotFoundError as e:
+        # Không có confirmed_state.json → host chưa PUT lần nào.
+        return JSONResponse(
+            status_code=400,
+            content={"error": "not_confirmed", "detail": str(e)},
+        )
+    except ValueError as e:
+        return JSONResponse(
+            status_code=422,
+            content={"detail": str(e)},
+        )
+
     return JSONResponse(
-        status_code=501,
+        status_code=200,
         content={
-            "error": "export_not_implemented",
-            "message": (
-                "Gate R6 pass (hết thẻ đỏ). Export file minutes.md + tasks_jira.csv "
-                "sẽ hiện thực ở P3 (theo spec/export-format.md). P2 đã verify gate hoạt động."
-            ),
-            "would_export": [
-                f"runs/{meeting}/{run_dir.name}/minutes.md",
-                f"runs/{meeting}/{run_dir.name}/tasks_jira.csv",
-            ],
+            "files": result["files"],
+            "generated_at": result["generated_at"],
         },
     )
 

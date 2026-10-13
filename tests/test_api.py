@@ -1,5 +1,5 @@
 """
-test_api.py — P2: FastAPI layer mỏng theo docs/spec/api-contract.md.
+test_api.py — P2 + P3: FastAPI layer mỏng theo docs/spec/api-contract.md.
 
 Phủ:
 - GET /health → 200
@@ -7,7 +7,8 @@ Phủ:
 - PUT /api/v1/review ghi confirmed_state.json + append review_log.json
 - POST /api/v1/export:
   + 403 gate_red_items khi còn thẻ đỏ
-  + 501 export_not_implemented khi hết đỏ (P3 hiện thực file)
+  + 200 export thật (minutes.md + tasks_jira.csv) khi hết đỏ + có confirmed_state
+  + 400 not_confirmed khi hết đỏ nhưng chưa PUT
   + 404 nếu chưa run
 """
 
@@ -166,8 +167,10 @@ def test_put_review_writes_confirmed_and_appends_log(
     confirmed = json.loads(
         (run_dir / "confirmed_state.json").read_text(encoding="utf-8")
     )
-    assert confirmed["meeting"] == "tc_test"
+    assert confirmed["meeting"]["id"] == "tc_test"
     assert confirmed["items"][0]["content"] == "Chốt B (đã sửa)"
+    # Envelope meeting (title/date/version) được giữ từ state.json để export dùng
+    assert confirmed["meeting"].get("date") == "2026-10-13"
 
     # review_log.json được append (không overwrite)
     log = json.loads((run_dir / "review_log.json").read_text(encoding="utf-8"))
@@ -248,15 +251,19 @@ def test_export_403_when_red_items_exist(
     assert "D1" in body["red_items"]
 
 
-def test_export_501_when_no_red_items(
+def test_export_400_when_no_confirmed_state(
     client: TestClient, runs_dir: Path
 ) -> None:
-    """Hết thẻ đỏ → 501 export_not_implemented (P3 hiện thực file)."""
+    """Gate pass nhưng chưa PUT review → 400 not_confirmed (không fallback).
+
+    P3 thay đổi: trước đây (P2) là 501 export_not_implemented. Sau P3,
+    export_meeting yêu cầu confirmed_state.json — host phải review trước.
+    """
     state_path = (
         runs_dir / "runs" / "tc_test" / "20260101-120000" / "state.json"
     )
     state = json.loads(state_path.read_text(encoding="utf-8"))
-    # Sửa D1 confidence lên xanh
+    # Sửa D1 confidence lên xanh → gate pass
     state["items"][0]["confidence"] = 0.90
     state["stats"]["by_badge"] = {"red": 0, "yellow": 0, "green": 2}
     state_path.write_text(
@@ -264,11 +271,53 @@ def test_export_501_when_no_red_items(
     )
 
     r = client.post("/api/v1/export?meeting=tc_test")
-    assert r.status_code == 501
+    assert r.status_code == 400
     body = r.json()
-    assert body["error"] == "export_not_implemented"
-    assert "would_export" in body
-    assert any("minutes.md" in f for f in body["would_export"])
+    assert body["error"] == "not_confirmed"
+    assert "confirmed_state.json" in body["detail"]
+
+
+def test_export_200_writes_files(
+    client: TestClient, runs_dir: Path, tmp_path: Path
+) -> None:
+    """Hết thẻ đỏ + có confirmed_state.json → 200 + 2 files thật."""
+    state_path = (
+        runs_dir / "runs" / "tc_test" / "20260101-120000" / "state.json"
+    )
+    state = json.loads(state_path.read_text(encoding="utf-8"))
+    # Sửa D1 confidence lên xanh → gate pass
+    state["items"][0]["confidence"] = 0.90
+    state["stats"]["by_badge"] = {"red": 0, "yellow": 0, "green": 2}
+    state_path.write_text(
+        json.dumps(state, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
+
+    # Tạo confirmed_state.json (giả lập host đã PUT 1 lần)
+    run_dir = state_path.parent
+    confirmed = {
+        "meeting": "tc_test",
+        "items": state["items"],
+        "updated_at": "2026-10-13T12:00:00Z",
+    }
+    (run_dir / "confirmed_state.json").write_text(
+        json.dumps(confirmed, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+
+    r = client.post("/api/v1/export?meeting=tc_test")
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert "files" in body
+    assert len(body["files"]) == 2
+    assert any(f.endswith("minutes.md") for f in body["files"])
+    assert any(f.endswith("tasks_jira.csv") for f in body["files"])
+    # File thật được tạo (path relative tới PROJECT_ROOT — resolve để assert tồn tại)
+    for f in body["files"]:
+        # f dạng "runs/tc_test/<ts>/<ts3>/minutes.md" — resolve ra tuyệt đối
+        # qua PROJECT_ROOT (tmp_path tại test).
+        abs_path = runs_dir / f
+        assert abs_path.exists(), f"missing: {abs_path}"
+        assert abs_path.stat().st_size > 0
 
 
 def test_export_404_when_meeting_missing(

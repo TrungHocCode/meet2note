@@ -1,0 +1,66 @@
+{# ──────────────────────────────────────────────────────────────────────
+   minutes.md — Biên bản họp
+   Spec: docs/spec/export-format.md §1.
+   Render với trim_blocks + lstrip_blocks: mỗi item 1 dòng riêng, blank line
+   trước mỗi header ##. Không dùng {%- -%} nuốt dòng bừa bãi.
+   ────────────────────────────────────────────────────────────────────── #}
+# Biên bản họp - {{ meeting.title }} — {{ meeting.date }}
+**Trạng thái:** Đã confirm · Pipeline {{ meeting.pipeline_version }}
+
+## ✅ Quyết định
+{% for d in decisions %}
+- **{{ d.id }} - {{ d.content }}** (bởi {{ d.decided_by or "?" }} · {{ "%.2f"|format(d.confidence) }} {{ d.badge }}){% if d.reason %} - Lý do: {{ d.reason }}{% endif %}{% if d.supersedes %} - Thay thế {{ d.supersedes | join(', ') }}{% endif %}.
+{% for ev in d.evidence %}
+  - 🎯 [{{ ev.timestamp }}] {{ ev.speaker }} ({{ ev.role_in_message }}): "{{ ev.quote }}"
+{% endfor %}
+{% for obj in d.objections %}
+  - ⛔ Objection: [{{ obj.timestamp }}] {{ obj.speaker }} ({{ obj.role_in_message }}): "{{ obj.quote }}"
+{% endfor %}
+{% else %}
+_(không có quyết định)_
+{% endfor %}
+
+## 📌 Công việc
+{% for t in tasks %}
+- [ ] {{ t.id }} {{ t.what }} — {{ t.owner }}{% if t.due_hint %} · {{ t.due_hint }}{% elif t.due %} · {{ t.due }}{% endif %}{% if t.link_to_decision %} · link {{ t.link_to_decision }}{% endif %} {{ t.badge }}
+{% else %}
+_(không có công việc)_
+{% endfor %}
+
+## ⚠️ Vướng mắc & Chưa chốt
+{% for b in blockers %}
+- {{ b.id }} {{ b.content }} (cần {{ b.needs_action_from }}) {{ b.badge }}
+{% endfor %}
+{% for o in open_issues %}
+- {{ o.id }} {{ o.content }} (next_step: {{ o.next_step }}{% if o.next_step_owner %} — owner: {{ o.next_step_owner }}{% endif %}) {{ o.badge }}
+{% if o.system_generated %}
+  - _(system_generated — verify tự tổng hợp khi LLM trắng final, R3-fallback)_
+{% endif %}
+{% endfor %}
+{% if not blockers and not open_issues %}
+_(không có vướng mắc)_
+{% endif %}
+
+## 📋 Yêu cầu & Kiến thức
+{% for r in requirements %}
+- {{ r.id }} {{ r.content }} (origin: {{ r.origin }}, raised_by: {{ r.raised_by }}) {{ r.badge }}
+{% endfor %}
+{% for k in knowledge %}
+- {{ k.id }} {{ k.content }}{% if k.context %} (context: {{ k.context }}){% endif %} {{ k.badge }}
+{% if k.tags %}
+  - tags: {{ k.tags | join(', ') }}
+{% endif %}
+{% endfor %}
+{% if not requirements and not knowledge %}
+_(không có yêu cầu / kiến thức)_
+{% endif %}
+
+---
+*Hạn chế:*
+{% if known_limitations %}
+{% for lim in known_limitations %}
+- {{ lim }}
+{% endfor %}
+{% else %}
+- _(không có)_
+{% endif %}
