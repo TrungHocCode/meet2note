@@ -1,0 +1,19 @@
+{
+  "decisions_final": [
+    {
+      "content": "Chốt phương án B",
+      "decided_by": "Lan",
+      "supersedes": ["D0"],
+      "evidence_ts": "00:45:30"
+    }
+  ],
+  "tasks": [
+    {
+      "what": "Gửi báo giá B cho khách",
+      "owner": "Nam",
+      "due": "2026-10-12",
+      "link_to_decision": "D1"
+    }
+  ],
+  "no_decision": false
+}
