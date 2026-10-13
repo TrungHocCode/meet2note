@@ -1,0 +1,115 @@
+[
+  {
+    "items": [
+      {
+        "id": "D0",
+        "type": "decision",
+        "content": "Đề xuất phương án A",
+        "status": "discarded",
+        "decided_by": null,
+        "reason": null,
+        "supersedes": [],
+        "objections": [],
+        "confidence": 0.7,
+        "confidence_reason": "đề xuất ban đầu",
+        "evidence": [{
+          "quote": "Em đề xuất phương án A, bên X rẻ hơn 20%.",
+          "timestamp": "00:08:04",
+          "speaker": "Nam",
+          "turn": 39,
+          "role_in_discussion": "propose"
+        }]
+      },
+      {
+        "id": "D1",
+        "type": "decision",
+        "content": "Chọn phương án B: bên Y với gói premium có SLA 99.9% và support tiếng Việt",
+        "status": "final",
+        "decided_by": "Lan",
+        "reason": "Giá cao hơn A khoảng 25% nhưng giảm rủi ro downtime và overhead support",
+        "supersedes": [],
+        "objections": [],
+        "confidence": 0.85,
+        "confidence_reason": "chốt rõ (chunk 0 — đoán sớm)",
+        "evidence": [
+          {
+            "quote": "Mình chuyển sang bàn phương án B nhé. Em Nam trình bày đi.",
+            "timestamp": "00:05:46",
+            "speaker": "Lan",
+            "turn": 29,
+            "role_in_discussion": "decide"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "items": [
+      {
+        "id": "D1",
+        "type": "decision",
+        "content": "Chốt phương án B (vendor Y, gói premium, SLA 99.9%, support tiếng Việt)",
+        "status": "final",
+        "decided_by": "Lan",
+        "reason": "A rủi ro vượt 30% nếu phát sinh",
+        "supersedes": ["D0"],
+        "objections": [],
+        "confidence": 0.95,
+        "confidence_reason": "chốt rõ (chunk 1 — câu chốt cuối)",
+        "evidence": [
+          {
+            "quote": "A rủi ro vượt 30% nếu phát sinh. Vậy chốt B nhé, cả team đồng ý không?",
+            "timestamp": "00:45:30",
+            "speaker": "Lan",
+            "turn": 65,
+            "role_in_discussion": "decide"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "items": [
+      {
+        "id": "T1",
+        "type": "task",
+        "what": "Gửi báo giá B cho khách",
+        "owner": "Nam",
+        "owner_source": "explicit",
+        "due": "2026-10-12",
+        "due_source": "explicit",
+        "due_hint": null,
+        "link_to_decision": "D1",
+        "confidence": 0.9,
+        "confidence_reason": "owner + due + link đều rõ trong transcript",
+        "evidence": [{
+          "quote": "Dạ em gửi báo giá B cho khách trước 12/10.",
+          "timestamp": "00:46:05",
+          "speaker": "Nam",
+          "turn": 69,
+          "role_in_discussion": "confirm"
+        }]
+      },
+      {
+        "id": "T2",
+        "type": "task",
+        "what": "Chuẩn bị sandbox test Y để bàn giao team dev sau khi ký hợp đồng",
+        "owner": "Hà",
+        "owner_source": "explicit",
+        "due": "TBD",
+        "due_source": "tbd",
+        "due_hint": "sau khi ký hợp đồng",
+        "link_to_decision": "D1",
+        "confidence": 0.6,
+        "confidence_reason": "owner rõ, due phụ thuộc ký hợp đồng",
+        "evidence": [{
+          "quote": "Em sẽ chuẩn bị sandbox test Y để bàn giao team dev sau khi ký hợp đồng ạ.",
+          "timestamp": "00:46:32",
+          "speaker": "Hà",
+          "turn": 71,
+          "role_in_discussion": "confirm"
+        }]
+      }
+    ]
+  }
+]

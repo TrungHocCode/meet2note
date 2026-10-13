@@ -1,0 +1,114 @@
+[
+  {
+    "items": [
+      {
+        "id": "D1",
+        "type": "decision",
+        "content": "Dùng VNPay cho phase 1 tích hợp thanh toán",
+        "status": "final",
+        "decided_by": "Lan",
+        "reason": "80% KH nội địa, fee thấp hơn Stripe, support nội địa tốt",
+        "supersedes": [],
+        "objections": [],
+        "confidence": 0.85,
+        "confidence_reason": "chốt rõ, lý do cụ thể, 3/3 đồng ý",
+        "evidence": [
+          {
+            "quote": "Ừ, 80% là con số lớn. Mình hướng về VNPay nhé.",
+            "timestamp": "00:02:42",
+            "speaker": "Lan",
+            "turn": 14,
+            "role_in_discussion": "decide"
+          },
+          {
+            "quote": "Chốt dùng VNPay cho phase lập trình.",
+            "timestamp": "00:03:06",
+            "speaker": "Lan",
+            "turn": 16,
+            "role_in_discussion": "decide"
+          }
+        ]
+      },
+      {
+        "id": "T1",
+        "type": "task",
+        "what": "Lead integration VNPay",
+        "owner": "em Hà",
+        "owner_source": "inferred",
+        "due": "thứ 6 tuần này",
+        "due_source": "inferred",
+        "due_hint": null,
+        "link_to_decision": "D1",
+        "confidence": 0.7,
+        "confidence_reason": "owner inferred qua alias, due tương đối sẽ được resolve quy đổi",
+        "evidence": [{
+          "quote": "Em Hà làm lead integration, deadline thứ 6 tuần này nhé.",
+          "timestamp": "00:03:42",
+          "speaker": "Lan",
+          "turn": 19,
+          "role_in_discussion": "decide"
+        }]
+      },
+      {
+        "id": "T2",
+        "type": "task",
+        "what": "Viết test plan thanh toán",
+        "owner": "Nam",
+        "owner_source": "explicit",
+        "due": "cuối tháng",
+        "due_source": "inferred",
+        "due_hint": null,
+        "link_to_decision": "D1",
+        "confidence": 0.7,
+        "confidence_reason": "owner rõ, due tương đối",
+        "evidence": [{
+          "quote": "Em Nam viết test plan, deadline cuối tháng.",
+          "timestamp": "00:04:02",
+          "speaker": "Lan",
+          "turn": 21,
+          "role_in_discussion": "decide"
+        }]
+      },
+      {
+        "id": "T3",
+        "type": "task",
+        "what": "Test edge cases refund",
+        "owner": "em Hà",
+        "owner_source": "inferred",
+        "due": "thứ 4 tuần sau",
+        "due_source": "inferred",
+        "due_hint": null,
+        "link_to_decision": "D1",
+        "confidence": 0.7,
+        "confidence_reason": "owner inferred, due tương đối",
+        "evidence": [{
+          "quote": "Em phụ trách test plan edge cases, deadline thứ 4 tuần sau.",
+          "timestamp": "00:08:18",
+          "speaker": "Hà",
+          "turn": 40,
+          "role_in_discussion": "confirm"
+        }]
+      },
+      {
+        "id": "T4",
+        "type": "task",
+        "what": "Update documentation",
+        "owner": "em Hà",
+        "owner_source": "inferred",
+        "due": "thứ 2 tuần sau",
+        "due_source": "inferred",
+        "due_hint": null,
+        "link_to_decision": "D1",
+        "confidence": 0.7,
+        "confidence_reason": "owner inferred, due tương đối",
+        "evidence": [{
+          "quote": "Em Hà phụ trách, deadline thứ 2 tuần sau.",
+          "timestamp": "00:04:28",
+          "speaker": "Lan",
+          "turn": 25,
+          "role_in_discussion": "decide"
+        }]
+      }
+    ]
+  }
+]

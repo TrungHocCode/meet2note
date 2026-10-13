@@ -105,6 +105,13 @@ class Decision(BaseModel):
         default_factory=list,
         description="Lưu phản đối — KHÔNG xoá tranh luận (R7).",
     )
+    unresolved_reversal: bool = Field(
+        default=False,
+        description=(
+            "R4 (P2): True khi phát hiện A→B→A hoặc 2 final cùng chủ đề khác "
+            "content — resolve KHÔNG tự chọn (audit + Open Issue cho host)."
+        ),
+    )
     confidence: float = Field(..., ge=0.0, le=1.0)
     confidence_reason: str = Field(..., min_length=1)
     evidence: list[Evidence] = Field(

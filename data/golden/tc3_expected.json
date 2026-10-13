@@ -1,0 +1,7 @@
+{
+  "decisions_final": [],
+  "tasks": [],
+  "no_decision": true,
+  "open_issues_min": 1,
+  "rationale": "Brainstorm vòng về — không chốt gì. Pipeline kỳ vọng no_decision=true + ≥1 Open Issue có next_step + Task TBD (owner/due) due mơ hờ + confidence đỏ/vàng."
+}
