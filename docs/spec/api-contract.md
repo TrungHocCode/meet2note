@@ -104,7 +104,9 @@ Tải file export về máy user (`Content-Disposition: attachment`).
 - Error format: `{"detail": string}` (FastAPI mặc định); riêng gate dùng `{"error": code, ...}`.
 - Tên file output: `minutes.md`, `tasks_jira.csv` — chi tiết: `spec/export-format.md`.
 - CORS: `allow_origins` từ env `CORS_ORIGINS` (default `http://localhost:5173`),
-  `allow_credentials=True` để gửi refresh cookie (xem `docs/runbook/demo-link.md` khi host FE/BE khác origin).
+  `allow_credentials=True` để gửi refresh cookie. Khi host FE/BE khác origin
+  (vd FE Vercel + BE tunnel): thêm domain FE vào `CORS_ORIGINS` và bật
+  `COOKIE_CROSS_SITE=1` (refresh cookie `SameSite=None; Secure`).
 
 ## Transcript viewer + upload (P5)
 
