@@ -129,60 +129,106 @@ function EvidenceLines({ evidence, onShow }) {
 }
 
 // ─── Meta pills theo loại item (ui-spec §3.2 + §4) ──────────────────────────
+// Quy ước thống nhất: mọi pill đều dạng `nhãn: giá trị`, cùng cỡ/shape;
+// mỗi loại item HIỆN ĐỦ bộ field của nó (thiếu → "—" mờ, không im lặng bỏ qua
+// — trừ link/hint chỉ có khi tồn tại). Severity/origin Việt hóa + tooltip.
+
+const SEVERITY_VN = { low: 'Thấp', medium: 'Trung bình', high: 'Cao' }
+const ORIGIN_VN = { customer: 'Khách hàng', internal: 'Nội bộ', partner: 'Đối tác', unknown: 'Chưa rõ' }
+
+function Meta({ label, children, tone = 'secondary', hint }) {
+  const pill = (
+    <Badge variant={tone}>
+      <span className="font-normal text-muted-foreground">{label}:</span> {children}
+    </Badge>
+  )
+  if (!hint) return pill
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>{pill}</TooltipTrigger>
+      <TooltipContent>{hint}</TooltipContent>
+    </Tooltip>
+  )
+}
 
 function MetaPills({ item, allIds }) {
   const pills = []
+  const missing = <span className="text-muted-foreground">—</span>
   if (item.type === 'task') {
     pills.push(
-      <Badge key="owner" variant={item.owner === 'TBD' ? 'conf-amber' : 'secondary'}>
+      <Meta key="owner" label="Người làm" tone={item.owner === 'TBD' ? 'conf-amber' : 'secondary'}>
         {item.owner === 'TBD' ? 'TBD' : item.owner}
-      </Badge>,
+      </Meta>,
     )
     pills.push(
-      <Badge key="due" variant={item.due === 'TBD' ? 'conf-amber' : 'secondary'}>
+      <Meta
+        key="due"
+        label="Hạn"
+        tone={item.due === 'TBD' ? 'conf-amber' : 'secondary'}
+        hint={item.due_hint ? `Chữ gốc trong họp: “${item.due_hint}”` : undefined}
+      >
         {item.due === 'TBD' ? 'TBD' : item.due}
         {item.due_source === 'inferred' ? ' · suy luận' : ''}
-      </Badge>,
+      </Meta>,
     )
-    if (item.due_hint) {
-      pills.push(
-        <Tooltip key="hint">
-          <TooltipTrigger asChild>
-            <Badge variant="outline">hint</Badge>
-          </TooltipTrigger>
-          <TooltipContent>hint: “{item.due_hint}”</TooltipContent>
-        </Tooltip>,
-      )
-    }
     if (item.link_to_decision) {
       const ok = allIds.has(item.link_to_decision)
       pills.push(
-        <Badge key="link" variant={ok ? 'secondary' : 'destructive'}>
+        <Meta key="link" label="Theo QĐ" tone={ok ? 'secondary' : 'destructive'}>
           <Link2 className="size-3" /> {item.link_to_decision}
           {!ok ? ' (không tồn tại)' : ''}
-        </Badge>,
+        </Meta>,
       )
     }
   }
   if (item.type === 'decision') {
     pills.push(
-      <Badge key="by" variant="secondary">bởi {item.decided_by || '?'}</Badge>,
+      <Meta key="by" label="Người chốt">{item.decided_by || missing}</Meta>,
     )
-    if (item.supersedes && item.supersedes.length > 0) {
-      pills.push(<Badge key="sup" variant="outline">thay thế: {item.supersedes.join(', ')}</Badge>)
-    }
+    pills.push(
+      <Meta key="sup" label="Thay thế">
+        {(item.supersedes ?? []).length > 0 ? item.supersedes.join(', ') : 'quyết định gốc'}
+      </Meta>,
+    )
   }
   if (item.type === 'blocker') {
-    pills.push(<Badge key="need" variant="secondary">cần: {item.needs_action_from || 'TBD'}</Badge>)
-    if (item.severity) pills.push(<Badge key="sev" variant="outline">{item.severity}</Badge>)
+    pills.push(
+      <Meta
+        key="need" label="Người gỡ"
+        tone={item.needs_action_from === 'TBD' ? 'conf-amber' : 'secondary'}
+      >
+        {item.needs_action_from || 'TBD'}
+      </Meta>,
+    )
+    pills.push(
+      <Meta
+        key="sev" label="Mức nặng"
+        hint="Mức nghiêm trọng của vướng mắc: Thấp (chờ được) / Trung bình (chậm tiến độ) / Cao (chặn cả team)"
+      >
+        {SEVERITY_VN[item.severity] ?? item.severity ?? missing}
+      </Meta>,
+    )
   }
   if (item.type === 'open_issue') {
-    if (item.next_step_owner) pills.push(<Badge key="nso" variant="outline">{item.next_step_owner}</Badge>)
+    pills.push(
+      <Meta key="nso" label="Người tiếp">
+        {item.next_step_owner || missing}
+      </Meta>,
+    )
     if (item.system_generated) pills.push(<Badge key="sys" variant="conf-amber">hệ thống tạo</Badge>)
   }
   if (item.type === 'requirement') {
-    pills.push(<Badge key="origin" variant="secondary">{item.origin}</Badge>)
-    if (item.raised_by) pills.push(<Badge key="rb" variant="outline">{item.raised_by}</Badge>)
+    pills.push(
+      <Meta
+        key="origin" label="Nguồn"
+        hint="Ai đặt yêu cầu: Khách hàng / Nội bộ / Đối tác / Chưa rõ"
+      >
+        {ORIGIN_VN[item.origin] ?? item.origin ?? missing}
+      </Meta>,
+    )
+    pills.push(
+      <Meta key="rb" label="Người nêu">{item.raised_by || missing}</Meta>,
+    )
   }
   if (item.type === 'knowledge') {
     ;(item.tags ?? []).forEach((t) => {

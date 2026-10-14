@@ -42,9 +42,13 @@ Thứ tự trên card (từ trên xuống):
    · pill `cần xử lý` nếu là thẻ đỏ chưa xử lý.
 2. **Nội dung:** `item.content` (hoặc `item.what` với task) — `text-sm`, `font-medium`, `leading-relaxed`.
 3. **Cảnh báo semantic** nếu có (§4).
-4. **Meta pills:** owner/due/link (task), decided_by/reason/supersedes (decision),
-   next_step/owner (open issue), needs_action_from/severity (blocker), origin/raised_by (requirement),
-   tags (knowledge). Owner/due `TBD` → pill vàng `--color-conf-amber-*` (R1).
+4. **Meta pills — 1 pattern duy nhất `nhãn: giá trị`:** task `Người làm / Hạn / Theo QĐ`;
+   decision `Người chốt / Thay thế` (trống → `quyết định gốc`); blocker `Người gỡ / Mức nặng`
+   (Thấp-Trung bình-Cao + tooltip giải thích); open_issue `Người tiếp` (+ pill `hệ thống tạo`);
+   requirement `Nguồn` (Khách hàng/Nội bộ/Đối tác/Chưa rõ + tooltip) / `Người nêu`;
+   knowledge tags + `Ngữ cảnh`. Thiếu → `—` mờ (không im lặng bỏ qua, trừ link/hint).
+   TBD → pill vàng (R1). Câu dài (lý do/next_step) KHÔNG để trong pill (pill `nowrap`
+   gây tràn) — render dòng text wrap riêng.
 5. **Evidence — HIỆN SẴN, không giấu sau click** (sửa so với v1):
    - Hiện tối đa **2** dòng evidence; nhiều hơn → nút `+N evidence` mở phần còn lại.
    - Mỗi dòng: `[timestamp]` (link-button, target ≥24×24, hover gạch chân + màu `primary`) ·
