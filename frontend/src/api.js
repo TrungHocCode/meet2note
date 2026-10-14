@@ -32,14 +32,20 @@ function setToken(t) {
 
 function authHeaders(extra = {}) {
   const t = getToken()
-  return t ? { Authorization: `Bearer ${t}`, ...extra } : { ...extra }
+  // Bypass trang warning của ngrok free (link demo) — vô hại khi chạy local/VPS.
+  const base = { 'ngrok-skip-browser-warning': '1', ...extra }
+  return t ? { Authorization: `Bearer ${t}`, ...base } : { ...base }
+}
+
+function formHeaders(extra = {}) {
+  return { 'ngrok-skip-browser-warning': '1', ...extra }
 }
 
 export async function login(email, password) {
   const res = await fetch(`${BASE}/auth/login`, {
     method: 'POST',
     credentials: 'include', // nhận refresh cookie httpOnly
-    headers: { 'content-type': 'application/x-www-form-urlencoded' },
+    headers: formHeaders({ 'content-type': 'application/x-www-form-urlencoded' }),
     body: new URLSearchParams({ username: email, password }),
   })
   const body = await _jsonOrThrow(res)
@@ -51,7 +57,7 @@ export async function register(email, password) {
   const res = await fetch(`${BASE}/auth/register`, {
     method: 'POST',
     credentials: 'include',
-    headers: { 'content-type': 'application/json' },
+    headers: formHeaders({ 'content-type': 'application/json' }),
     body: JSON.stringify({ email, password }),
   })
   await _jsonOrThrow(res) // 201 — chưa login, gọi login() tiếp
