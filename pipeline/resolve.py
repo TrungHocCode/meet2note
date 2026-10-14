@@ -393,17 +393,22 @@ def _demote_finals_without_decide(
 
 
 def _contents_match(a: str, b: str, min_len: int = 12) -> bool:
-    """Hai content có phải cùng một quyết định? (normalized containment).
+    """Hai content có phải cùng một quyết định?
 
-    Chỉ containment — KHÔNG dùng token-overlap (thử nghiệm cho thấy overlap
-    gộp nhầm 2 chốt thật sự khác nhau khi cùng scaffolding câu chữ).
-    Diễn đạt lại nhưng cùng ý mà không chứa nhau → để host phân xử ở review
-    (an toàn hơn gộp nhầm).
+    - normalized containment (một bên chứa bên kia), HOẶC
+    - overlap ratio shared/min(tokens) ≥ 0.8 (cùng ý diễn đạt lại).
+    Ngưỡng hiệu chuẩn trên dữ liệu thật: paraphrase cùng chốt ≥1.0;
+    2 chốt thật sự khác nhau nhưng chung khung câu ≤0.71 (live tc5).
+    Tập token quá nhỏ (<3) thì ratio nhiễu → chỉ dùng containment.
     """
     na, nb = _norm_text(a or ""), _norm_text(b or "")
-    if len(na) < min_len or len(nb) < min_len:
+    if len(na) >= min_len and len(nb) >= min_len and (na in nb or nb in na):
+        return True
+    ta = {t for t in na.split() if len(t) >= 4}
+    tb = {t for t in nb.split() if len(t) >= 4}
+    if min(len(ta), len(tb)) < 3:
         return False
-    return na in nb or nb in na
+    return len(ta & tb) / min(len(ta), len(tb)) >= 0.8
 
 
 # Câu tường thuật lại (recap), KHÔNG phải câu chốt — dù model có gán role=decide.
@@ -695,6 +700,7 @@ _DOW_RE = re.compile(
     re.IGNORECASE,
 )
 _TUAN_SAU_RE = re.compile(r"tuần\s*sau", re.IGNORECASE)
+_CUOI_TUAN_RE = re.compile(r"cuối\s*tuần(\s*này)?", re.IGNORECASE)
 _CUOI_THANG_RE = re.compile(r"cuối\s*tháng|cuối\s*tháng\s*này", re.IGNORECASE)
 _NGAY_RE = re.compile(r"ngày\s+(\d{1,2})\s*[/\-]\s*(\d{1,2})(?:\s*[/\-]\s*(\d{2,4}))?")
 _DAYS_RE = re.compile(r"sau\s+(\d+)\s*ngày|trong\s+(\d+)\s*ngày", re.IGNORECASE)
@@ -755,6 +761,14 @@ def parse_relative_date(
         else:
             end = date(base.year, base.month + 1, 1) - timedelta(days=1)
         return end.isoformat(), "inferred"
+
+    if _CUOI_TUAN_RE.search(hint):
+        # Cuối tuần = thứ 7 tuần này. Nếu đã qua (base là Chủ nhật)
+        # → thứ 7 tuần sau. ("đầu tuần sau" đã được _TUAN_SAU_RE lo.)
+        sat = base + timedelta(days=(5 - base.weekday()))
+        if sat < base:
+            sat += timedelta(days=7)
+        return sat.isoformat(), "inferred"
 
     m = _NGAY_RE.search(hint)
     if m:

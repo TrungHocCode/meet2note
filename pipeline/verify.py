@@ -161,6 +161,80 @@ def badge_for(conf: float) -> str:
 
 _ISO_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
+_SELF_PRONOUNS = frozenset({"em", "anh", "chị", "tớ", "mình", "tôi"})
+_FILLER_RE = re.compile(r"^(?:dạ|vâng|ạ)\s+", flags=re.IGNORECASE)
+_PARTICLE_RE = re.compile(r"\s*(?:ạ|dạ|vâng|nhé|nha|nhe|ha|hả)\s*$", flags=re.IGNORECASE)
+# LƯU Ý: không liệt kê động từ nhận việc ở đây — volunteer check dùng cấu trúc
+# (đại từ mở đầu + không tên cụ thể) vì động từ là lớp mở, liệt kê không bao giờ đủ.
+
+
+def _resolve_self_reference(
+    owner_raw: str,
+    evidence: list[dict[str, Any]],
+    participants: list[Participant],
+) -> tuple[str, str] | None:
+    """Đại từ tự xưng trong field owner ("Em làm ạ") → speaker nói câu evidence đó."""
+    s = str(owner_raw or "").strip()
+    if not s or s == TBD_SENTINEL:
+        return None
+    s_lower = s.lower()
+    names: set[str] = set()
+    for p in participants:
+        names.add(p.name.lower())
+        names.update((a or "").lower() for a in (p.aliases or []))
+    names.discard("")
+    if any(n in s_lower for n in names):
+        return None
+    core = _FILLER_RE.sub("", s_lower).strip()
+    core = _PARTICLE_RE.sub("", core).strip()
+    toks = core.split()
+    if not toks or toks[0] not in _SELF_PRONOUNS:
+        return None
+    evs = evidence or []
+    speaker = (evs[0].get("speaker", "") or "").strip() if evs else ""
+    if not speaker:
+        return None
+    for p in participants:
+        if speaker == p.name or speaker in (p.aliases or []):
+            return p.name, "inferred"
+    return None
+
+
+def _resolve_volunteer_from_quote(
+    evidence: list[dict[str, Any]],
+    participants: list[Participant],
+) -> tuple[str, str] | None:
+    """Câu evidence tự nhận việc ("Em làm ạ", "Dạ em cover phần này") → speaker.
+
+    CẤU TRÚC, không danh sách động từ (động từ là lớp mở — liệt kê không bao giờ
+    đủ): quote mở đầu bằng [dạ/vâng] + đại từ tự xưng, KHÔNG chứa tên/alias cụ
+    thể nào, và speaker thuộc participants. "Em Nam gửi..." có tên → loại ngay.
+    Returns (name, "inferred") hoặc None.
+    """
+    evs = evidence or []
+    if not evs:
+        return None
+    quote = str((evs[0].get("quote") or "")).strip()
+    speaker = str((evs[0].get("speaker") or "")).strip()
+    if not quote or not speaker:
+        return None
+    names: set[str] = set()
+    for p in participants:
+        names.add(p.name.lower())
+        names.update((a or "").lower() for a in (p.aliases or []))
+    names.discard("")
+    if any(n in quote.lower() for n in names):
+        return None
+    toks = quote.lower().split()
+    while toks and toks[0] in ("dạ", "vâng", "ạ"):
+        toks.pop(0)
+    if not toks or toks[0] not in _SELF_PRONOUNS:
+        return None
+    for p in participants:
+        if speaker == p.name or speaker in (p.aliases or []):
+            return p.name, "inferred"
+    return None
+
 
 def _is_iso_date(s: str) -> bool:
     return bool(_ISO_RE.match(s))
@@ -175,7 +249,8 @@ def canonicalize_owner(
     Returns: (canonical_name_or_TBD, owner_source).
     - Khớp `name` chính xác → (name, "explicit")
     - Khớp alias → (name, "inferred")
-    - Không khớp hoặc rỗng → ("TBD", "tbd")
+    - CHỨA đúng 1 tên/alias trong câu ("em Hà làm nhé" → Hà) → (name, "inferred")
+    - Không khớp, rỗng, hoặc chứa ≥2 tên (mơ hồ) → ("TBD", "tbd")
     """
     if not owner or owner.strip() == TBD_SENTINEL:
         return TBD_SENTINEL, "tbd"
@@ -187,6 +262,15 @@ def canonicalize_owner(
     for p in participants:
         if owner_clean in (p.aliases or []):
             return p.name, "inferred"
+    # Contains-fallback: tên/alias xuất hiện trong câu dài.
+    lowered = owner_clean.lower()
+    hits: list[str] = []
+    for p in participants:
+        candidates = [p.name] + list(p.aliases or [])
+        if any(c and c.lower() in lowered for c in candidates):
+            hits.append(p.name)
+    if len(hits) == 1:
+        return hits[0], "inferred"
     return TBD_SENTINEL, "tbd"
 
 
@@ -363,12 +447,39 @@ def verify_state(
             owner, owner_src = canonicalize_owner(
                 item_dict.get("owner", ""), participants
             )
+            # Self-reference: "Em làm ạ" (không kèm tên) do chính speaker nói
+            # → owner là speaker đó (live sample đàm phán: Nam "Em làm ạ" → Nam,
+            # Hà "Em review giúp" → Hà). Chỉ khi KHÔNG chứa tên/alias nào khác.
+            # Nếu model đã bó tay (owner=TBD) mà QUOTE evidence tự nhận việc
+            # ("Dạ em gửi báo giá") → cũng resolve từ speaker (volunteer).
+            _self_resolved = False
+            if owner == TBD_SENTINEL:
+                _self = _resolve_self_reference(
+                    item_dict.get("owner", ""), item_dict.get("evidence", []),
+                    participants,
+                )
+                if _self is None:
+                    _self = _resolve_volunteer_from_quote(
+                        item_dict.get("evidence", []), participants
+                    )
+                if _self is not None:
+                    owner, owner_src = _self
+                    _self_resolved = True
+                    limitations.append(
+                        f"item {item_id} (task): owner tự nhận việc "
+                        f"{item_dict.get('owner')!r} → {owner} (inferred)"
+                    )
             old_owner = item_dict.get("owner", "")
             item_dict["owner"] = owner
-            # Nếu ta đã ép TBD, force source = tbd
+            # Nếu ta đã ép TBD, force source = tbd. Nếu ta tự suy ra owner
+            # (self-reference), force source = inferred (không giữ claim cũ).
             if owner == TBD_SENTINEL:
                 item_dict["owner_source"] = "tbd"
-            elif item_dict.get("owner_source") not in ("explicit", "inferred", "tbd"):
+            elif _self_resolved:
+                item_dict["owner_source"] = "inferred"
+            else:
+                # Source LUÔN theo suy luận của ta (canonicalize), không giữ
+                # claim của model (vd model ghi "explicit" cho tên suy ra).
                 item_dict["owner_source"] = owner_src
 
             old_due = item_dict.get("due", "")
@@ -389,6 +500,17 @@ def verify_state(
                 item_dict["due_source"] = "tbd"
             elif item_dict.get("due_source") not in ("explicit", "inferred", "tbd"):
                 item_dict["due_source"] = due_src
+            # Due inferred mà THIẾU due_hint → không kiểm chứng được (ENTITY CONTRACT
+            # bắt hint giữ chữ gốc). Giữ due nhưng ghi limitation cho host soi.
+            if (
+                item_dict.get("due") != TBD_SENTINEL
+                and item_dict.get("due_source") == "inferred"
+                and not item_dict.get("due_hint")
+            ):
+                limitations.append(
+                    f"item {item_id} (task): due inferred nhưng thiếu due_hint — "
+                    f"không kiểm chứng được chữ gốc"
+                )
         elif item_type == "blocker":
             naf = item_dict.get("needs_action_from", "")
             if naf and naf != TBD_SENTINEL:
@@ -439,7 +561,11 @@ def verify_state(
 
         # ─── 2. Evidence quote verify (R5) ───
         evidence_list = item_dict.get("evidence", [])
-        if not evidence_list and item_type != "knowledge":
+        if (
+            not evidence_list
+            and item_type != "knowledge"
+            and not item_dict.get("system_generated")
+        ):
             limitations.append(
                 f"item {item_id} ({item_type}): thiếu evidence — bỏ"
             )
