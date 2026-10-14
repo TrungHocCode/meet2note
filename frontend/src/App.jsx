@@ -993,8 +993,12 @@ export default function App() {
     } catch (e) {
       if (e.status === 503) {
         setUpMsg('LLM chưa sẵn sàng (503): bật Ollama rồi thử lại.')
+      } else if (e.status === 409) {
+        setUpMsg(
+          'Meeting id này đã có người khác dùng. Đổi "Meeting id" khác (ví dụ thêm tên bạn) rồi upload lại.',
+        )
       } else {
-        setUpMsg(`Lỗi (${e.status ?? '?'}): ${JSON.stringify(e.body)}`)
+        setUpMsg(`Lỗi (${e.status ?? '?'}): ${e.body?.detail ?? JSON.stringify(e.body)}`)
       }
     } finally {
       setUpBusy(false)
