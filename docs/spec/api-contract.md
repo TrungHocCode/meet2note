@@ -24,7 +24,6 @@ Body `{"email": "...", "password": "≥8 ký tự"}`.
 ### POST /auth/login
 
 Form `username=<email>&password=...` (OAuth2PasswordRequestForm).
-
 | Kết quả | Body |
 |---|---|
 | `200` | `{"access_token": "...", "token_type": "bearer"}` + set cookie `refresh_token` |
@@ -37,6 +36,16 @@ Form `username=<email>&password=...` (OAuth2PasswordRequestForm).
 | `POST /auth/refresh` (đọc cookie) | `200` access mới + xoay refresh · `401` không cookie/hết hạn/bị revoke |
 | `POST /auth/logout` | `200 {"ok": true}` + revoke refresh hiện tại + xoá cookie |
 | `GET /auth/me` (Bearer) | `200 {"id", "email"}` · `401` không token |
+
+### GET /api/v1/meetings (Bearer bắt buộc)
+
+Danh sách meeting của chính mình (mới nhất trước) kèm run mới nhất —
+để UI hiện danh sách bấm xem lại, user không cần nhớ id.
+
+| Kết quả | Body |
+|---|---|
+| `200` | `{meetings: [{id, title, date, source, created_at, runs_count, latest_ts, badges, no_decision}]}` |
+| `401` | thiếu/sai access token |
 
 ## Endpoints
 
@@ -75,7 +84,20 @@ Gate đọc `review_log.json`: id nào đã có entry xử lý thì không chặ
 | Kết quả | Body |
 |---|---|
 | `403` | `{"error": "gate_red_items", "red_items": ["B1"]}` — còn thẻ đỏ, export bị khoá |
-| `200` | `{"files": ["runs/tc2/<ts>/minutes.md", "runs/tc2/<ts>/tasks_jira.csv"]}` |
+| `200` | `{"files": [...], "generated_at": ..., "downloads": {"minutes.md": "/api/v1/export/file?...", ...}}` |
+
+### GET /api/v1/export/file?meeting=tc2&name=minutes.md (Bearer bắt buộc)
+
+Tải file export về máy user (`Content-Disposition: attachment`).
+
+- `name` chỉ nhận đúng `minutes.md` | `tasks_jira.csv` (tên khác → 400, chặn traversal).
+- Server lấy file mới nhất trong cây `runs/<meeting>/`.
+
+| Kết quả | Body |
+|---|---|
+| `200` | file (filename `tc2_minutes.md`) |
+| `401` | thiếu/sai access token |
+| `404` | không phải của mình / file chưa được export |
 
 ## Quy ước chung
 

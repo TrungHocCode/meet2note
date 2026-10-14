@@ -26,8 +26,10 @@ import {
   X,
 } from 'lucide-react'
 import {
+  downloadExport,
   getMe,
   getReview,
+  listMeetings,
   login,
   logout,
   putReview,
@@ -686,6 +688,8 @@ export default function App() {
   // Auth (P6b): user null → hiện LoginScreen, không load meeting.
   const [user, setUser] = useState(null)
   const [authChecked, setAuthChecked] = useState(false)
+  // Danh sách meeting của mình — bấm xem lại, khỏi nhớ id.
+  const [meetings, setMeetings] = useState([])
   // Keyboard focus.
   const [focusedId, setFocusedId] = useState(null)
   const [hoveredId, setHoveredId] = useState(null)
@@ -762,11 +766,23 @@ export default function App() {
   }, [])
 
   // Không auto-load meeting mẫu: new user chưa có gì — họ upload trước
-  // (section ③ Upload mở sẵn). Meeting cũ thì nhập id ở ① Meeting → Load.
+  // (section ③ Upload mở sẵn). Meeting cũ thì bấm trong danh sách ①.
   useEffect(() => {
-    if (authChecked && user) setMeetingInput('')
+    if (authChecked && user) {
+      setMeetingInput('')
+      loadMeetings()
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authChecked, user])
+
+  async function loadMeetings() {
+    try {
+      const data = await listMeetings()
+      setMeetings(data.meetings ?? [])
+    } catch {
+      setMeetings([])
+    }
+  }
 
   async function sendPut(itemsToSend, changes) {
     setBusy(true)
@@ -912,9 +928,22 @@ export default function App() {
         } else if (e.status === 400) {
           setExportError(`Chưa confirm: ${e.body?.detail ?? ''}`)
         } else {
-          setExportError(`${e.status ?? '?'}: ${JSON.stringify(e.body)}`)
+          setExportError(`${e.status ?? '?'}: ${e.body?.detail ?? JSON.stringify(e.body)}`)
         }
       })
+  }
+
+  const [downloading, setDownloading] = useState(null)
+
+  async function doDownload(name) {
+    setDownloading(name)
+    try {
+      await downloadExport(meetingId, name)
+    } catch (e) {
+      toast.error(`Tải ${name} lỗi (${e.status ?? '?'}): ${e.body?.detail ?? ''}`)
+    } finally {
+      setDownloading(null)
+    }
   }
 
   async function showEvidence(ev) {
@@ -990,6 +1019,7 @@ export default function App() {
       setEditedItems({})
       setDrawer(null)
       setUpMsg(`Xong: ${resp.turns_count} turns → ${resp.state.items?.length ?? 0} items. Review bên dưới.`)
+      loadMeetings() // upload xong → danh sách ① có ngay, khỏi nhớ id
     } catch (e) {
       if (e.status === 503) {
         setUpMsg('LLM chưa sẵn sàng (503): bật Ollama rồi thử lại.')
@@ -1191,7 +1221,38 @@ export default function App() {
               <ChevronDown className="size-4" /> ① Meeting
             </CollapsibleTrigger>
             <CollapsibleContent className="mt-2 flex flex-col gap-2">
-              <Label htmlFor="meeting-id">Meeting id</Label>
+              {meetings.length > 0 && (
+                <div className="flex max-h-56 flex-col gap-1 overflow-y-auto" role="list" aria-label="Meeting của tôi">
+                  {meetings.map((m) => {
+                    const active = m.id === meetingId
+                    const badges = m.badges ?? {}
+                    return (
+                      <button
+                        key={m.id}
+                        type="button"
+                        role="listitem"
+                        aria-current={active ? 'true' : undefined}
+                        onClick={() => {
+                          setMeetingInput(m.id)
+                          load(m.id)
+                        }}
+                        className={`flex min-w-0 flex-col rounded-md border px-2 py-1.5 text-left transition-colors hover:border-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring ${
+                          active ? 'border-primary bg-primary/10' : 'border-border bg-background'
+                        }`}
+                      >
+                        <span className="truncate text-xs font-semibold">{m.title || m.id}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {m.date || m.id}
+                          {(badges.red ?? 0) > 0 && <> · 🔴{badges.red}</>}
+                          {(badges.yellow ?? 0) > 0 && <> · 🟡{badges.yellow}</>}
+                          {(badges.green ?? 0) > 0 && <> · 🟢{badges.green}</>}
+                        </span>
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+              <Label htmlFor="meeting-id">Hoặc nhập meeting id khác</Label>
               <Input
                 id="meeting-id"
                 value={meetingInput}
@@ -1260,15 +1321,25 @@ export default function App() {
               </Button>
               {exportFiles && exportFiles.length > 0 && (
                 <Alert variant="ok">
-                  <AlertTitle>Export xong</AlertTitle>
+                  <AlertTitle>Export xong — tải về máy bạn</AlertTitle>
                   <AlertDescription>
-                    <ul>
-                      {exportFiles.map((f) => (
-                        <li key={f}>
-                          <code className="text-xs break-all">{f}</code>
-                        </li>
-                      ))}
-                    </ul>
+                    <div className="mt-1 flex flex-wrap gap-2">
+                      {exportFiles.map((f) => {
+                        const name = f.split('/').pop()
+                        return (
+                          <Button
+                            key={f}
+                            size="sm"
+                            variant="outline"
+                            disabled={downloading === name}
+                            onClick={() => doDownload(name)}
+                          >
+                            <Download className="size-3" />
+                            {downloading === name ? 'Đang tải…' : name}
+                          </Button>
+                        )
+                      })}
+                    </div>
                   </AlertDescription>
                 </Alert>
               )}
