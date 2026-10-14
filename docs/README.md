@@ -18,7 +18,9 @@
 | 9 | `spec/io-formats.md` | Định dạng transcript/turns/meta/golden + parse .txt/.srt (P0) |
 | 10 | `prompts/` | system_extract, system_resolve, fewshot_atob — code load trực tiếp (P1) |
 | 11 | `spec/api-contract.md` | GET/PUT /review, POST /export + gate R6 (P2) |
-| 12 | `spec/export-format.md` | Template minutes.md + tasks_jira.csv + review_log + UI tối thiểu (P3) |
+| 12 | `spec/export-format.md` | Template minutes.md + tasks_jira.csv + review_log (P3) |
 | 13 | `spec/acceptance.md` | Tiêu chí nghiệm thu MVP (P4) |
+| 14 | `design/` | UI: `tokens.md` (token) → `layout.md` (bố cục + breakpoint) → `components.md` (component + trạng thái) |
+| 15 | `spec/ui-spec.md` | UI: hợp đồng hành vi (schema↔UI, R1–R8, bàn phím) + acceptance checklist |
 
 Spec thực thi MVP: `private/PLAN_MVP.md` (local-only, không push).

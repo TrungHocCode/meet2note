@@ -330,6 +330,40 @@ def test_export_404_when_meeting_missing(
     assert r.status_code == 404
 
 
+def test_export_200_when_red_handled_via_review_log(
+    client: TestClient, runs_dir: Path
+) -> None:
+    """Thẻ đỏ đã được host Đồng ý (có entry trong review_log) → không chặn export.
+
+    Bug thực tế: gate đọc state.json thô, host agree xong vẫn 403 mãi.
+    """
+    run_dir = runs_dir / "runs" / "tc_test" / "20260101-120000"
+    # confirmed như state hiện tại (D1 vẫn đỏ 0.40) + review_log có agree D1
+    state = json.loads((run_dir / "state.json").read_text(encoding="utf-8"))
+    (run_dir / "confirmed_state.json").write_text(
+        json.dumps(
+            {"meeting": state["meeting"], "items": state["items"], "updated_at": "t"},
+            ensure_ascii=False,
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+    (run_dir / "review_log.json").write_text(
+        json.dumps(
+            {"meeting_id": "tc_test",
+             "entries": [{"item_id": "D1", "action": "agree",
+                          "old": None, "new": None,
+                          "reviewer": "host", "ts": "t"}]},
+            ensure_ascii=False,
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+    r = client.post("/api/v1/export?meeting=tc_test")
+    assert r.status_code == 200, r.text
+    assert "files" in r.json()
+
+
 # ──────────────────────────────────────────────────────────────────────
 # 5. CORS — chỉ React dev
 # ──────────────────────────────────────────────────────────────────────

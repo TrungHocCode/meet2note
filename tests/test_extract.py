@@ -566,6 +566,8 @@ def test_call_llm_url_construction_no_chat_completions(monkeypatch) -> None:
     monkeypatch.setenv("OPENAI_BASE_URL", "https://api.example.com/v1")
     monkeypatch.setenv("MODEL_NAME", "test-model")
     monkeypatch.setenv("OPENAI_API_KEY", "sk-fake")
+    for v in ("LLM_BASE_URL", "LLM_MODEL", "LLM_API_KEY", "LLM_STRUCTURED", "LLM_JSON_MODE"):
+        monkeypatch.delenv(v, raising=False)
     monkeypatch.setattr(_httpx, "Client", FakeClient)
 
     call_llm([{"role": "user", "content": "x"}])
@@ -592,6 +594,8 @@ def test_call_llm_url_construction_with_chat_completions(monkeypatch) -> None:
     monkeypatch.setenv("OPENAI_BASE_URL", "https://api.example.com/v1/chat/completions")
     monkeypatch.setenv("MODEL_NAME", "test-model")
     monkeypatch.setenv("OPENAI_API_KEY", "sk-fake")
+    for v in ("LLM_BASE_URL", "LLM_MODEL", "LLM_API_KEY", "LLM_STRUCTURED", "LLM_JSON_MODE"):
+        monkeypatch.delenv(v, raising=False)
     monkeypatch.setattr(_httpx, "Client", FakeClient)
 
     call_llm([{"role": "user", "content": "x"}])

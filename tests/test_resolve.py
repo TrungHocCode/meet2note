@@ -826,3 +826,29 @@ def test_resolve_no_merge_different_content_finals() -> None:
     b = _fin("D_B", "Chuyển sang FastAPI vì team quen Python", "Lan", "00:14:22", "decide")
     out = resolve({"id": "tc5", "date": "2026-10-14", "participants": []}, [[a], [b]])
     assert sorted(i["id"] for i in out["items"]) == ["D_A", "D_B"]
+
+
+def test_resolve_merge_ratio_paraphrase() -> None:
+    """Cùng ý diễn đạt lại (overlap ratio 1.0) → gộp (live sample đàm phán).
+
+    D0/D1 cùng chốt trial+lock85tr, câu chữ khác → gộp, không flag reversal oan.
+    """
+    a = _fin("D0", "Chốt phương án: trial 1 tháng, lock 85 triệu", "Lan", "00:05:36", "decide")
+    b = _fin("D1", "Chốt phương án: xin trial 1 tháng + lock giá 85 triệu/năm", "Lan", "00:06:04", "decide")
+    out = resolve({"id": "demo", "date": "2026-10-14", "participants": []}, [[a], [b]])
+    ids = [i["id"] for i in out["items"]]
+    assert len(ids) == 1 and ids[0] == "D1"  # decide muộn nhất thắng
+    assert not any("unresolved_reversal" in lim and "D0" in lim and "D1" in lim
+                   for lim in out["known_limitations"])
+
+
+def test_parse_cuoi_tuan_nay() -> None:
+    """'cuối tuần này' từ thứ Tư 2026-10-14 → thứ 7 (2026-10-17)."""
+    iso, src = parse_relative_date("cuối tuần này", "2026-10-14")
+    assert iso == "2026-10-17" and src == "inferred"
+
+
+def test_parse_cuoi_tuan_chu_nhat() -> None:
+    """Base Chủ nhật → 'cuối tuần này' đã qua → thứ 7 tuần sau."""
+    iso, src = parse_relative_date("cuối tuần này", "2026-10-18")
+    assert iso == "2026-10-24" and src == "inferred"

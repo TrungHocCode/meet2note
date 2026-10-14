@@ -33,6 +33,8 @@ Body: `{"items": [...], "changes": [{"item_id": "T2", "action": "edit", "old": {
 ### POST /api/v1/export?meeting=tc2
 
 Gate R6: export chỉ sau khi **mọi item đỏ (<0.50) đã được Đồng ý/Sửa/Loại**.
+Gate đọc `review_log.json`: id nào đã có entry xử lý thì không chặn nữa
+(không đọc state.json thô — nếu không host xử lý xong vẫn bị 403 mãi).
 
 | Kết quả | Body |
 |---|---|

@@ -3,7 +3,7 @@
   "tasks": [],
   "no_decision": false,
   "unresolved_reversal_expected": true,
-  "expected_red_min": 3,
+  "expected_red_min": 2,
   "expected_open_issues_min": 1,
-  "rationale": "Ca này dự kiến THẤT BẠI — minh chứng R4 (taxonomy §6). Pipeline đạt khi: 1) flag unresolved_reversal=true trên ≥2 final (đảo A↔B↔A), 2) tạo Open Issue O_REV cho host, 3) tất cả items đều đỏ (gate R6 ngăn export). no_decision=false vì có final '3 chốt mâu thuẫn' — host phải tự chọn. Đạt nếu trung thực (R4 enforced); Chưa đạt nếu pipeline tự chọn 1 bên."
+  "rationale": "Ca khó nhất — minh chứng R4. Pipeline đạt khi: 1) flag unresolved_reversal (kể cả khi merge-ratio đã gộp các cách nói trùng nhau), 2) tạo Open Issue O_REV cho host, 3) còn thẻ đỏ để gate R6 ngăn export. no_decision=false vì có final mâu thuẫn — host phải tự chọn."
 }

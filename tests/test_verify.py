@@ -990,10 +990,7 @@ def test_verify_requirement_bad_origin_becomes_unknown() -> None:
 
 
 def test_verify_open_issue_missing_next_step_filled() -> None:
-    """OpenIssue thiếu next_step → placeholder cho host + limitation, GIỮ item.
-
-    (Họp mơ hồ hay thiếu next_step — bỏ cả item thì mất record "chưa chốt".)
-    """
+    """OpenIssue thiếu next_step → placeholder cho host + limitation, GIỮ item."""
     raw = [{
         "id": "O1", "type": "open_issue",
         "content": "Chưa chốt hướng tích hợp",
@@ -1013,3 +1010,179 @@ def test_verify_open_issue_missing_next_step_filled() -> None:
     assert len(state.items) == 1
     assert state.items[0].next_step == "Host xác định bước tiếp theo"
     assert any("next_step" in lim for lim in state.known_limitations)
+
+
+def _task_self_ref(owner: str, speaker: str) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    raw = [{
+        "id": "T1", "type": "task",
+        "what": "Làm gì đó",
+        "owner": owner, "owner_source": "explicit",
+        "due": "2026-10-16", "due_source": "explicit",
+        "due_hint": None, "link_to_decision": None,
+        "confidence": 0.8, "confidence_reason": "ok",
+        "evidence": [{
+            "quote": "Em làm ạ", "timestamp": "00:00:10",
+            "speaker": speaker, "turn": 1, "role_in_discussion": "confirm",
+        }],
+    }]
+    turns = [{"turn": 1, "t_start": "00:00:10", "t_end": "00:00:10",
+              "speaker": speaker, "text": "Em làm ạ"}]
+    return raw, turns
+
+
+def _meeting_3() -> Any:
+    from pipeline.schema import Meeting, Participant
+    return Meeting(
+        id="tcX", title="X", date="2026-10-14", participants=[
+            Participant(name="Lan", role="PM", aliases=["chị Lan", "Lan"]),
+            Participant(name="Nam", role="BA", aliases=["Nam", "em Nam"]),
+            Participant(name="Hà", role="Dev", aliases=["em Hà", "Hà"]),
+        ],
+        source_file="x.txt", pipeline_version="t",
+    )
+
+
+def test_verify_owner_self_reference_resolves_speaker() -> None:
+    """owner='Em làm ạ' do Nam nói → Nam (inferred) — live sample đàm phán."""
+    raw, turns = _task_self_ref("Em làm ạ", "Nam")
+    state = verify_state(
+        meeting=_meeting_3(), items_raw=raw,
+        conf_llm_map={"T1": 0.8}, turns=turns,
+    )
+    t1 = next(i for i in state.items if i.id == "T1")
+    assert t1.owner == "Nam" and t1.owner_source == "inferred"
+    assert any("tự nhận việc" in lim for lim in state.known_limitations)
+
+
+def test_verify_owner_with_explicit_name_untouched() -> None:
+    """'em Hà' chứa tên cụ thể → canonicalize thường (Hà), không self-ref."""
+    raw, turns = _task_self_ref("em Hà làm nhé", "Lan")
+    state = verify_state(
+        meeting=_meeting_3(), items_raw=raw,
+        conf_llm_map={"T1": 0.8}, turns=turns,
+    )
+    t1 = next(i for i in state.items if i.id == "T1")
+    assert t1.owner == "Hà" and t1.owner_source == "inferred"
+
+
+def test_verify_owner_self_ref_unknown_speaker_stays_tbd() -> None:
+    """Speaker ngoài participants → không đoán → TBD."""
+    raw, turns = _task_self_ref("Em làm ạ", "Khách")
+    state = verify_state(
+        meeting=_meeting_3(), items_raw=raw,
+        conf_llm_map={"T1": 0.8}, turns=turns,
+    )
+    t1 = next(i for i in state.items if i.id == "T1")
+    assert t1.owner == "TBD"
+
+
+def _task_volunteer(quote: str, speaker: str) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """Task owner=TBD (model bó tay) + quote evidence tùy biến."""
+    raw = [{
+        "id": "T1", "type": "task",
+        "what": "Làm gì đó",
+        "owner": "TBD", "owner_source": "tbd",
+        "due": "2026-10-16", "due_source": "explicit",
+        "due_hint": None, "link_to_decision": None,
+        "confidence": 0.8, "confidence_reason": "ok",
+        "evidence": [{
+            "quote": quote, "timestamp": "00:00:10",
+            "speaker": speaker, "turn": 1, "role_in_discussion": "confirm",
+        }],
+    }]
+    turns = [{"turn": 1, "t_start": "00:00:10", "t_end": "00:00:10",
+              "speaker": speaker, "text": quote}]
+    return raw, turns
+
+
+def test_verify_volunteer_quote_resolves_speaker() -> None:
+    """owner=TBD + quote 'Dạ em gửi báo giá' của Nam → Nam (inferred)."""
+    raw, turns = _task_volunteer("Dạ em gửi báo giá cho khách", "Nam")
+    state = verify_state(
+        meeting=_meeting_3(), items_raw=raw,
+        conf_llm_map={"T1": 0.8}, turns=turns,
+    )
+    t1 = next(i for i in state.items if i.id == "T1")
+    assert t1.owner == "Nam" and t1.owner_source == "inferred"
+
+
+def test_verify_volunteer_with_name_after_pronoun_ignored() -> None:
+    """'Em Nam gửi...' (Lan giao cho Nam) → volunteer KHÔNG fire (sau 'em' là tên,
+    không phải động từ). Trích assignee từ tên trong quote là luật khác (backlog);
+    hiện tại giữ TBD trung thực thay vì gán bừa cho speaker Lan."""
+    raw, turns = _task_volunteer("Em Nam gửi báo giá nhé", "Lan")
+    state = verify_state(
+        meeting=_meeting_3(), items_raw=raw,
+        conf_llm_map={"T1": 0.8}, turns=turns,
+    )
+    t1 = next(i for i in state.items if i.id == "T1")
+    assert t1.owner == "TBD"
+
+
+def test_verify_volunteer_no_pattern_stays_tbd() -> None:
+    """Quote không có pattern nhận việc → giữ TBD."""
+    raw, turns = _task_volunteer("Việc này ai làm nhỉ", "Lan")
+    state = verify_state(
+        meeting=_meeting_3(), items_raw=raw,
+        conf_llm_map={"T1": 0.8}, turns=turns,
+    )
+    t1 = next(i for i in state.items if i.id == "T1")
+    assert t1.owner == "TBD"
+
+
+def test_verify_volunteer_novel_verb_no_list_needed() -> None:
+    """Động từ lạ ('cover') không trong danh sách cũ vẫn resolve được —
+    chứng minh luật cấu trúc tổng quát hơn liệt kê."""
+    raw, turns = _task_volunteer("Em cover phần này nhé", "Hà")
+    state = verify_state(
+        meeting=_meeting_3(), items_raw=raw,
+        conf_llm_map={"T1": 0.8}, turns=turns,
+    )
+    t1 = next(i for i in state.items if i.id == "T1")
+    assert t1.owner == "Hà" and t1.owner_source == "inferred"
+
+
+def test_verify_inferred_due_without_hint_flagged() -> None:
+    """Due inferred nhưng thiếu hint → giữ due + limitation (không kiểm chứng được)."""
+    raw = [{
+        "id": "T1", "type": "task",
+        "what": "Làm gì đó",
+        "owner": "Nam", "owner_source": "explicit",
+        "due": "2026-10-21", "due_source": "inferred",
+        "due_hint": None, "link_to_decision": None,
+        "confidence": 0.8, "confidence_reason": "ok",
+        "evidence": [{
+            "quote": "Làm gì đó", "timestamp": "00:00:10",
+            "speaker": "Lan", "turn": 1, "role_in_discussion": "info",
+        }],
+    }]
+    turns = [{"turn": 1, "t_start": "00:00:10", "t_end": "00:00:10",
+              "speaker": "Lan", "text": "Làm gì đó"}]
+    state = verify_state(
+        meeting=_meeting_3(), items_raw=raw,
+        conf_llm_map={"T1": 0.8}, turns=turns,
+    )
+    t1 = next(i for i in state.items if i.id == "T1")
+    assert t1.due == "2026-10-21"  # giữ, không đoán lại
+    assert any("thiếu due_hint" in lim for lim in state.known_limitations)
+
+
+def test_verify_system_open_issue_empty_evidence_survives() -> None:
+    """O_REV/O_SYS (system_generated, evidence rỗng) KHÔNG bị R5 drop.
+
+    Bug thật live tc5: O_REV_1 bị bỏ ở evidence-check → mất Open Issue cho host.
+    """
+    raw = [{
+        "id": "O_REV_1", "type": "open_issue",
+        "content": "Mâu thuẫn D1/D2",
+        "next_step": "Host xử lý",
+        "next_step_owner": "TBD",
+        "confidence": 0.4, "confidence_reason": "R4",
+        "evidence": [],
+        "system_generated": True,
+    }]
+    state = verify_state(
+        meeting=_meeting_3(), items_raw=raw,
+        conf_llm_map={"O_REV_1": 0.4}, turns=[],
+    )
+    assert any(i.id == "O_REV_1" for i in state.items)

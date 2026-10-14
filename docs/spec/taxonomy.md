@@ -29,8 +29,8 @@ Mọi item có `confidence 0–1` + `confidence_reason`. Ngưỡng: đỏ <0.50 
 
 | # | Quy tắc | Enforce |
 |---|---|---|
-| R1 | Không bịa owner/deadline ⇒ `TBD` | `tbd` ⇒ confidence ≤0.4 (đỏ) |
-| R2 | Cấm đoán ngày: `sớm/gấp/asap` ⇒ `due TBD + due_hint`; chỉ nhận ngày rõ hoặc tính deterministic từ `meeting.date` | Regex + quy đổi thứ/tuần bằng Python; không parse ISO ⇒ TBD. **Mở rộng (vòng transcripts v2):** due đã ISO nhưng hint còn pattern tương đối → recompute, khác thì OVERRIDE + limitation (model hay tính nhầm thứ→ngày); due ISO trước `meeting.date` → bất khả thi → TBD + limitation |
+| R1 | Không bịa owner/deadline ⇒ `TBD`; source LUÔN theo suy luận của code (không giữ claim của model) | `tbd` ⇒ confidence ≤0.4 (đỏ); tên trong câu dài ("em Hà làm nhé") → chứa đúng 1 tên ⇒ inferred; đại từ tự xưng đứng một mình ("Em làm ạ") → speaker nói câu đó (inferred); quote tự nhận việc ("Dạ em gửi...") → speaker (inferred) |
+| R2 | Cấm đoán ngày + deterministic override (due ISO sai → recompute từ hint; due quá khứ → TBD). **Nguyên tắc tổng quát:** prompt bắt `due_hint` giữ chữ gốc mọi khi due không nói rõ bằng số; code recompute/verify từ hint. Due inferred mà THIẾU hint → giữ số + limitation (không kiểm chứng được). Không liệt kê pattern ngày càng dài — parser chỉ cover pattern chắc chắn, còn lại nhờ LLM + hint | Regex + quy đổi thứ/tuần bằng Python; không parse ISO ⇒ TBD |
 | R3 | `No Decision` hợp lệ | Không decision ⇒ `no_decision=true` + yêu cầu ≥1 Open Issue |
 | R4 | Giữ vết supersedes; A→B→A không resolve ⇒ `unresolved_reversal` + Open Issue nhờ host | Graph check Python, không tự chọn |
 | R5 | Mọi item (trừ Knowledge) ≥1 evidence khớp fuzzy ≥85% (difflib trên text normalize) | Không khớp ⇒ `evidence_mismatch`, thẻ đỏ |
@@ -82,7 +82,8 @@ conf_final = clamp01(
   nhưng quote là tường thuật ("Em note lại: chốt...") cũng không tính — chỉ ghi chú/đồng thuận
   lại ≠ chốt. Giữ làm proposal để audit.
 - **Gộp finals CÙNG nội dung khác id** (model đặt D0/D1 cho cùng 1 chốt ở 2 chunk):
-  winner = evidence decide không-recap muộn nhất; union evidence + supersedes (bỏ self-ref).
+  containment HOẶC overlap ratio shared/min(tokens) ≥ 0.8 → gộp; winner = evidence
+  decide không-recap muộn nhất; union evidence + supersedes (bỏ self-ref).
   Khác nội dung thì giữ nguyên để reversal detection xử.
 - **Tách id-collision task:** model tái dùng T1..Tn mỗi chunk cho task khác nhau → cùng id +
   khác nội dung (non-decision) = collision, không phải conflict → tách cluster, rename id mới
@@ -95,7 +96,7 @@ conf_final = clamp01(
 - **Entity-link người:** chỉ chấp nhận `name`/`aliases` trong `participants` (em/anh/chị → name,
   source=inferred); không khớp → TBD. Tên ngoài participants là SAI.
 - **Entity-link ngày** (regex + Python, từ `meeting.date`): `thứ 2..CN`, `tuần sau`, `ngày N/M`,
-  `cuối tháng` → ISO deterministic; mơ hồ → `due=TBD` + `due_hint` giữ nguyên gốc (R2).
+  `cuối tháng`, `cuối tuần [này]` (= thứ 7) → ISO deterministic; mơ hồ → `due=TBD` + `due_hint` giữ nguyên gốc (R2).
 
 ## 8. Meeting brief (vấn đề + kết quả — tư duy business)
 

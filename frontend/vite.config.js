@@ -1,3 +1,4 @@
+import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 
@@ -5,7 +6,7 @@ import { defineConfig } from 'vite'
 // Proxy `/api` + `/health` sang FastAPI ở :8000 (api-contract.md §1).
 // Cho phép dev gọi `fetch('/api/v1/review?...')` không cần CORS biết.
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), tailwindcss()],
   server: {
     port: 5173,
     proxy: {

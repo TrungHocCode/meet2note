@@ -5,11 +5,11 @@
   "results": [
     {
       "case": "tc1",
-      "items_total": 8,
+      "items_total": 14,
       "badges": {
         "red": 0,
         "yellow": 2,
-        "green": 6
+        "green": 12
       },
       "no_decision": false,
       "limitations": [
@@ -17,18 +17,16 @@
         "same-id conflict id=D1: chọn bản @00:04:24 (1 winner-majority hoặc latest-decide). Bản thua: ['chunk2@00:11:08/info'] — giữ không xóa (R4 audit).",
         "id collision: T1 ở chunk khác là task khác ('Nghiên cứu giá cả nhà cung cấp (vendor pricing)') → đổi id T1_2",
         "id collision: T1 ở chunk khác là task khác ('Nghiên cứu giá vendor') → đổi id T1_3",
-        "id collision: R1 ở chunk khác là task khác ('Demo cuối tháng cần rehearsal') → đổi id R1_2",
+        "id collision: R1 ở chunk khác là yêu cầu khác ('Demo cuối tháng cần rehearsal') → đổi id R1_2",
         "id collision: T2 ở chunk khác là task khác ('Hà setup môi trường dev') → đổi id T2_2",
-        "id collision: T3 ở chunk khác là task khác ('Minh viết test plan thanh toán') → đổi id T3_2",
-        "id collision: T4 ở chunk khác là task khác ('Hà liên hệ account manager vendor') → đổi id T4_2",
+        "same-id conflict id=T3: chọn bản @00:09:26 (1 winner-majority hoặc latest-decide). Bản thua: ['chunk1@00:07:22/propose'] — giữ không xóa (R4 audit).",
+        "same-id conflict id=T4: chọn bản @00:07:56 (1 winner-majority hoặc latest-decide). Bản thua: ['chunk1@00:09:34/propose'] — giữ không xóa (R4 audit).",
         "same-id conflict id=T5: chọn bản @00:10:18 (1 winner-majority hoặc latest-decide). Bản thua: ['chunk1@00:10:08/propose'] — giữ không xóa (R4 audit).",
         "demote: D0 final→proposal (không có evidence chốt thật — chỉ là ghi chú/tường thuật lại, không phải chốt)",
         "demote: D2 final→proposal (không có evidence chốt thật — chỉ là ghi chú/tường thuật lại, không phải chốt)",
         "merge: task T1_2 trùng T1 (owner+due+overlap ['nghiên', 'vendor']) → gộp, giữ T1",
         "merge: task T1_3 trùng T1 (owner+due+overlap ['nghiên', 'vendor']) → gộp, giữ T1",
         "merge: task T2_2 trùng T2 (owner+due+overlap ['setup', 'trường']) → gộp, giữ T2",
-        "merge: task T3_2 trùng T3 (owner+due+overlap ['plan', 'test', 'thanh', 'toán']) → gộp, giữ T3",
-        "merge: task T4_2 trùng T4 (owner+due+overlap ['account', 'liên', 'manager', 'vendor']) → gộp, giữ T4",
         "item D1 (decision): evidence ts 00:04:24 → 00:04:14 (khớp quote tại turn 29)",
         "item T1 (task): evidence ts 00:05:02 → 00:04:54 (khớp quote tại turn 35)",
         "item T1 (task): evidence ts 00:05:39 → 00:05:26 (khớp quote tại turn 39)",
@@ -38,8 +36,8 @@
         "item O1 (open_issue): role ngoài allowlist → 'info'",
         "item R1 (requirement): evidence ts 00:02:32 → 00:03:52 (khớp quote tại turn 27)",
         "item R1 (requirement): role ngoài allowlist → 'info'",
-        "item R1 (requirement): Pydantic reject — 2 validation errors for tagged-union[Decision,Task,Blocker,Requirement,function-after[_evidence_required_unless_system(), OpenIssue],Knowledge]\nrequirement.raised_by\n  Field required [type=missing, in...",
-        "item R1_2 (requirement): Pydantic reject — 1 validation error for tagged-union[Decision,Task,Blocker,Requirement,function-after[_evidence_required_unless_system(), OpenIssue],Knowledge]\nrequirement.origin\n  Input should be 'customer', 'interna...",
+        "item R1 (requirement): Pydantic reject — 1 validation error for tagged-union[Decision,Task,Blocker,Requirement,function-after[_evidence_required_unless_system(), OpenIssue],Knowledge]\nrequirement.raised_by\n  Field required [type=missing, inp...",
+        "item R1_2 (requirement): origin 'discussion' không hợp lệ → 'unknown'",
         "item T2 (task): evidence ts 00:05:58 → 00:05:48 (khớp quote tại turn 41)",
         "item T2 (task): evidence ts 00:06:10 → 00:06:26 (khớp quote tại turn 45)",
         "item T2 (task): evidence_mismatch (R5)",
@@ -47,14 +45,15 @@
         "item T4 (task): evidence ts 00:07:56 → 00:08:04 (khớp quote tại turn 55)",
         "item T5 (task): evidence ts 00:09:58 → 00:10:08 (khớp quote tại turn 69)",
         "item B0 (blocker): Pydantic reject — 3 validation errors for tagged-union[Decision,Task,Blocker,Requirement,function-after[_evidence_required_unless_system(), OpenIssue],Knowledge]\nblocker.needs_action_from\n  Field required [type=missing...",
-        "item R2 (requirement): Pydantic reject — 1 validation error for tagged-union[Decision,Task,Blocker,Requirement,function-after[_evidence_required_unless_system(), OpenIssue],Knowledge]\nrequirement.origin\n  Input should be 'customer', 'interna...",
+        "item R2 (requirement): origin 'discussion' không hợp lệ → 'unknown'",
         "item D2 (decision): confidence thiếu/ngoài [0,1] — bỏ",
         "item D3 (decision): confidence thiếu/ngoài [0,1] — bỏ",
         "item B1 (blocker): Pydantic reject — 3 validation errors for tagged-union[Decision,Task,Blocker,Requirement,function-after[_evidence_required_unless_system(), OpenIssue],Knowledge]\nblocker.needs_action_from\n  Field required [type=missing...",
-        "item R3 (requirement): Pydantic reject — 1 validation error for tagged-union[Decision,Task,Blocker,Requirement,function-after[_evidence_required_unless_system(), OpenIssue],Knowledge]\nrequirement.origin\n  Input should be 'customer', 'interna...",
-        "item R4 (requirement): Pydantic reject — 1 validation error for tagged-union[Decision,Task,Blocker,Requirement,function-after[_evidence_required_unless_system(), OpenIssue],Knowledge]\nrequirement.origin\n  Input should be 'customer', 'interna...",
-        "item R5 (requirement): Pydantic reject — 1 validation error for tagged-union[Decision,Task,Blocker,Requirement,function-after[_evidence_required_unless_system(), OpenIssue],Knowledge]\nrequirement.origin\n  Input should be 'customer', 'interna...",
-        "item R6 (requirement): Pydantic reject — 1 validation error for tagged-union[Decision,Task,Blocker,Requirement,function-after[_evidence_required_unless_system(), OpenIssue],Knowledge]\nrequirement.origin\n  Input should be 'customer', 'interna..."
+        "item R3 (requirement): origin 'discussion' không hợp lệ → 'unknown'",
+        "item R4 (requirement): origin 'discussion' không hợp lệ → 'unknown'",
+        "item R5 (requirement): origin 'discussion' không hợp lệ → 'unknown'",
+        "item R6 (requirement): origin 'discussion' không hợp lệ → 'unknown'",
+        "item T3: link_to_decision=D2 không tồn tại → null"
       ],
       "checks": {
         "no_decision": {
@@ -95,7 +94,7 @@
         "same-id conflict id=D1: chọn bản @00:52:10 (1 winner-majority hoặc latest-decide). Bản thua: ['chunk1@00:12:58/decide', 'chunk0@00:06:30/decide'] — giữ không xóa (R4 audit).",
         "same-id conflict id=T1: giữ 1 bản, bỏ 1 bản trùng nội dung",
         "id collision: T1 ở chunk khác là task khác ('Ghi nhận tinh thần theo team về phương án A') → đổi id T1_2",
-        "id collision: O1 ở chunk khác là task khác (\"Xác định rõ ràng điều kiện 'sau khi ký hợp đồng' t\") → đổi id O1_2",
+        "id collision: O1 ở chunk khác là vấn đề treo khác (\"Xác định rõ ràng điều kiện 'sau khi ký hợp đồng' t\") → đổi id O1_2",
         "id collision: T2 ở chunk khác là task khác ('Chuẩn bị môi trường demo PoC cho KH') → đổi id T2_2",
         "id collision: T2 ở chunk khác là task khác ('Chuẩn bị sandbox test Y để bàn giao team dev sau k') → đổi id T2_3",
         "id collision: T3 ở chunk khác là task khác ('Chuẩn bị sandbox test Y để bàn giao team dev sau k') → đổi id T3_2",
@@ -133,19 +132,19 @@
     },
     {
       "case": "tc3",
-      "items_total": 5,
+      "items_total": 7,
       "badges": {
         "red": 0,
         "yellow": 1,
-        "green": 4
+        "green": 6
       },
       "no_decision": true,
       "limitations": [
-        "id collision: R0 ở chunk khác là task khác ('Xem xét việc kết hợp Stripe quốc tế và VNPay nội đ') → đổi id R0_2",
-        "id collision: O1 ở chunk khác là task khác ('Trả lời khách hàng khi được hỏi về tình trạng tích') → đổi id O1_2",
-        "item R0 (requirement): Pydantic reject — 1 validation error for tagged-union[Decision,Task,Blocker,Requirement,function-after[_evidence_required_unless_system(), OpenIssue],Knowledge]\nrequirement.origin\n  Input should be 'customer', 'interna...",
+        "id collision: R0 ở chunk khác là yêu cầu khác ('Xem xét việc kết hợp Stripe quốc tế và VNPay nội đ') → đổi id R0_2",
+        "id collision: O1 ở chunk khác là vấn đề treo khác ('Trả lời khách hàng khi được hỏi về tình trạng tích') → đổi id O1_2",
+        "item R0 (requirement): origin 'discussion' không hợp lệ → 'unknown'",
+        "item R0_2 (requirement): origin 'discussion' không hợp lệ → 'unknown'",
         "item R0_2 (requirement): evidence ts 00:07:36 → 00:06:58 (khớp quote tại turn 34)",
-        "item R0_2 (requirement): Pydantic reject — 1 validation error for tagged-union[Decision,Task,Blocker,Requirement,function-after[_evidence_required_unless_system(), OpenIssue],Knowledge]\nrequirement.origin\n  Input should be 'customer', 'interna...",
         "item T1 (task): evidence ts 00:02:18 → 00:02:04 (khớp quote tại turn 11)",
         "item T1 (task): evidence ts 00:02:28 → 00:02:18 (khớp quote tại turn 12)"
       ],
@@ -164,10 +163,10 @@
     },
     {
       "case": "tc4",
-      "items_total": 14,
+      "items_total": 15,
       "badges": {
         "red": 0,
-        "yellow": 0,
+        "yellow": 1,
         "green": 14
       },
       "no_decision": false,
@@ -181,7 +180,7 @@
         "id collision: T4 ở chunk khác là task khác ('Thực hiện test edge cases cho flow refund') → đổi id T4_2",
         "id collision: T4 ở chunk khác là task khác ('Test edge cases cho thanh toán') → đổi id T4_3",
         "id collision: T5 ở chunk khác là task khác ('Phụ trách cập nhật documentation') → đổi id T5_2",
-        "id collision: R0 ở chunk khác là task khác ('KH confirm flow refund standard 1 cần ghi vào docs') → đổi id R0_2",
+        "id collision: R0 ở chunk khác là yêu cầu khác ('KH confirm flow refund standard 1 cần ghi vào docs') → đổi id R0_2",
         "same-id conflict id=O1: chọn bản @00:14:52 (1 winner-majority hoặc latest-decide). Bản thua: ['chunk2@00:14:38/decide'] — giữ không xóa (R4 audit).",
         "due 2026-10-12 trước meeting.date 2026-10-15 → TBD (item T1_2)",
         "due model 2026-10-22 != deterministic 2026-10-16 từ hint 'thứ 6 tuần này' → dùng 2026-10-16 (item T1_3)",
@@ -194,17 +193,18 @@
         "merge: task T4_3 trùng T4_2 (owner+due+overlap ['cases', 'edge', 'test']) → gộp, giữ T4_2",
         "item T1_2 (task): evidence ts 00:07:22 → 00:07:08 (khớp quote tại turn 35)",
         "item T1_3 (task): evidence ts 00:16:30 → 00:16:02 (khớp quote tại turn 73)",
-        "item R0 (requirement): Pydantic reject — 2 validation errors for tagged-union[Decision,Task,Blocker,Requirement,function-after[_evidence_required_unless_system(), OpenIssue],Knowledge]\nrequirement.raised_by\n  Field required [type=missing, in...",
+        "item R0 (requirement): Pydantic reject — 1 validation error for tagged-union[Decision,Task,Blocker,Requirement,function-after[_evidence_required_unless_system(), OpenIssue],Knowledge]\nrequirement.raised_by\n  Field required [type=missing, inp...",
+        "item R0_2 (requirement): origin 'discussion' không hợp lệ → 'unknown'",
         "item R0_2 (requirement): evidence_mismatch (R5)",
-        "item R0_2 (requirement): Pydantic reject — 1 validation error for tagged-union[Decision,Task,Blocker,Requirement,function-after[_evidence_required_unless_system(), OpenIssue],Knowledge]\nrequirement.origin\n  Input should be 'customer', 'interna...",
-        "item R1 (requirement): Pydantic reject — 2 validation errors for tagged-union[Decision,Task,Blocker,Requirement,function-after[_evidence_required_unless_system(), OpenIssue],Knowledge]\nrequirement.raised_by\n  Field required [type=missing, in...",
-        "item R2 (requirement): Pydantic reject — 2 validation errors for tagged-union[Decision,Task,Blocker,Requirement,function-after[_evidence_required_unless_system(), OpenIssue],Knowledge]\nrequirement.raised_by\n  Field required [type=missing, in...",
-        "item R3 (requirement): Pydantic reject — 2 validation errors for tagged-union[Decision,Task,Blocker,Requirement,function-after[_evidence_required_unless_system(), OpenIssue],Knowledge]\nrequirement.raised_by\n  Field required [type=missing, in...",
+        "item R1 (requirement): Pydantic reject — 1 validation error for tagged-union[Decision,Task,Blocker,Requirement,function-after[_evidence_required_unless_system(), OpenIssue],Knowledge]\nrequirement.raised_by\n  Field required [type=missing, inp...",
+        "item R2 (requirement): Pydantic reject — 1 validation error for tagged-union[Decision,Task,Blocker,Requirement,function-after[_evidence_required_unless_system(), OpenIssue],Knowledge]\nrequirement.raised_by\n  Field required [type=missing, inp...",
+        "item R3 (requirement): Pydantic reject — 1 validation error for tagged-union[Decision,Task,Blocker,Requirement,function-after[_evidence_required_unless_system(), OpenIssue],Knowledge]\nrequirement.raised_by\n  Field required [type=missing, inp...",
         "item T7 (task): evidence ts 00:11:50 → 00:12:18 (khớp quote tại turn 57)",
         "item T8 (task): evidence ts 00:12:04 → 00:12:32 (khớp quote tại turn 58)",
+        "item O1 (open_issue): thiếu next_step → placeholder cho host (R3)",
         "item O1 (open_issue): evidence ts 00:14:38 → 00:13:56 (khớp quote tại turn 64)",
         "item O1 (open_issue): evidence ts 00:14:52 → 00:14:10 (khớp quote tại turn 65)",
-        "item O1 (open_issue): Pydantic reject — 6 validation errors for tagged-union[Decision,Task,Blocker,Requirement,function-after[_evidence_required_unless_system(), OpenIssue],Knowledge]\nopen_issue.next_step\n  Field required [type=missing, inp...",
+        "item O1 (open_issue): Pydantic reject — 5 validation errors for tagged-union[Decision,Task,Blocker,Requirement,function-after[_evidence_required_unless_system(), OpenIssue],Knowledge]\nopen_issue.owner\n  Extra inputs are not permitted [type=...",
         "item T1_2: link_to_decision=D1 không tồn tại → null",
         "item T3_2: link_to_decision=D1 không tồn tại → null",
         "item T4_2: link_to_decision=D1 không tồn tại → null",
@@ -246,18 +246,19 @@
       "case": "tc5",
       "items_total": 13,
       "badges": {
-        "red": 4,
-        "yellow": 1,
+        "red": 3,
+        "yellow": 2,
         "green": 8
       },
       "no_decision": false,
       "limitations": [
         "same-id conflict id=D0: chọn bản @00:13:40 (1 winner-majority hoặc latest-decide). Bản thua: ['chunk0@00:08:12/propose', 'chunk0@00:05:20/propose'] — giữ không xóa (R4 audit).",
         "same-id conflict id=D1: chọn bản @00:16:14 (1 winner-majority hoặc latest-decide). Bản thua: ['chunk1@00:13:54/decide', 'chunk0@00:04:32/propose'] — giữ không xóa (R4 audit).",
-        "id collision: O1 ở chunk khác là task khác ('Tính khả thi của việc chuyển từ Spring Boot sang F') → đổi id O1_2",
-        "id collision: O1 ở chunk khác là task khác ('Xem xét việc giảm giá 20% cho Spring Boot 20%') → đổi id O1_3",
-        "id collision: O2 ở chunk khác là task khác ('Họp lại thứ 3 tuần sau để đánh giá lại quyết định') → đổi id O2_2",
-        "unresolved_reversal: ['D1', 'D2'] — flagged + Open Issue O_REV_1 (host xử lý, R4).",
+        "id collision: O1 ở chunk khác là vấn đề treo khác ('Tính khả thi của việc chuyển từ Spring Boot sang F') → đổi id O1_2",
+        "id collision: O1 ở chunk khác là vấn đề treo khác ('Xem xét việc giảm giá 20% cho Spring Boot 20%') → đổi id O1_3",
+        "id collision: O2 ở chunk khác là vấn đề treo khác ('Họp lại thứ 3 tuần sau để đánh giá lại quyết định') → đổi id O2_2",
+        "merge: finals cùng nội dung ['D2'] → D1 (decide muộn nhất 00:16:14 thắng)",
+        "unresolved_reversal: ['D1'] — flagged + Open Issue O_REV_1 (host xử lý, R4).",
         "due model 2026-10-14 != deterministic 2026-10-19 từ hint 'thứ 2 tuần sau' → dùng 2026-10-19 (item T2)",
         "item O1 (open_issue): evidence ts 00:07:16 → 00:07:02 (khớp quote tại turn 33)",
         "item O1 (open_issue): evidence ts 00:07:34 → 00:07:16 (khớp quote tại turn 34)",
@@ -270,21 +271,24 @@
         "item O3 (open_issue): evidence ts 00:05:36 → 00:07:44 (khớp quote tại turn 36)",
         "item O0 (open_issue): evidence_mismatch (R5)",
         "item T0 (task): evidence ts 00:19:30 → 00:19:16 (khớp quote tại turn 85)",
-        "item O_REV_1 (open_issue): thiếu evidence — bỏ",
-        "R4: 2 Decision final cùng tồn tại — mâu thuẫn tiềm ẩn, mỗi final -0.20"
+        "item T1: link_to_decision=D2 không tồn tại → null"
       ],
       "checks": {
         "no_decision": {
           "pass": true,
           "detail": "expected=False actual=False"
         },
+        "open_issues_min": {
+          "pass": true,
+          "detail": "found=8"
+        },
         "unresolved_reversal": {
           "pass": true,
-          "detail": "flagged=2 finals (expect≥2, tc5 DỰ KIẾN không chốt được)"
+          "detail": "flagged=1 finals, O_REV=có (tc5 DỰ KIẾN không chốt được)"
         },
         "red_count": {
           "pass": true,
-          "detail": "red=4 (expect≥3)"
+          "detail": "red=3 (expect≥2)"
         }
       },
       "pass": true,

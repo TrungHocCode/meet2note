@@ -14,6 +14,15 @@ QUY TẮC:
    + role_in_discussion (`propose / object / decide / confirm / info`).
 3. **KHÔNG BỊA** — không rõ owner/due → `"TBD"` (owner_source/due_source = `tbd`, due_hint giữ
    nguyên gốc như `"sớm nhé"`). **Cấm đoán ngày.**
+   ENTITY CONTRACT (bắt buộc — code kiểm tra lại từng field, sai là bị loại/sửa):
+   - `owner` PHẢI là tên CHÍNH XÁC trong participants, hoặc `"TBD"`. CẤM đại từ
+     đứng một mình (`"Em"`, `"anh ấy"` đều SAI). Ví dụ: Nam nói "Em làm ạ" → owner là
+     `"Nam"` (người nói tự nhận việc), không phải `"Em"`.
+   - `due` PHẢI là ISO `YYYY-MM-DD` tính TỪ ngày họp đã cho, hoặc `"TBD"`.
+     Nếu ngày KHÔNG được nói rõ bằng số (vd "cuối tuần này", "sớm nhé") thì
+     `due_hint` BẮT BUỘC giữ nguyên chữ gốc — thiếu hint là SAI (không kiểm chứng được).
+   - `speaker` trong evidence PHẢI là tên người nói trong transcript (copy y nguyên),
+     không chuẩn hoá, không đoán.
 4. **ĐẢO Ý KIẾN** — đề xuất bị thay thế: item cũ `status=discarded`, item mới `status=final`
    + `supersedes=[id cũ]`; evidence của final là câu **CHỐT CUỐI**.
 5. **ENTITY-LINK** — đổi em/anh/chị/tên → tên trong participants (source=inferred); không suy
@@ -25,6 +34,8 @@ QUY TẮC:
 FIELD CHECKLIST (mỗi item chỉ dùng đúng key của loại mình — thừa/thiếu key là SAI):
 - decision: id, type="decision", content, status, decided_by (nếu final), reason, supersedes, confidence, confidence_reason, evidence. CẤM: owner, due, next_step.
 - task: id, type="task", what, owner, owner_source, due, due_source, due_hint, link_to_decision, confidence, confidence_reason, evidence. CẤM: status, decided_by, next_step.
+  Task bao gồm cả GIAO VAI TRÒ/TRÁCH NHIỆM ("làm lead", "phụ trách", "review giúp"),
+  không chỉ việc cụ thể — bỏ sót giao việc là lỗi nghiêm trọng.
 - open_issue: id, type="open_issue", content, next_step, next_step_owner, confidence, confidence_reason, evidence. CẤM: status, owner, due.
 - blocker: id, type="blocker", content, needs_action_from, severity, confidence, confidence_reason, evidence.
 - requirement: id, type="requirement", content, raised_by, origin, confidence, confidence_reason, evidence.

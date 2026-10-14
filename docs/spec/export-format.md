@@ -1,4 +1,4 @@
-# Spec - Export formats + review log + UI tối thiểu (P3)
+# Spec - Export formats + review log (P3)
 
 Nguồn: PLAN_MVP §5. **EXPORT chỉ chạy sau confirm** (R6 — API từ chối 403 nếu còn thẻ đỏ).
 
@@ -62,10 +62,11 @@ Quy tắc:
 
 ## 4. UI tối thiểu (React 1 trang)
 
-- **Sidebar:** chọn meeting, filter theo confidence, nút Export (khoá/mở theo gate R6), đếm thẻ đỏ.
-- **Main 4 cột:** Quyết định | Công việc | Vướng mắc & Chưa chốt | Yêu cầu & Phản hồi.
-- **Thẻ:** content + badge màu confidence + evidence expandable (quote + timestamp + speaker)
-  + 3 nút **Đồng ý / Sửa / Loại**.
-- **Sửa inline:** content, owner, due, link_to_decision.
-- **Discarded:** hiển thị thu gọn dưới final (`Lịch sử: thay thế D0`), không hiện ngang hàng.
-- Gọi API: `GET/PUT /api/v1/review`, `POST /api/v1/export` (chi tiết: `spec/api-contract.md`).
+> **Đã chuyển sang tài liệu chuyên biệt** — mục này chỉ giữ 1 dòng để tránh 2 nguồn sự thật:
+> - Công nghệ + token: `docs/adr/0008-tailwind-shadcn-va-design-tokens.md`, `docs/design/tokens.md`
+> - Bố cục / component / trạng thái: `docs/design/layout.md`, `docs/design/components.md`
+> - Hành vi (schema↔UI, R1–R8, bàn phím) + acceptance: `docs/spec/ui-spec.md`
+>
+> Tóm gọn bất biến: sidebar (meeting · review · upload) + **4 cột** Quyết định / Công việc /
+> Vướng mắc & Chưa chốt / Yêu cầu & Phản hồi + drawer transcript ±4 lượt + gate R6 khoá Export.
+> Gọi API: `GET/PUT /api/v1/review`, `POST /api/v1/export` (`spec/api-contract.md`).
