@@ -18,6 +18,13 @@ from .resolve import resolve
 from .schema import Meeting, Participant
 from .verify import verify_state
 
+try:
+    from dotenv import load_dotenv
+
+    load_dotenv()  # nạp .env cho MỌI đường gọi (CLI lẫn API/upload) — file gitignored
+except ImportError:
+    pass  # không có python-dotenv thì đọc env hệ thống thuần
+
 
 def run_pipeline(
     *,

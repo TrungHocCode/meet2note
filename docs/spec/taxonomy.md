@@ -19,8 +19,8 @@ Nguồn: `PLAN_MVP.md` §3. File này là hợp đồng chi tiết để hiện 
 | Decision | `content, status final\|discarded\|proposal, decided_by, reason, supersedes[]`, `objections[]` optional | Final duy nhất mỗi vấn đề; cũ → `discarded`, giữ vết `supersedes`; phản đối lưu `objections`, không xóa |
 | Task | `what, owner\|TBD, owner_source, due ISO\|TBD, due_source, due_hint, link_to_decision` | Thiếu ⇒ TBD; `due_hint` giữ chữ gốc (`sớm nhé`); source `explicit\|inferred\|tbd` |
 | Blocker/Risk | `content, needs_action_from\|TBD, severity high\|medium\|low` | Việc bị chặn, cần ai gỡ |
-| Requirement/Feedback | `content, raised_by, origin customer\|internal\|partner` | Yêu cầu hoặc phản hồi, kể cả từ bên ngoài |
-| Open Issue | `content, next_step (bắt buộc), next_step_owner\|TBD` | Chưa chốt; họp không chốt gì ⇒ `no_decision=true` + ≥1 Open Issue |
+| Requirement/Feedback | `content, raised_by, origin customer\|internal\|partner\|unknown` | Yêu cầu hoặc phản hồi, kể cả từ bên ngoài; origin không xác định được → `unknown` (giữ item) |
+| Open Issue | `content, next_step (bắt buộc — thiếu thì placeholder "Host xác định bước tiếp theo" + limitation), next_step_owner\|TBD` | Chưa chốt; họp không chốt gì ⇒ `no_decision=true` + ≥1 Open Issue |
 | Evidence/Knowledge | `content, context, tags[]` | Tri thức/quy ước rút ra, không phải việc phải làm |
 
 Mọi item có `confidence 0–1` + `confidence_reason`. Ngưỡng: đỏ <0.50 (khóa export) · vàng 0.50–0.75 · xanh ≥0.75.

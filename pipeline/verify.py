@@ -394,11 +394,33 @@ def verify_state(
             if naf and naf != TBD_SENTINEL:
                 canonical, _ = canonicalize_owner(naf, participants)
                 item_dict["needs_action_from"] = canonical
+        elif item_type == "requirement":
+            # Origin ngoài allowlist (model hay viết câu dài) → "unknown" +
+            # limitation, GIỮ item (origin là metadata phụ như role — mất cả
+            # item vì 1 field phụ là sai lầm đã trả giá ở brainstorm).
+            origin = str(item_dict.get("origin") or "").strip().lower()
+            if origin not in ("customer", "internal", "partner"):
+                if origin and origin != "unknown":
+                    limitations.append(
+                        f"item {item_id} (requirement): origin {origin[:40]!r} "
+                        f"không hợp lệ → 'unknown'"
+                    )
+                item_dict["origin"] = "unknown"
         elif item_type == "open_issue":
             nso = item_dict.get("next_step_owner")
             if nso and nso != TBD_SENTINEL:
                 canonical, _ = canonicalize_owner(nso, participants)
                 item_dict["next_step_owner"] = canonical
+            # next_step là bắt buộc (R3) nhưng model họp mơ hồ hay bỏ trống →
+            # điền placeholder thủ tục + limitation, GIỮ item (bỏ cả item vì
+            # thiếu 1 field thủ tục thì mất luôn record "chưa chốt" — sai lầm
+            # đã trả giá ở brainstorm). Placeholder trung thực: ghi rõ host làm.
+            if not str(item_dict.get("next_step") or "").strip():
+                item_dict["next_step"] = "Host xác định bước tiếp theo"
+                limitations.append(
+                    f"item {item_id} (open_issue): thiếu next_step → "
+                    f"placeholder cho host (R3)"
+                )
 
         # ─── 1b. Confidence gate (quyết định #7 — dời từ extract sang đây khi
         # extract nới lỏng shape): thiếu hoặc ngoài [0,1] → bỏ ITEM (không giết

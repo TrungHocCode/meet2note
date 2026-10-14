@@ -45,7 +45,7 @@ SourceType = Literal["explicit", "inferred", "tbd"]
 RoleInDiscussion = Literal["propose", "object", "decide", "confirm", "info"]
 DecisionStatus = Literal["final", "discarded", "proposal"]
 Severity = Literal["high", "medium", "low"]
-Origin = Literal["customer", "internal", "partner"]
+Origin = Literal["customer", "internal", "partner", "unknown"]
 ItemType = Literal[
     "decision", "task", "blocker", "requirement", "open_issue", "knowledge"
 ]

@@ -433,21 +433,115 @@ def test_extract_empty_turns_returns_empty(tmp_path: Path, tc1_meta) -> None:
 
 
 def test_call_llm_raises_without_env(monkeypatch) -> None:
-    """Không có OPENAI_BASE_URL hoặc MODEL_NAME → raise RuntimeError rõ ràng."""
-    monkeypatch.delenv("OPENAI_BASE_URL", raising=False)
-    monkeypatch.delenv("MODEL_NAME", raising=False)
-    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
-    monkeypatch.delenv("API_KEY", raising=False)
+    """Không có base_url/model (cả tên mới lẫn fallback cũ) → raise rõ ràng."""
+    for v in ("LLM_BASE_URL", "LLM_MODEL", "LLM_API_KEY",
+              "OPENAI_BASE_URL", "MODEL_NAME", "OPENAI_API_KEY", "API_KEY"):
+        monkeypatch.delenv(v, raising=False)
     with pytest.raises(RuntimeError, match="LLM chưa cấu hình"):
         call_llm([{"role": "user", "content": "hi"}])
 
 
 def test_call_llm_raises_when_only_base_url(monkeypatch) -> None:
     """Có base_url nhưng thiếu model → vẫn raise."""
+    for v in ("LLM_MODEL", "MODEL_NAME"):
+        monkeypatch.delenv(v, raising=False)
     monkeypatch.setenv("OPENAI_BASE_URL", "https://api.example.com/v1")
-    monkeypatch.delenv("MODEL_NAME", raising=False)
     with pytest.raises(RuntimeError, match="LLM chưa cấu hình"):
         call_llm([{"role": "user", "content": "hi"}])
+
+
+def test_call_llm_llm_names_take_precedence(monkeypatch) -> None:
+    """Tên mới LLM_* thắng fallback OPENAI_* (Ollama-first)."""
+    import httpx as _httpx
+
+    captured = {}
+
+    class FakeClient:
+        def __init__(self, *a, **k): pass
+        def __enter__(self): return self
+        def __exit__(self, *a): return False
+        def post(self, url, **kwargs):
+            captured["url"] = url
+            captured["payload"] = kwargs.get("json", {})
+            return _httpx.Response(200, json={
+                "choices": [{"message": {"content": "{}"}}]
+            })
+
+    monkeypatch.setenv("LLM_BASE_URL", "http://localhost:11434/v1")
+    monkeypatch.setenv("LLM_MODEL", "qwen3-test")
+    monkeypatch.setenv("OPENAI_BASE_URL", "https://api.example.com/v1")
+    monkeypatch.setenv("MODEL_NAME", "other-model")
+    monkeypatch.delenv("LLM_STRUCTURED", raising=False)
+    monkeypatch.delenv("LLM_JSON_MODE", raising=False)
+    monkeypatch.setattr(_httpx, "Client", FakeClient)
+
+    call_llm([{"role": "user", "content": "x"}])
+    assert captured["url"] == "http://localhost:11434/v1/chat/completions"
+    assert captured["payload"]["model"] == "qwen3-test"
+    assert "response_format" not in captured["payload"]
+
+
+def test_call_llm_structured_sends_json_schema(monkeypatch) -> None:
+    """LLM_STRUCTURED=1 → response_format json_schema sinh từ Pydantic Literals."""
+    import httpx as _httpx
+
+    captured = {}
+
+    class FakeClient:
+        def __init__(self, *a, **k): pass
+        def __enter__(self): return self
+        def __exit__(self, *a): return False
+        def post(self, url, **kwargs):
+            captured["payload"] = kwargs.get("json", {})
+            return _httpx.Response(200, json={
+                "choices": [{"message": {"content": "{}"}}]
+            })
+
+    monkeypatch.setenv("LLM_BASE_URL", "http://localhost:11434/v1")
+    monkeypatch.setenv("LLM_MODEL", "qwen3-test")
+    monkeypatch.setenv("LLM_STRUCTURED", "1")
+    monkeypatch.delenv("LLM_JSON_MODE", raising=False)
+    monkeypatch.setattr(_httpx, "Client", FakeClient)
+
+    call_llm([{"role": "user", "content": "x"}])
+    rf = captured["payload"].get("response_format", {})
+    assert rf.get("type") == "json_schema"
+    schema = rf.get("json_schema", {}).get("schema", {})
+    dumped = json.dumps(schema)
+    # Enum tập lựa chọn phải có mặt trong schema gửi đi
+    for choice in ("decision", "task", "final", "discarded", "decide", "propose"):
+        assert f'"{choice}"' in dumped
+    assert "items" in dumped
+
+
+def test_call_llm_structured_fallback_on_400(monkeypatch) -> None:
+    """Provider 400 với json_schema → tự gửi lại plain 1 lần (tương thích rộng)."""
+    import httpx as _httpx
+
+    calls = []
+
+    class FakeClient:
+        def __init__(self, *a, **k): pass
+        def __enter__(self): return self
+        def __exit__(self, *a): return False
+        def post(self, url, **kwargs):
+            calls.append(dict(kwargs.get("json", {})))
+            if len(calls) == 1:
+                return _httpx.Response(400, json={"error": "response_format unsupported"})
+            return _httpx.Response(200, json={
+                "choices": [{"message": {"content": "{}"}}]
+            })
+
+    monkeypatch.setenv("LLM_BASE_URL", "http://localhost:11434/v1")
+    monkeypatch.setenv("LLM_MODEL", "qwen3-test")
+    monkeypatch.setenv("LLM_STRUCTURED", "1")
+    monkeypatch.setattr(_httpx, "Client", FakeClient)
+
+    out = call_llm([{"role": "user", "content": "x"}])
+    assert out == "{}"
+    assert len(calls) == 2
+    assert "response_format" in calls[0]
+    assert "response_format" not in calls[1]
 
 
 def test_call_llm_url_construction_no_chat_completions(monkeypatch) -> None:

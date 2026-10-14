@@ -63,7 +63,9 @@ Chi tiết đầy đủ: `docs/spec/taxonomy.md`. Tóm tắt:
 - LLM: temp ~0, JSON mode, retry ≤2 lần khi validate fail, chunk ~80 lượt overlap 10.
 - Entity-linking: đổi `em/anh/chị/tên` → tên trong `participants`; ngày tương đối → ISO từ `meeting.date`
   (tính deterministic bằng Python); không suy ra được → TBD. Tên ngoài participants là sai.
-- LLM qua env `OPENAI_BASE_URL` + `MODEL_NAME` — không khoá vendor.
+- LLM qua env `LLM_BASE_URL` + `LLM_MODEL` (Ollama-first; fallback tên cũ `OPENAI_*`) — không khoá vendor.
+- Ép shape ở request: `LLM_JSON_MODE=1` (json_object) hoặc `LLM_STRUCTURED=1` (json_schema
+  từ Pydantic Literals — constrained decoding, provider không hỗ trợ thì tự fallback plain).
 - Trung thực: không bịa, không che giấu hạn chế (`known_limitations`).
 
 ## 6. Eval

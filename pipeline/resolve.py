@@ -247,6 +247,20 @@ def _item_text(raw: dict[str, Any]) -> str:
     return str(raw.get("content") or "")
 
 
+_TYPE_WORD = {
+    "decision": "quyết định",
+    "task": "task",
+    "blocker": "vướng mắc",
+    "requirement": "yêu cầu",
+    "open_issue": "vấn đề treo",
+    "knowledge": "tri thức",
+}
+
+
+def _kind_word(raw: dict[str, Any]) -> str:
+    return _TYPE_WORD.get(str(raw.get("type") or ""), "item")
+
+
 def _sig_tokens(text: str) -> set[str]:
     """Tokens significant (len≥4) để đo overlap — dùng chung cho merge/split."""
     return {t for t in _norm_text(text or "").split() if len(t) >= 4}
@@ -313,7 +327,8 @@ def _resolve_same_id_conflict(
                         used_ids.add(new_id)
                         for raw in cl:
                             limitations.append(
-                                f"id collision: {iid} ở chunk khác là task khác "
+                                f"id collision: {iid} ở chunk khác là "
+                                f"{_kind_word(raw)} khác "
                                 f"({str(_item_text(raw))[:50]!r}) → đổi id {new_id}"
                             )
                             raw["id"] = new_id
