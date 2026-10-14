@@ -257,16 +257,24 @@ def compare(tc_id: str, state, golden: dict[str, Any]) -> dict[str, Any]:
             continue
         _check_task(max(loose, key=_tscore))
 
-    # open_issues_min
-    if golden.get("open_issues_min"):
+    # open_issues_min (chấp nhận cả 2 tên key do golden viết không nhất quán)
+    oi_min = golden.get("open_issues_min", golden.get("expected_open_issues_min"))
+    if oi_min:
         n = sum(1 for i in items if getattr(i, "type", "") == "open_issue")
-        put("open_issues_min", n >= golden["open_issues_min"], f"found={n}")
+        put("open_issues_min", n >= oi_min, f"found={n}")
 
-    # unresolved_reversal_expected (tc5 — pass = flag trung thực, không phải "đúng đáp án")
+    # unresolved_reversal_expected (tc5 — pass = flag trung thực, không phải "đúng đáp án").
+    # Hành vi cốt lõi: CÓ flag + CÓ Open Issue O_REV cho host + export bị khóa (còn đỏ).
+    # (Kể từ merge-ratio: 2 cách nói cùng 1 chốt được gộp trước nên số final bị flag
+    # có thể ít đi — quan trọng là flag tồn tại, không phải đếm.)
     if golden.get("unresolved_reversal_expected"):
         flagged = [i for i in finals if getattr(i, "unresolved_reversal", False)]
-        put("unresolved_reversal", len(flagged) >= 2,
-            f"flagged={len(flagged)} finals (expect≥2, tc5 DỰ KIẾN không chốt được)")
+        has_orev = any(getattr(i, "type", "") == "open_issue" and "REV" in (i.id or "")
+                       for i in items)
+        ok = len(flagged) >= 1 and has_orev
+        put("unresolved_reversal", ok,
+            f"flagged={len(flagged)} finals, O_REV={'có' if has_orev else 'THIẾU'} "
+            f"(tc5 DỰ KIẾN không chốt được)")
 
     # expected_red_min (số thẻ đỏ TỐI THIỂU — model có thể flag thêm, không phạt thừa)
     red_min = golden.get("expected_red_min", golden.get("expected_red_count"))
