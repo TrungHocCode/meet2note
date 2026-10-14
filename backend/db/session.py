@@ -16,6 +16,15 @@ from sqlalchemy.orm import Session, sessionmaker
 
 load_dotenv()
 
+
+def default_url() -> str:
+    """Đọc env MỖI lần gọi (để test monkeypatch DATABASE_URL có tác dụng)."""
+    return os.environ.get(
+        "DATABASE_URL", "postgresql+psycopg://meet2note:meet2note@localhost:5434/meet2note"
+    )
+
+
+# Giữ tên cũ cho code đã dùng (giá trị tại import — KHÔNG dùng cho logic mới).
 DEFAULT_URL = os.environ.get(
     "DATABASE_URL", "postgresql+psycopg://meet2note:meet2note@localhost:5434/meet2note"
 )
@@ -23,7 +32,7 @@ DEFAULT_URL = os.environ.get(
 
 def make_engine(db_url: str | None = None):
     """Tạo engine. SQLite memory cần StaticPool để giữ 1 connection."""
-    url = db_url or DEFAULT_URL
+    url = db_url or default_url()
     if url.startswith("sqlite"):
         from sqlalchemy import event
         from sqlalchemy.pool import StaticPool

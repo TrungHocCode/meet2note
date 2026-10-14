@@ -26,10 +26,14 @@ import {
   X,
 } from 'lucide-react'
 import {
+  getMe,
   getReview,
+  login,
+  logout,
   putReview,
   postExport,
   getTranscript,
+  register,
   uploadMeeting,
 } from './api.js'
 import { Alert, AlertDescription, AlertTitle } from './components/ui/alert.jsx'
@@ -566,6 +570,93 @@ function TranscriptSheet({ view, drawerError, onClose }) {
 
 // ─── App ─────────────────────────────────────────────────────────────────────
 
+// ─── Login (P6b) ───────────────────────────────────────────────────────────
+
+function LoginScreen({ onDone }) {
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [mode, setMode] = useState('login') // login | register
+  const [error, setError] = useState(null)
+  const [busy, setBusy] = useState(false)
+
+  async function submit(e) {
+    e.preventDefault()
+    setBusy(true)
+    setError(null)
+    try {
+      const user =
+        mode === 'login'
+          ? await login(email.trim(), password)
+          : await register(email.trim(), password)
+      onDone(user)
+    } catch (err) {
+      setError(
+        err.status === 401
+          ? 'Email hoặc mật khẩu sai.'
+          : err.status === 409
+            ? 'Email đã tồn tại — chuyển sang Đăng nhập.'
+            : `Lỗi ${err.status ?? '?'}: ${JSON.stringify(err.body)}`,
+      )
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-background p-4">
+      <Card className="w-full max-w-sm p-6">
+        <h1 className="font-heading text-xl font-bold">meet2note</h1>
+        <p className="mt-1 text-xs text-muted-foreground">
+          {mode === 'login' ? 'Đăng nhập để xem meeting của bạn.' : 'Tạo tài khoản mới (mật khẩu ≥ 8 ký tự).'}
+        </p>
+        <form onSubmit={submit} className="mt-4 flex flex-col gap-3">
+          <div>
+            <Label htmlFor="login-email">Email</Label>
+            <Input
+              id="login-email"
+              type="email"
+              autoComplete="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </div>
+          <div>
+            <Label htmlFor="login-password">Mật khẩu</Label>
+            <Input
+              id="login-password"
+              type="password"
+              autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              minLength={8}
+            />
+          </div>
+          {error && (
+            <Alert variant="destructive">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+          <Button type="submit" disabled={busy}>
+            {busy ? 'Đang xử lý…' : mode === 'login' ? 'Đăng nhập' : 'Đăng ký'}
+          </Button>
+          <button
+            type="button"
+            className="text-xs text-primary underline-offset-2 hover:underline"
+            onClick={() => {
+              setMode(mode === 'login' ? 'register' : 'login')
+              setError(null)
+            }}
+          >
+            {mode === 'login' ? 'Chưa có tài khoản? Đăng ký' : 'Đã có tài khoản? Đăng nhập'}
+          </button>
+        </form>
+      </Card>
+    </div>
+  )
+}
+
 export default function App() {
   const [meetingId, setMeetingId] = useState('tc2')
   const [meetingInput, setMeetingInput] = useState('tc2')
@@ -592,6 +683,9 @@ export default function App() {
   const [upParts, setUpParts] = useState('Lan (PM)\nNam (BA)\nHà (Dev)')
   const [upMsg, setUpMsg] = useState(null)
   const [upBusy, setUpBusy] = useState(false)
+  // Auth (P6b): user null → hiện LoginScreen, không load meeting.
+  const [user, setUser] = useState(null)
+  const [authChecked, setAuthChecked] = useState(false)
   // Keyboard focus.
   const [focusedId, setFocusedId] = useState(null)
   const [hoveredId, setHoveredId] = useState(null)
@@ -633,6 +727,11 @@ export default function App() {
       setState(data)
       setMeetingId(target)
     } catch (e) {
+      if (e.status === 401) {
+        setUser(null) // token hết hạn → về màn hình login
+        setState(null)
+        return
+      }
       setLoadError(
         e.status === 404
           ? `Chưa chạy cli run cho meeting này (404). Chạy: python -m pipeline.cli run --meeting ${target}`
@@ -645,9 +744,28 @@ export default function App() {
   }
 
   useEffect(() => {
-    load('tc2')
+    let cancelled = false
+    getMe()
+      .then((u) => {
+        if (!cancelled) setUser(u)
+      })
+      .catch(() => {
+        if (!cancelled) setUser(null)
+      })
+      .finally(() => {
+        if (!cancelled) setAuthChecked(true)
+      })
+    return () => {
+      cancelled = true
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // Load meeting mặc định SAU khi biết đã login (tránh 401 lúc mở trang).
+  useEffect(() => {
+    if (authChecked && user) load('tc2')
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authChecked, user])
 
   async function sendPut(itemsToSend, changes) {
     setBusy(true)
@@ -1014,6 +1132,28 @@ export default function App() {
     }
   }
 
+  if (!authChecked) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background p-4">
+        <div className="flex w-full max-w-sm flex-col gap-2" aria-label="đang tải">
+          <Skeleton className="h-6 w-2/3" />
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-1/2" />
+        </div>
+      </div>
+    )
+  }
+
+  if (!user) {
+    return <LoginScreen onDone={(u) => setUser(u)} />
+  }
+
+  async function doLogout() {
+    await logout()
+    setUser(null)
+    setState(null)
+  }
+
   return (
     <div className="min-h-screen bg-background font-sans text-sm text-foreground">
       <Toaster />
@@ -1022,6 +1162,18 @@ export default function App() {
         <aside className="flex flex-col gap-4 border-b bg-card p-4 xl:h-screen xl:overflow-y-auto xl:border-r xl:border-b-0">
           <div>
             <h1 className="font-heading text-xl font-bold">meet2note</h1>
+            <div className="mt-1 flex items-center justify-between gap-2">
+              <p className="truncate text-xs text-muted-foreground" title={user.email}>
+                {user.email}
+              </p>
+              <button
+                type="button"
+                onClick={doLogout}
+                className="shrink-0 text-xs text-primary underline-offset-2 hover:underline"
+              >
+                Đăng xuất
+              </button>
+            </div>
             {state?.meeting && (
               <p className="text-xs text-muted-foreground">
                 {state.meeting.title} · {state.meeting.date}
