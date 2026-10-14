@@ -84,7 +84,20 @@ Gate đọc `review_log.json`: id nào đã có entry xử lý thì không chặ
 | Kết quả | Body |
 |---|---|
 | `403` | `{"error": "gate_red_items", "red_items": ["B1"]}` — còn thẻ đỏ, export bị khoá |
-| `200` | `{"files": ["runs/tc2/<ts>/minutes.md", "runs/tc2/<ts>/tasks_jira.csv"]}` |
+| `200` | `{"files": [...], "generated_at": ..., "downloads": {"minutes.md": "/api/v1/export/file?...", ...}}` |
+
+### GET /api/v1/export/file?meeting=tc2&name=minutes.md (Bearer bắt buộc)
+
+Tải file export về máy user (`Content-Disposition: attachment`).
+
+- `name` chỉ nhận đúng `minutes.md` | `tasks_jira.csv` (tên khác → 400, chặn traversal).
+- Server lấy file mới nhất trong cây `runs/<meeting>/`.
+
+| Kết quả | Body |
+|---|---|
+| `200` | file (filename `tc2_minutes.md`) |
+| `401` | thiếu/sai access token |
+| `404` | không phải của mình / file chưa được export |
 
 ## Quy ước chung
 

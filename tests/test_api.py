@@ -639,3 +639,65 @@ def test_meetings_lists_only_mine(client: TestClient, db: dict) -> None:
     ids = [m["id"] for m in r.json()["meetings"]]
     assert "tc_test" in ids  # seed từ fixture db
     assert "hidden1" not in ids
+
+
+# ──────────────────────────────────────────────────────────────────────
+# 8. GET /api/v1/export/file (tải file về máy user)
+# ──────────────────────────────────────────────────────────────────────
+
+
+def _seed_export_file(runs_dir: Path) -> None:
+    out = runs_dir / "runs" / "tc_test" / "20260101-120000" / "exp1"
+    out.mkdir(parents=True, exist_ok=True)
+    (out / "minutes.md").write_text("# Minutes\n", encoding="utf-8")
+    (out / "tasks_jira.csv").write_text("key,summary\n", encoding="utf-8")
+
+
+def test_download_minutes_200(client: TestClient, runs_dir: Path) -> None:
+    _seed_export_file(runs_dir)
+    r = client.get("/api/v1/export/file?meeting=tc_test&name=minutes.md")
+    assert r.status_code == 200, r.text
+    assert r.text.startswith("# Minutes")
+    assert "attachment" in r.headers.get("content-disposition", "")
+    assert "tc_test_minutes.md" in r.headers.get("content-disposition", "")
+
+
+def test_download_csv_200(client: TestClient, runs_dir: Path) -> None:
+    _seed_export_file(runs_dir)
+    r = client.get("/api/v1/export/file?meeting=tc_test&name=tasks_jira.csv")
+    assert r.status_code == 200
+    assert "key,summary" in r.text
+
+
+def test_download_rejects_bad_name(client: TestClient, runs_dir: Path) -> None:
+    _seed_export_file(runs_dir)
+    assert client.get(
+        "/api/v1/export/file?meeting=tc_test&name=../state.json"
+    ).status_code in (400, 422)
+    assert client.get(
+        "/api/v1/export/file?meeting=tc_test&name=state.json"
+    ).status_code == 400
+
+
+def test_download_404_without_file(client: TestClient, runs_dir: Path) -> None:
+    r = client.get("/api/v1/export/file?meeting=tc_test&name=minutes.md")
+    assert r.status_code == 404
+
+
+def test_download_requires_token(db: dict, runs_dir: Path) -> None:
+    _seed_export_file(runs_dir)
+    r = TestClient(app).get("/api/v1/export/file?meeting=tc_test&name=minutes.md")
+    assert r.status_code == 401
+
+
+def test_download_other_owner_404(client: TestClient, db: dict) -> None:
+    from backend.db.models import Meeting, User
+    from backend.db.session import session_scope
+
+    with session_scope(db["url"]) as s:
+        other = User(email="dl-other@example.com", password_hash="x")
+        s.add(other)
+        s.flush()
+        s.add(Meeting(id="priv", owner_id=other.id, title="Priv"))
+    r = client.get("/api/v1/export/file?meeting=priv&name=minutes.md")
+    assert r.status_code == 404

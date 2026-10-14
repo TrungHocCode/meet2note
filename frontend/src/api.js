@@ -127,6 +127,34 @@ export async function postExport(meeting) {
   return _jsonOrThrow(res)
 }
 
+/** Tải file export về máy user (kích hoạt download trình duyệt). */
+export async function downloadExport(meeting, name) {
+  const url = `${BASE}/api/v1/export/file?meeting=${encodeURIComponent(meeting)}&name=${encodeURIComponent(name)}`
+  const res = await fetch(url, {
+    method: 'GET',
+    credentials: 'include',
+    headers: authHeaders(),
+  })
+  if (!res.ok) {
+    const err = new Error(`HTTP ${res.status}`)
+    err.status = res.status
+    try {
+      err.body = await res.json()
+    } catch (_e) {
+      err.body = {}
+    }
+    throw err
+  }
+  const blob = await res.blob()
+  const a = document.createElement('a')
+  a.href = URL.createObjectURL(blob)
+  a.download = `${meeting}_${name}`
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+  setTimeout(() => URL.revokeObjectURL(a.href), 5000)
+}
+
 export async function getHealth() {
   const res = await fetch(`${BASE}/health`)
   return _jsonOrThrow(res)

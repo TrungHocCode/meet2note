@@ -37,7 +37,7 @@ from fastapi import (
     UploadFile,
 )
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
@@ -530,7 +530,55 @@ def post_export(
         content={
             "files": result["files"],
             "generated_at": result["generated_at"],
+            "downloads": {
+                Path(f).name: (
+                    f"/api/v1/export/file?meeting={meeting}&name={Path(f).name}"
+                )
+                for f in result["files"]
+            },
         },
+    )
+
+
+_DOWNLOADABLE = {
+    "minutes.md": "text/markdown; charset=utf-8",
+    "tasks_jira.csv": "text/csv; charset=utf-8",
+}
+
+
+@app.get("/api/v1/export/file")
+def download_export_file(
+    meeting: str = Query(..., min_length=1),
+    name: str = Query(..., min_length=1),
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> FileResponse:
+    """Tải file export về máy user (minutes.md / tasks_jira.csv).
+
+    - Chỉ đúng 2 tên allowlist (chặn traversal — không nhận path).
+    - Tìm file mới nhất trong cây runs/<meeting>/ (mỗi export 1 thư mục con).
+    - 401 thiếu token · 404 meeting của người khác/không tồn tại/file chưa có.
+    """
+    _require_meeting(meeting, user, db)
+    if name not in _DOWNLOADABLE:
+        raise HTTPException(
+            status_code=400,
+            detail=f"chỉ được tải {sorted(_DOWNLOADABLE)}",
+        )
+    base = PROJECT_ROOT / "runs" / meeting
+    candidates = sorted(
+        [p for p in base.rglob(name) if p.is_file()],
+        key=lambda p: p.stat().st_mtime,
+        reverse=True,
+    )
+    if not candidates:
+        raise HTTPException(
+            status_code=404, detail="file chưa được export cho meeting này"
+        )
+    return FileResponse(
+        path=candidates[0],
+        media_type=_DOWNLOADABLE[name],
+        filename=f"{meeting}_{name}",
     )
 
 

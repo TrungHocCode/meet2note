@@ -26,6 +26,7 @@ import {
   X,
 } from 'lucide-react'
 import {
+  downloadExport,
   getMe,
   getReview,
   listMeetings,
@@ -927,9 +928,22 @@ export default function App() {
         } else if (e.status === 400) {
           setExportError(`Chưa confirm: ${e.body?.detail ?? ''}`)
         } else {
-          setExportError(`${e.status ?? '?'}: ${JSON.stringify(e.body)}`)
+          setExportError(`${e.status ?? '?'}: ${e.body?.detail ?? JSON.stringify(e.body)}`)
         }
       })
+  }
+
+  const [downloading, setDownloading] = useState(null)
+
+  async function doDownload(name) {
+    setDownloading(name)
+    try {
+      await downloadExport(meetingId, name)
+    } catch (e) {
+      toast.error(`Tải ${name} lỗi (${e.status ?? '?'}): ${e.body?.detail ?? ''}`)
+    } finally {
+      setDownloading(null)
+    }
   }
 
   async function showEvidence(ev) {
@@ -1307,15 +1321,25 @@ export default function App() {
               </Button>
               {exportFiles && exportFiles.length > 0 && (
                 <Alert variant="ok">
-                  <AlertTitle>Export xong</AlertTitle>
+                  <AlertTitle>Export xong — tải về máy bạn</AlertTitle>
                   <AlertDescription>
-                    <ul>
-                      {exportFiles.map((f) => (
-                        <li key={f}>
-                          <code className="text-xs break-all">{f}</code>
-                        </li>
-                      ))}
-                    </ul>
+                    <div className="mt-1 flex flex-wrap gap-2">
+                      {exportFiles.map((f) => {
+                        const name = f.split('/').pop()
+                        return (
+                          <Button
+                            key={f}
+                            size="sm"
+                            variant="outline"
+                            disabled={downloading === name}
+                            onClick={() => doDownload(name)}
+                          >
+                            <Download className="size-3" />
+                            {downloading === name ? 'Đang tải…' : name}
+                          </Button>
+                        )
+                      })}
+                    </div>
                   </AlertDescription>
                 </Alert>
               )}
