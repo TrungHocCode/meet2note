@@ -535,10 +535,10 @@ export default function App() {
         <div className="upload-block">
           <h3>⬆ Upload transcript</h3>
           <label>
-            File .txt/.srt:
+            File .txt/.srt/.docx:
             <input
               type="file"
-              accept=".txt,.srt"
+              accept=".txt,.srt,.docx"
               onChange={(e) => setUpFile(e.target.files?.[0] ?? null)}
             />
           </label>

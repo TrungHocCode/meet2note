@@ -298,7 +298,7 @@ def _find_transcript_file(meeting_id: str) -> Path | None:
         d = PROJECT_ROOT / "data" / base
         if not d.is_dir():
             continue
-        for ext in (".txt", ".srt"):
+        for ext in (".txt", ".srt", ".docx"):
             for f in sorted(d.glob(f"{meeting_id}*{ext}")):
                 return f
     return None
@@ -353,7 +353,7 @@ async def upload_meeting(
     chunk_size: int = Form(40),
     overlap: int = Form(10),
 ) -> JSONResponse:
-    """Upload transcript (.txt/.srt) + chạy pipeline ngay, trả state để review.
+    """Upload transcript (.txt/.srt/.docx) + chạy pipeline ngay, trả state để review.
 
     - meeting_id trống → lấy từ tên file (bỏ đuôi, sanitize).
     - participants: JSON string list [{name, role?, aliases?}] (aliases thiếu → [name]).
@@ -370,10 +370,10 @@ async def upload_meeting(
 
     filename = file.filename or ""
     ext = Path(filename).suffix.lower()
-    if ext not in (".txt", ".srt"):
+    if ext not in (".txt", ".srt", ".docx"):
         return JSONResponse(
             status_code=400,
-            content={"detail": f"chỉ nhận .txt/.srt, got {filename!r}"},
+            content={"detail": f"chỉ nhận .txt/.srt/.docx, got {filename!r}"},
         )
     mid = (meeting_id or "").strip() or _re.sub(r"\.[^.]+$", "", filename)
     mid = _re.sub(r"[^A-Za-z0-9_-]", "_", mid)[:64] or "uploaded"

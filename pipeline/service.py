@@ -40,7 +40,7 @@ def run_pipeline(
     Args:
         meeting_id: id meeting (dùng cho runs/<id>/<ts>/).
         meta: dict metadata (id, title, date, participants, glossary).
-        transcript_path: file .txt/.srt (đã tồn tại, đã validate).
+        transcript_path: file .txt/.srt/.docx (đã tồn tại, đã validate).
         runs_dir: thư mục runs/.
         extract_llm_fn / resolve_llm_fn: None → live LLM qua .env.
         brief_raw: brief đã trích (caller tự gọi extract_brief hoặc fixture).

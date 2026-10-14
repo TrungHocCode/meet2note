@@ -15,6 +15,7 @@ Phủ:
 from __future__ import annotations
 
 import json
+import io
 import os
 import shutil
 from pathlib import Path
@@ -495,3 +496,43 @@ def test_upload_success_mocked(
     assert body["turns_count"] == 2
     assert (tmp_path / "data" / "uploads" / "up1.txt").exists()
     assert (tmp_path / "data" / "uploads" / "up1_meta.json").exists()
+
+
+def test_upload_docx_accepted(
+    client: TestClient, runs_dir: Path, tmp_path: Path, monkeypatch
+) -> None:
+    """Upload .docx đi qua ext-check và parse thật (pipeline mock)."""
+    pytest.importorskip("docx")
+    from docx import Document
+
+    from pipeline.schema import Meeting, MeetingState, Stats
+
+    st = MeetingState(
+        meeting=Meeting(
+            id="updoc", title="Up", date="2026-10-13", participants=[],
+            source_file="updoc.docx", pipeline_version="t",
+        ),
+        items=[], no_decision=False, stats=Stats(), known_limitations=[],
+    )
+    monkeypatch.setattr(
+        "pipeline.service.run_pipeline",
+        lambda **kw: {"state": st, "out_dir": tmp_path, "turns_count": 1},
+    )
+    monkeypatch.setattr(
+        "pipeline.extract.extract_brief", lambda *a, **k: None
+    )
+    doc = Document()
+    doc.add_paragraph("[00:00:05] Lan: Chào.")
+    blob = io.BytesIO()
+    doc.save(blob)
+    r = client.post(
+        "/api/v1/meetings/upload",
+        files={"file": (
+            "updoc.docx", blob.getvalue(),
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        )},
+        data={"meeting_id": "updoc", "date": "2026-10-13", "participants": "[]"},
+    )
+    assert r.status_code == 200, r.text
+    assert r.json()["turns_count"] == 1
+    assert (tmp_path / "data" / "uploads" / "updoc.docx").exists()

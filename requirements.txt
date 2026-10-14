@@ -2,6 +2,7 @@
 pydantic>=2
 fastapi
 python-multipart
+python-docx
 uvicorn[standard]
 jinja2
 python-dotenv

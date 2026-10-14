@@ -208,3 +208,46 @@ def test_tc2_fixture_parses(fixtures_dir: Path) -> None:
     assert "Em đề xuất phương án A, bên X rẻ hơn 20%." in full
     assert "Vậy chốt B nhé, cả team đồng ý không?" in full
     assert "Dạ em gửi báo giá B cho khách trước 12/10." in full
+
+
+def test_docx_parses_paragraphs_and_tables(tmp_path: Path) -> None:
+    """docx: paragraph + cell table đúng format → turns; đoạn sai → limitation."""
+    pytest.importorskip("docx")
+    from docx import Document
+
+    p = tmp_path / "m.docx"
+    doc = Document()
+    doc.add_paragraph("[00:00:05] Lan: Chào team.")
+    doc.add_paragraph("Dòng này không có timestamp.")
+    doc.add_paragraph("")
+    table = doc.add_table(rows=1, cols=1)
+    table.cell(0, 0).text = "[00:00:10] Nam: Dạ chào chị."
+    doc.save(p)
+
+    turns, lims = parse_transcript(p)
+    assert len(turns) == 2
+    assert turns[0]["speaker"] == "Lan" and turns[0]["turn"] == 1
+    assert turns[1]["speaker"] == "Nam" and turns[1]["turn"] == 2
+    assert any("không đúng format" in lim for lim in lims)
+
+
+def test_docx_no_valid_lines(tmp_path: Path) -> None:
+    """docx toàn đoạn sai format → 0 turns + limitation rõ ràng."""
+    pytest.importorskip("docx")
+    from docx import Document
+
+    p = tmp_path / "empty.docx"
+    doc = Document()
+    doc.add_paragraph("Biên bản họp ngày hôm nay.")
+    doc.save(p)
+
+    turns, lims = parse_transcript(p)
+    assert turns == []
+    assert any("không có đoạn nào parse được" in lim for lim in lims)
+
+
+def test_unsupported_extension_rejected(tmp_path: Path) -> None:
+    f = tmp_path / "x.pdf"
+    f.write_bytes(b"%PDF")
+    with pytest.raises(ValueError):
+        parse_transcript(f)

@@ -55,17 +55,17 @@ def _load_meta(meta_id: str, data_dir: Path) -> dict[str, Any]:
 
 
 def _find_transcript(meta_id: str, data_dir: Path) -> Path:
-    """Tìm file transcript (.txt hoặc .srt) bắt đầu bằng `<meta_id>`."""
+    """Tìm file transcript (.txt / .srt / .docx) bắt đầu bằng `<meta_id>`."""
     transcripts = data_dir / "transcripts"
     if not transcripts.exists():
         raise FileNotFoundError(f"transcripts dir not found: {transcripts}")
-    for ext in (".txt", ".srt"):
+    for ext in (".txt", ".srt", ".docx"):
         # sorted() để chọn deterministic nếu có nhiều file trùng prefix
         for f in sorted(transcripts.glob(f"{meta_id}*{ext}")):
             return f
     raise FileNotFoundError(
         f"transcript for {meta_id} not found in {transcripts} "
-        f"(looked for {meta_id}*.txt and {meta_id}*.srt)"
+        f"(looked for {meta_id}*.txt, {meta_id}*.srt and {meta_id}*.docx)"
     )
 
 
