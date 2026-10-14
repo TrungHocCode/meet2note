@@ -1,4 +1,4 @@
-# Spec — Taxonomy 6 loại + Evidence + 7 quy tắc cứng
+# Spec — Taxonomy 6 loại + Evidence + 8 quy tắc cứng
 
 Nguồn: `PLAN_MVP.md` §3. File này là hợp đồng chi tiết để hiện thực `schema.py`.
 Định nghĩa từ vựng: `glossary.md`.
@@ -25,17 +25,18 @@ Nguồn: `PLAN_MVP.md` §3. File này là hợp đồng chi tiết để hiện 
 
 Mọi item có `confidence 0–1` + `confidence_reason`. Ngưỡng: đỏ <0.50 (khóa export) · vàng 0.50–0.75 · xanh ≥0.75.
 
-## 4. Bảy quy tắc cứng (enforce bằng code ở VERIFY)
+## 4. Tám quy tắc cứng (enforce bằng code ở VERIFY/RESOLVE)
 
 | # | Quy tắc | Enforce |
 |---|---|---|
 | R1 | Không bịa owner/deadline ⇒ `TBD` | `tbd` ⇒ confidence ≤0.4 (đỏ) |
-| R2 | Cấm đoán ngày: `sớm/gấp/asap` ⇒ `due TBD + due_hint`; chỉ nhận ngày rõ hoặc tính deterministic từ `meeting.date` | Regex + quy đổi thứ/tuần bằng Python; không parse ISO ⇒ TBD |
+| R2 | Cấm đoán ngày: `sớm/gấp/asap` ⇒ `due TBD + due_hint`; chỉ nhận ngày rõ hoặc tính deterministic từ `meeting.date` | Regex + quy đổi thứ/tuần bằng Python; không parse ISO ⇒ TBD. **Mở rộng (vòng transcripts v2):** due đã ISO nhưng hint còn pattern tương đối → recompute, khác thì OVERRIDE + limitation (model hay tính nhầm thứ→ngày); due ISO trước `meeting.date` → bất khả thi → TBD + limitation |
 | R3 | `No Decision` hợp lệ | Không decision ⇒ `no_decision=true` + yêu cầu ≥1 Open Issue |
 | R4 | Giữ vết supersedes; A→B→A không resolve ⇒ `unresolved_reversal` + Open Issue nhờ host | Graph check Python, không tự chọn |
 | R5 | Mọi item (trừ Knowledge) ≥1 evidence khớp fuzzy ≥85% (difflib trên text normalize) | Không khớp ⇒ `evidence_mismatch`, thẻ đỏ |
 | R6 | Không tự sync: export chỉ sau confirm | Gate ở React + backend check |
 | R7 | Không xóa tranh luận | Phản đối vào `objections` của Decision |
+| R8 | Toàn vẹn link: `link_to_decision` phải trỏ tới item TỒN TẠI | Không tồn tại (model link ID tưởng tượng) → null + limitation |
 
 ## 5. Công thức confidence (VERIFY — deterministic)
 
@@ -53,6 +54,11 @@ conf_final = clamp01(
 - Ngưỡng badge: đỏ `<0.50` (khoá export) · vàng `0.50-0.75` · xanh `≥0.75`.
 - Quote verify: normalize (bỏ dấu câu + khoảng trắng dư) → `difflib.ratio ≥ 0.85`;
   thử lân cận ≤2 lượt; fail → `evidence_mismatch` (đỏ). Trừ Knowledge — không bắt buộc evidence.
+- **Evidence ts sửa về turn khớp thật:** model hay gán sai timestamp vài giây dù quote đúng
+  (live tc1: quote 04:14 gán ts 04:24) → verify đặt lại ts/turn/speaker theo turn khớp + limitation.
+  Không sửa quote (nguyên văn là thiêng liêng — R5).
+- **Contradiction chỉ phạt finals SỐNG SÓT:** penalty -0.20 áp sau validate (item rớt không tính),
+  tính lại badge sau phạt. Tránh phạt oan như bản cũ (đếm trên raw input).
 - **Substring fallback** (vì ratio 0.85 sai toán học với quote ngắn trong turn dài):
   quote ≥10 ký tự nằm nguyên trong turn + coverage ≥30% → tính khớp.
 - **Role normalize:** `role_in_discussion` ngoài 5 giá trị → `"info"` + ghi limitation
@@ -72,6 +78,18 @@ conf_final = clamp01(
 ## 7. Resolve rules (pass-2 — deterministic, không để LLM tự chọn)
 
 - **Merge trùng:** cùng chủ đề + speaker + bằng chứng → gộp 1, ghi `merged_ids`.
+- **Hạ final thiếu câu chốt thật → proposal** (glossary "Chốt vs nói chơi"): evidence role=decide
+  nhưng quote là tường thuật ("Em note lại: chốt...") cũng không tính — chỉ ghi chú/đồng thuận
+  lại ≠ chốt. Giữ làm proposal để audit.
+- **Gộp finals CÙNG nội dung khác id** (model đặt D0/D1 cho cùng 1 chốt ở 2 chunk):
+  winner = evidence decide không-recap muộn nhất; union evidence + supersedes (bỏ self-ref).
+  Khác nội dung thì giữ nguyên để reversal detection xử.
+- **Tách id-collision task:** model tái dùng T1..Tn mỗi chunk cho task khác nhau → cùng id +
+  khác nội dung (non-decision) = collision, không phải conflict → tách cluster, rename id mới
+  (`T2_2`) + limitation. Text quá ngắn (<2 tokens significant) thì không đủ phân biệt → trọng
+  tài như cũ (mất task thật tệ hơn trùng task).
+- **Gộp task trùng khác id:** cùng owner (non-TBD) + cùng due ISO (non-TBD) + overlap what →
+  giữ bản đầu + union hint/link/evidence từ bản thua.
 - **Nối supersedes xuyên chunk:** mỗi vấn đề tối đa 1 `final`; cũ → `discarded` (R4).
 - **A→B→A hoặc 2 final cùng chủ đề** → `unresolved_reversal=true` + Open Issue cho host — không tự chọn (R4).
 - **Entity-link người:** chỉ chấp nhận `name`/`aliases` trong `participants` (em/anh/chị → name,

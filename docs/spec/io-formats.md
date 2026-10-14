@@ -86,6 +86,10 @@ Kỳ vọng **tối thiểu** để eval runner so (chi tiết tiêu chí: `spec
 
 - Chỉ so các trường then chốt; phần mơ hồ/sarcasm chấm tay (host).
 - ID item (D1/T1): **không so cứng thứ tự** — so theo nội dung.
+- Key mở rộng (không bắt buộc, để eval công bằng với paraphrase của LLM):
+  `content_any[]` (biến thể ngữ nghĩa tương đương — đúng ý vẫn đạt),
+  `evidence_ts_any[]` (các timestamp đều là câu decide thật),
+  `open_issues_min`, `unresolved_reversal_expected`, `expected_red_min` (số đỏ tối thiểu).
 
 ## 5. Quy tắc parse (tóm tắt cho code)
 
