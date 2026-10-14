@@ -1,0 +1,25 @@
+# meet2note P6a — Postgres local (metadata DB, file vẫn nằm trên disk).
+# Backend/frontend chạy local như hiện tại, nối DB qua DATABASE_URL.
+# Lên cloud sau: thay image/volume, code không đổi (schema lưu path tương đối).
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-meet2note}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-meet2note}
+      POSTGRES_DB: ${POSTGRES_DB:-meet2note}
+    ports:
+      # Tránh 5432 (Postgres native) và 5433 (project agentflow) — đổi qua env nếu cần.
+      - "${POSTGRES_PORT:-5434}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-meet2note}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  pgdata:

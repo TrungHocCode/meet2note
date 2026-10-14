@@ -17,6 +17,8 @@ Chuyển **transcript cuộc họp có sẵn** (txt/srt + timestamp + speaker) �
 |---|---|
 | `pipeline/` | **Lõi** (root, độc lập): `schema ingest extract resolve verify export service cli` (`service.run_pipeline` dùng chung cho CLI + API) |
 | `backend/api.py` | Lớp mỏng FastAPI: review (GET/PUT), export (POST + gate R6), transcript viewer (GET), upload chạy pipeline (POST) |
+| `backend/db/` | SQLAlchemy models + session + security (P6a); `backend/db_cli.py` ops (migrate/seed/sync) |
+| `docker-compose.yml` | Postgres 16 local, port host **5434** (tránh 5432 native, 5433 project khác) |
 | `frontend/` | React review: 4 cột + brief + drawer transcript (±4 turns) + form upload |
 | `prompts/` | `system_extract.md`, `system_resolve.md`, `system_brief.md`, `fewshot_atob.md` — tách khỏi code |
 | `data/` | `transcripts/` `meta/` `golden/` — **bắt buộc SYNTHETIC** (repo public); `uploads/` gitignored (file người dùng) |
