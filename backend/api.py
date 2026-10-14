@@ -322,6 +322,46 @@ def me(user: User = Depends(get_current_user)) -> JSONResponse:
     return JSONResponse(status_code=200, content=_public_user(user))
 
 
+@app.get("/api/v1/meetings")
+def list_meetings(
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> JSONResponse:
+    """Danh sách meeting của chính mình (mới nhất trước) kèm run mới nhất.
+
+    200: {meetings: [{id, title, date, source, created_at,
+                      runs_count, latest_ts, badges, no_decision}]}.
+    Frontend dùng để user bấm xem lại mà không cần nhớ id.
+    """
+    rows = (
+        db.query(Meeting)
+        .filter_by(owner_id=user.id)
+        .order_by(Meeting.created_at.desc())
+        .all()
+    )
+    out = []
+    for m in rows:
+        runs = (
+            db.query(Run)
+            .filter_by(meeting_id=m.id)
+            .order_by(Run.ts.desc())
+            .all()
+        )
+        latest = runs[0] if runs else None
+        out.append({
+            "id": m.id,
+            "title": m.title,
+            "date": m.date,
+            "source": m.source,
+            "created_at": m.created_at.isoformat() if m.created_at else None,
+            "runs_count": len(runs),
+            "latest_ts": latest.ts if latest else None,
+            "badges": latest.badges if latest and latest.badges else {},
+            "no_decision": bool(latest.no_decision) if latest else False,
+        })
+    return JSONResponse(status_code=200, content={"meetings": out})
+
+
 @app.get("/api/v1/review")
 def get_review(
     meeting: str = Query(..., min_length=1),

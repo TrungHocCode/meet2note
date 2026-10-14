@@ -24,7 +24,6 @@ Body `{"email": "...", "password": "≥8 ký tự"}`.
 ### POST /auth/login
 
 Form `username=<email>&password=...` (OAuth2PasswordRequestForm).
-
 | Kết quả | Body |
 |---|---|
 | `200` | `{"access_token": "...", "token_type": "bearer"}` + set cookie `refresh_token` |
@@ -37,6 +36,16 @@ Form `username=<email>&password=...` (OAuth2PasswordRequestForm).
 | `POST /auth/refresh` (đọc cookie) | `200` access mới + xoay refresh · `401` không cookie/hết hạn/bị revoke |
 | `POST /auth/logout` | `200 {"ok": true}` + revoke refresh hiện tại + xoá cookie |
 | `GET /auth/me` (Bearer) | `200 {"id", "email"}` · `401` không token |
+
+### GET /api/v1/meetings (Bearer bắt buộc)
+
+Danh sách meeting của chính mình (mới nhất trước) kèm run mới nhất —
+để UI hiện danh sách bấm xem lại, user không cần nhớ id.
+
+| Kết quả | Body |
+|---|---|
+| `200` | `{meetings: [{id, title, date, source, created_at, runs_count, latest_ts, badges, no_decision}]}` |
+| `401` | thiếu/sai access token |
 
 ## Endpoints
 

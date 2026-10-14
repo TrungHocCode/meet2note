@@ -490,7 +490,6 @@ def test_transcript_404(client: TestClient, runs_dir: Path) -> None:
     r = client.get("/api/v1/transcript", params={"meeting": "nope"})
     assert r.status_code == 404
 
-
 def test_transcript_200(client: TestClient, runs_dir: Path, db: dict) -> None:
     from backend.db.models import Meeting
     from backend.db.session import session_scope
@@ -613,3 +612,30 @@ def test_upload_docx_accepted(
     assert r.status_code == 200, r.text
     assert r.json()["turns_count"] == 1
     assert (tmp_path / "data" / "uploads" / "updoc.docx").exists()
+
+
+# ──────────────────────────────────────────────────────────────────────
+# 7. GET /api/v1/meetings (danh sách của mình — khỏi nhớ id)
+# ──────────────────────────────────────────────────────────────────────
+
+
+def test_meetings_requires_token(db: dict) -> None:
+    r = TestClient(app).get("/api/v1/meetings")
+    assert r.status_code == 401
+
+
+def test_meetings_lists_only_mine(client: TestClient, db: dict) -> None:
+    from backend.db.models import Meeting, User
+    from backend.db.session import session_scope
+
+    # Meeting của user khác trong cùng DB → không được lộ.
+    with session_scope(db["url"]) as s:
+        other = User(email="other@example.com", password_hash="x")
+        s.add(other)
+        s.flush()
+        s.add(Meeting(id="hidden1", owner_id=other.id, title="Hidden"))
+    r = client.get("/api/v1/meetings")
+    assert r.status_code == 200, r.text
+    ids = [m["id"] for m in r.json()["meetings"]]
+    assert "tc_test" in ids  # seed từ fixture db
+    assert "hidden1" not in ids

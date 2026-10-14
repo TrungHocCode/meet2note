@@ -132,8 +132,16 @@ export async function getHealth() {
   return _jsonOrThrow(res)
 }
 
-export async function getTranscript(meeting) {
-  const url = `${BASE}/api/v1/transcript?meeting=${encodeURIComponent(meeting)}`
+export async function listMeetings() {
+  const res = await fetch(`${BASE}/api/v1/meetings`, {
+    method: 'GET',
+    credentials: 'include',
+    headers: authHeaders(),
+  })
+  return _jsonOrThrow(res)
+}
+
+export async function getTranscript(meeting) {  const url = `${BASE}/api/v1/transcript?meeting=${encodeURIComponent(meeting)}`
   const res = await fetch(url, {
     method: 'GET',
     credentials: 'include',
