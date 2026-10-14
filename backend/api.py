@@ -5,13 +5,11 @@ backend/api.py — FastAPI layer mỏng (ADR-0005) cho P2 review workflow + P3 e
 KHÔNG chứa logic pipeline — chỉ adapter theo `docs/spec/api-contract.md`.
 Export gọi `pipeline.export.export_meeting` (P3) — không tự render.
 
-Endpoints (theo spec §1-§3 + P5 upload/transcript):
-- GET  /health
-- GET  /api/v1/review?meeting=tc2              → 200 state.json | 404
-- PUT  /api/v1/review?meeting=tc2              → ghi confirmed_state.json + append review_log
-- POST /api/v1/export?meeting=tc2              → 403 gate_red_items | 200 files | 404
-- GET  /api/v1/transcript?meeting=tc2          → 200 turns | 404
-- POST /api/v1/meetings/upload (multipart)     → chạy pipeline, 200 state | 400/422/503
+Endpoints (theo spec §1-§3 + P5 upload/transcript + P6b auth):
+- GET  /health                                                    → mở, không cần auth
+- POST /auth/register | /auth/login | /auth/refresh | /auth/logout | GET /auth/me
+- MỌI /api/v1/* còn lại: yêu cầu Bearer access token + meeting thuộc owner.
+  Không tồn tại / không phải của mình → 404 như nhau (không lộ sự tồn tại).
 
 CORS chỉ http://localhost:5173 (React dev theo AGENTS.md §2).
 """
@@ -19,6 +17,7 @@ CORS chỉ http://localhost:5173 (React dev theo AGENTS.md §2).
 from __future__ import annotations
 
 import datetime as _dt
+import hashlib
 import json
 import logging
 import os
@@ -26,11 +25,33 @@ import time
 from pathlib import Path
 from typing import Any
 
-from fastapi import FastAPI, File, Form, HTTPException, Query, UploadFile
+from fastapi import (
+    Depends,
+    FastAPI,
+    File,
+    Form,
+    HTTPException,
+    Query,
+    Request,
+    Response,
+    UploadFile,
+)
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import BaseModel, Field
+from sqlalchemy.orm import Session
 
+from backend.auth import (
+    REFRESH_COOKIE,
+    REFRESH_DAYS,
+    create_access_token,
+    get_current_user,
+    get_db,
+    new_refresh_token,
+)
+from backend.db.models import Meeting, RefreshToken, Run, User
+from backend.db.security import hash_password, verify_password
 from pipeline.export import export_meeting
 
 logger = logging.getLogger(__name__)
@@ -85,6 +106,19 @@ def _latest_run_dir(meeting_id: str) -> Path | None:
         reverse=True,
     )
     return children[0] if children else None
+
+
+def _require_meeting(meeting_id: str, user: User, db: Session) -> Meeting:
+    """Meeting phải tồn tại VÀ thuộc owner — ngược lại 404 như nhau
+    (không lộ meeting của người khác có tồn tại hay không)."""
+    meeting = (
+        db.query(Meeting)
+        .filter_by(id=meeting_id, owner_id=user.id)
+        .one_or_none()
+    )
+    if meeting is None:
+        raise HTTPException(status_code=404, detail="meeting not found")
+    return meeting
 
 
 def _read_json(path: Path) -> dict[str, Any]:
@@ -143,12 +177,162 @@ def get_health() -> dict[str, str]:
     return {"status": "ok"}
 
 
+# ──────────────────────────────────────────────────────────────────────
+# Auth (P6b) — register / login / refresh / logout / me
+# ──────────────────────────────────────────────────────────────────────
+
+
+class RegisterBody(BaseModel):
+    email: str = Field(..., min_length=3, max_length=320)
+    password: str = Field(..., min_length=8, max_length=128)
+
+
+def _public_user(user: User) -> dict[str, str]:
+    return {"id": user.id, "email": user.email}
+
+
+@app.post("/auth/register", status_code=201)
+def register(body: RegisterBody, db: Session = Depends(get_db)) -> JSONResponse:
+    """Tạo tài khoản (mở — MVP chưa tắt đăng ký). Email trùng → 409."""
+    email = body.email.strip().lower()
+    if "@" not in email:
+        return JSONResponse(status_code=422, content={"detail": "email không hợp lệ"})
+    if db.query(User).filter_by(email=email).one_or_none() is not None:
+        return JSONResponse(status_code=409, content={"detail": "email đã tồn tại"})
+    try:
+        hashed = hash_password(body.password)
+    except ValueError as e:
+        return JSONResponse(status_code=422, content={"detail": str(e)})
+    user = User(email=email, password_hash=hashed)
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return JSONResponse(status_code=201, content=_public_user(user))
+
+
+def _issue_refresh(db: Session, user: User) -> str:
+    """Tạo refresh token mới: lưu hash, trả token thô (đặt vào cookie)."""
+    from datetime import timedelta
+
+    raw, hashed = new_refresh_token()
+    db.add(RefreshToken(
+        user_id=user.id,
+        token_hash=hashed,
+        expires_at=_dt.datetime.now(_dt.timezone.utc) + timedelta(days=REFRESH_DAYS),
+    ))
+    db.commit()
+    return raw
+
+
+def _set_refresh_cookie(resp: JSONResponse, raw: str) -> None:
+    resp.set_cookie(
+        REFRESH_COOKIE,
+        raw,
+        max_age=REFRESH_DAYS * 24 * 3600,
+        httponly=True,
+        samesite="lax",
+        path="/auth",
+    )
+
+
+@app.post("/auth/login")
+def login(
+    form: OAuth2PasswordRequestForm = Depends(),
+    db: Session = Depends(get_db),
+) -> JSONResponse:
+    """Đăng nhập (form username=email, password). 401 nếu sai."""
+    email = (form.username or "").strip().lower()
+    user = db.query(User).filter_by(email=email).one_or_none()
+    if user is None or not verify_password(form.password or "", user.password_hash):
+        return JSONResponse(
+            status_code=401, content={"detail": "email hoặc mật khẩu sai"}
+        )
+    resp = JSONResponse(
+        status_code=200,
+        content={
+            "access_token": create_access_token(user.id, user.email),
+            "token_type": "bearer",
+        },
+    )
+    _set_refresh_cookie(resp, _issue_refresh(db, user))
+    return resp
+
+
+@app.post("/auth/refresh")
+def refresh(request: Request, db: Session = Depends(get_db)) -> JSONResponse:
+    """Đổi refresh token (cookie httpOnly) lấy access token mới + xoay refresh.
+
+    Không có/không hợp lệ/hết hạn/bị revoke → 401.
+    """
+    from datetime import timedelta
+
+    raw = (request.cookies or {}).get(REFRESH_COOKIE, "")
+    hashed = hashlib.sha256(raw.encode()).hexdigest() if raw else ""
+    rt = (
+        db.query(RefreshToken)
+        .filter_by(token_hash=hashed, revoked=False)
+        .one_or_none()
+        if hashed
+        else None
+    )
+    now = _dt.datetime.now(_dt.timezone.utc)
+    if rt is None or rt.expires_at.replace(tzinfo=_dt.timezone.utc) <= now:
+        return JSONResponse(
+            status_code=401, content={"detail": "refresh token không hợp lệ"}
+        )
+    user = db.query(User).filter_by(id=rt.user_id).one_or_none()
+    if user is None:
+        return JSONResponse(status_code=401, content={"detail": "user không tồn tại"})
+    rt.revoked = True  # xoay: vô hiệu token cũ
+    db.commit()
+    resp = JSONResponse(
+        status_code=200,
+        content={
+            "access_token": create_access_token(user.id, user.email),
+            "token_type": "bearer",
+        },
+    )
+    _set_refresh_cookie(resp, _issue_refresh(db, user))
+    db.commit()
+    return resp
+
+
+@app.post("/auth/logout")
+def logout(request: Request, db: Session = Depends(get_db)) -> JSONResponse:
+    """Revoke refresh hiện tại + xoá cookie (logout thật, không chỉ xoá client)."""
+    raw = (request.cookies or {}).get(REFRESH_COOKIE, "")
+    if raw:
+        hashed = hashlib.sha256(raw.encode()).hexdigest()
+        rt = (
+            db.query(RefreshToken)
+            .filter_by(token_hash=hashed, revoked=False)
+            .one_or_none()
+        )
+        if rt is not None:
+            rt.revoked = True
+            db.commit()
+    resp = JSONResponse(status_code=200, content={"ok": True})
+    resp.delete_cookie(REFRESH_COOKIE, path="/auth")
+    return resp
+
+
+@app.get("/auth/me")
+def me(user: User = Depends(get_current_user)) -> JSONResponse:
+    """Thông tin user từ access token."""
+    return JSONResponse(status_code=200, content=_public_user(user))
+
+
 @app.get("/api/v1/review")
-def get_review(meeting: str = Query(..., min_length=1)) -> JSONResponse:
+def get_review(
+    meeting: str = Query(..., min_length=1),
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> JSONResponse:
     """Trả meeting_state.json cho React render (api-contract §1).
 
-    404 nếu chưa có run (chưa `cli run`).
+    404 nếu chưa có run (chưa `cli run`) hoặc không phải của mình.
     """
+    _require_meeting(meeting, user, db)
     run_dir = _latest_run_dir(meeting)
     if run_dir is None:
         return JSONResponse(
@@ -166,11 +350,17 @@ def get_review(meeting: str = Query(..., min_length=1)) -> JSONResponse:
 
 
 @app.put("/api/v1/review")
-def put_review(meeting: str, body: ReviewPutBody) -> JSONResponse:
+def put_review(
+    meeting: str,
+    body: ReviewPutBody,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> JSONResponse:
     """Ghi confirmed_state.json + append review_log (api-contract §2).
 
     Body: {items, changes}. Mỗi change có action ∈ {agree, edit, remove}.
     """
+    _require_meeting(meeting, user, db)
     run_dir = _latest_run_dir(meeting)
     if run_dir is None:
         return JSONResponse(
@@ -235,7 +425,11 @@ def put_review(meeting: str, body: ReviewPutBody) -> JSONResponse:
 
 
 @app.post("/api/v1/export")
-def post_export(meeting: str) -> JSONResponse:
+def post_export(
+    meeting: str,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> JSONResponse:
     """Gate R6: chỉ export khi hết thẻ đỏ (api-contract §3).
 
     - Còn thẻ đỏ → 403 + `gate_red_items` (gate R6 enforcement).
@@ -243,6 +437,7 @@ def post_export(meeting: str) -> JSONResponse:
     - Chưa confirm → 400 (export yêu cầu host đã review).
     - Không tìm thấy meeting / state.json → 404.
     """
+    _require_meeting(meeting, user, db)
     run_dir = _latest_run_dir(meeting)
     if run_dir is None:
         return JSONResponse(
@@ -317,12 +512,17 @@ def _find_transcript_file(meeting_id: str) -> Path | None:
 
 
 @app.get("/api/v1/transcript")
-def get_transcript(meeting: str = Query(..., min_length=1)) -> JSONResponse:
+def get_transcript(
+    meeting: str = Query(..., min_length=1),
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> JSONResponse:
     """Trả turns transcript để UI hiện context quanh evidence (P5).
 
     200: {meeting, source, turns:[{turn,t_start,t_end,speaker,text}], limitations}.
-    404: không tìm thấy transcript.
+    404: không tìm thấy transcript / không phải của mình.
     """
+    _require_meeting(meeting, user, db)
     from pipeline.ingest import parse_transcript
 
     path = _find_transcript_file(meeting)
@@ -364,6 +564,8 @@ async def upload_meeting(
     participants: str = Form("[]"),
     chunk_size: int = Form(40),
     overlap: int = Form(10),
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ) -> JSONResponse:
     """Upload transcript (.txt/.srt/.docx) + chạy pipeline ngay, trả state để review.
 
@@ -372,6 +574,7 @@ async def upload_meeting(
     - date: YYYY-MM-DD (dùng để resolve ngày tương đối — R2).
     - File + meta lưu ở data/uploads/ (gitignored — transcript người dùng
       KHÔNG bao giờ commit). Chạy live LLM qua .env (thiếu key → 503).
+    - Ghi `meetings` (upsert, owner=user hiện tại) + `runs` (mỗi upload 1 run mới).
     - 400: sai định dạng/ext; 422: parse transcript lỗi; 503: thiếu LLM;
       200: {meeting_id, state, out_dir, turns_count}.
     """
@@ -466,13 +669,56 @@ async def upload_meeting(
         )
 
     state = result["state"]
+    out_dir: Path = result["out_dir"]
+
+    # P6b: upsert meetings (owner=user) + ghi runs — mỗi upload 1 run mới.
+    badges = {"red": 0, "yellow": 0, "green": 0}
+    for it in state.items:
+        c = float(it.confidence or 0)
+        badges["red" if c < 0.50 else "yellow" if c < 0.75 else "green"] += 1
+
+    meeting_row = db.query(Meeting).filter_by(id=mid).one_or_none()
+    if meeting_row is None:
+        meeting_row = Meeting(
+            id=mid,
+            owner_id=user.id,
+            title=(title.strip() or mid)[:500],
+            date=date,
+            transcript_sha=hashlib.sha256(content).hexdigest(),
+            source="upload",
+        )
+        db.add(meeting_row)
+    elif meeting_row.owner_id != user.id:
+        return JSONResponse(
+            status_code=409,
+            content={"detail": f"meeting_id {mid!r} đã thuộc về người dùng khác"},
+        )
+    stats_raw = state.stats
+    stats = (
+        stats_raw
+        if isinstance(stats_raw, dict)
+        else (stats_raw.model_dump() if hasattr(stats_raw, "model_dump") else {})
+    )
+    rel = out_dir.relative_to(PROJECT_ROOT)
+    db.add(Run(
+        meeting_id=mid,
+        ts=out_dir.name,
+        status="done",
+        stats=stats,
+        badges=badges,
+        no_decision=bool(state.no_decision),
+        state_path=str(rel / "state.json"),
+        llm_log_path=str(rel / "llm_log.jsonl"),
+    ))
+    db.commit()
+
     return JSONResponse(
         status_code=200,
         content={
             "meeting_id": mid,
             "state": json.loads(state.model_dump_json()),
             "turns_count": result["turns_count"],
-            "out_dir": str(result["out_dir"].relative_to(PROJECT_ROOT)),
+            "out_dir": str(out_dir.relative_to(PROJECT_ROOT)),
         },
     )
 

@@ -1,7 +1,42 @@
-# Spec - API contract (`backend/api.py`, P2)
+# Spec - API contract (`backend/api.py`, P2 + P6b auth)
 
 Service layer **mỏng** — đọc/ghi state từ `runs/`, KHÔNG chứa logic pipeline (ADR-0005).
 Base URL local: `http://localhost:8000`. React dev: `http://localhost:5173` — CORS cho phép origin này.
+
+## §0. Auth (P6b) — mọi /api/v1/* yêu cầu Bearer access token
+
+- Access token: JWT HS256, TTL 60 phút, gửi qua header `Authorization: Bearer <token>`.
+- Refresh token: opaque 32 bytes, lưu **hash** ở `refresh_tokens`, TTL 7 ngày,
+  trao qua cookie httpOnly `refresh_token` (path `/auth`, SameSite=Lax).
+- Meeting bị giới hạn theo owner: không tồn tại HOẶC không phải của mình
+  → `404 {"detail": "meeting not found"}` như nhau (không lộ sự tồn tại).
+- Thiếu/sai token → `401 {"detail": "..."}`.
+
+### POST /auth/register
+
+Body `{"email": "...", "password": "≥8 ký tự"}`.
+
+| Kết quả | Body |
+|---|---|
+| `201` | `{"id": "<uuid>", "email": "..."}` |
+| `409` | `{"detail": "email đã tồn tại"}` |
+
+### POST /auth/login
+
+Form `username=<email>&password=...` (OAuth2PasswordRequestForm).
+
+| Kết quả | Body |
+|---|---|
+| `200` | `{"access_token": "...", "token_type": "bearer"}` + set cookie `refresh_token` |
+| `401` | `{"detail": "email hoặc mật khẩu sai"}` |
+
+### POST /auth/refresh — POST /auth/logout — GET /auth/me
+
+| Endpoint | Kết quả |
+|---|---|
+| `POST /auth/refresh` (đọc cookie) | `200` access mới + xoay refresh · `401` không cookie/hết hạn/bị revoke |
+| `POST /auth/logout` | `200 {"ok": true}` + revoke refresh hiện tại + xoá cookie |
+| `GET /auth/me` (Bearer) | `200 {"id", "email"}` · `401` không token |
 
 ## Endpoints
 
@@ -9,14 +44,15 @@ Base URL local: `http://localhost:8000`. React dev: `http://localhost:5173` — 
 
 → `200 {"status": "ok"}`
 
-### GET /api/v1/review?meeting=tc2
+### GET /api/v1/review?meeting=tc2 (Bearer bắt buộc)
 
 Trả trạng thái hiện tại để React render 4 cột.
 
 | Kết quả | Body |
 |---|---|
 | `200` | `meeting_state.json` (envelope + items + stats + known_limitations) |
-| `404` | `{"detail": "meeting not found"}` — chưa chạy `cli run` |
+| `401` | thiếu/sai access token |
+| `404` | `{"detail": "meeting not found"}` — chưa chạy `cli run` HOẶC không phải của mình |
 
 ### PUT /api/v1/review?meeting=tc2
 
@@ -59,9 +95,11 @@ trước, `data/uploads/` sau.
 | `200` | `{meeting, source, turns: [{turn, t_start, t_end, speaker, text}], limitations}` |
 | `404` | `{"detail": "transcript not found"}` |
 
-### POST /api/v1/meetings/upload (multipart/form-data)
+### POST /api/v1/meetings/upload (multipart/form-data, Bearer bắt buộc)
 
 Upload transcript + chạy pipeline ngay, trả state để review luôn.
+Ghi `meetings` (upsert, owner = user hiện tại) + `runs` (mỗi upload 1 run mới).
+`meeting_id` đã thuộc user khác → `409`.
 
 Fields: `file` (.txt/.srt, bắt buộc) · `meeting_id` (trống = từ tên file, sanitize)
 · `title` · `date` (YYYY-MM-DD, bắt buộc — R2) · `participants`

@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 
 // https://vite.dev/config/
-// Proxy `/api` + `/health` sang FastAPI ở :8000 (api-contract.md §1).
+// Proxy `/api` + `/health` + `/auth` sang FastAPI ở :8000 (api-contract.md §1).
 // Cho phép dev gọi `fetch('/api/v1/review?...')` không cần CORS biết.
 export default defineConfig({
   plugins: [react(), tailwindcss()],
@@ -15,6 +15,10 @@ export default defineConfig({
         changeOrigin: true,
       },
       '/health': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+      },
+      '/auth': {
         target: 'http://localhost:8000',
         changeOrigin: true,
       },

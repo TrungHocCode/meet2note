@@ -27,8 +27,46 @@ from backend.api import app
 
 
 @pytest.fixture
-def client() -> TestClient:
-    return TestClient(app)
+def db(tmp_path: Path, monkeypatch) -> dict:
+    """SQLite tmp + seed user + meeting 'tc_test' (P6b).
+
+    Set DATABASE_URL/JWT_SECRET qua env — backend đọc env mỗi lần gọi
+    nên test có DB riêng, không chạm Postgres local.
+    """
+    from backend.db.models import Base, Meeting, User
+    from backend.db.security import hash_password
+    from backend.db.session import make_engine
+    from sqlalchemy.orm import Session as _Session
+
+    monkeypatch.setenv("JWT_SECRET", "test-only-secret-du-32-ky-tu-abcdef")
+    url = f"sqlite:///{tmp_path / 'test.db'}"
+    monkeypatch.setenv("DATABASE_URL", url)
+    engine = make_engine(url)
+    Base.metadata.create_all(engine)
+    email, password = "host@example.com", "Testpass123"
+    with _Session(engine) as s:
+        user = User(email=email, password_hash=hash_password(password))
+        s.add(user)
+        s.flush()
+        uid = user.id
+        s.add(Meeting(id="tc_test", owner_id=uid, title="Test", date="2026-10-13"))
+        s.commit()
+    return {"email": email, "password": password, "user_id": uid, "url": url}
+
+
+@pytest.fixture
+def client(db: dict) -> TestClient:
+    """TestClient đã login — mọi /api/v1/* đi kèm Bearer token."""
+    c = TestClient(app)
+    r = c.post(
+        "/auth/login",
+        data={"username": db["email"], "password": db["password"]},
+    )
+    assert r.status_code == 200, r.text
+    c.headers.update(
+        {"Authorization": f"Bearer {r.json()['access_token']}"}
+    )
+    return c
 
 
 @pytest.fixture
@@ -453,7 +491,12 @@ def test_transcript_404(client: TestClient, runs_dir: Path) -> None:
     assert r.status_code == 404
 
 
-def test_transcript_200(client: TestClient, runs_dir: Path) -> None:
+def test_transcript_200(client: TestClient, runs_dir: Path, db: dict) -> None:
+    from backend.db.models import Meeting
+    from backend.db.session import session_scope
+
+    with session_scope(db["url"]) as s:
+        s.add(Meeting(id="tx", owner_id=db["user_id"], title="Tx"))
     d = runs_dir / "data" / "transcripts"
     d.mkdir(parents=True)
     (d / "tx.txt").write_text(
