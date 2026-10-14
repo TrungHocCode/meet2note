@@ -22,6 +22,7 @@ frontend/.vite/
 runs/*
 !runs/.gitkeep
 data/uploads/
+samples/  # transcripts mẫu test local (không commit)
 
 # ── Private docs (coursework / sensitive — never push) ─────────
 docs/private/
