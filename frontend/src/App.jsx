@@ -168,8 +168,7 @@ function MetaPills({ item, allIds }) {
     pills.push(
       <Badge key="by" variant="secondary">bởi {item.decided_by || '?'}</Badge>,
     )
-    if (item.reason) pills.push(<Badge key="reason" variant="outline">lý do: {item.reason}</Badge>)
-    if ((item.supersedes ?? []).length > 0) {
+    if (item.supersedes && item.supersedes.length > 0) {
       pills.push(<Badge key="sup" variant="outline">thay thế: {item.supersedes.join(', ')}</Badge>)
     }
   }
@@ -178,7 +177,6 @@ function MetaPills({ item, allIds }) {
     if (item.severity) pills.push(<Badge key="sev" variant="outline">{item.severity}</Badge>)
   }
   if (item.type === 'open_issue') {
-    if (item.next_step) pills.push(<Badge key="ns" variant="secondary">next: {item.next_step}</Badge>)
     if (item.next_step_owner) pills.push(<Badge key="nso" variant="outline">{item.next_step_owner}</Badge>)
     if (item.system_generated) pills.push(<Badge key="sys" variant="conf-amber">hệ thống tạo</Badge>)
   }
@@ -294,6 +292,19 @@ function ItemCard({
       <div className="mt-2">
         <MetaPills item={item} allIds={allIds} />
       </div>
+
+      {/* Câu dài (lý do / next_step) render dạng text wrap, KHÔNG pill
+          (pill có whitespace-nowrap nên tràn khung — lỗi đã gặp). */}
+      {item.type === 'decision' && item.reason && (
+        <p className="mt-1 text-xs text-muted-foreground break-words">
+          Lý do: {item.reason}
+        </p>
+      )}
+      {item.type === 'open_issue' && item.next_step && (
+        <p className="mt-1 text-xs text-muted-foreground break-words">
+          Next: {item.next_step}
+        </p>
+      )}
 
       <div className="mt-2" data-testid={`card-${item.id}-evidence`}>
         <EvidenceLines evidence={item.evidence} onShow={onShowEvidence} />
