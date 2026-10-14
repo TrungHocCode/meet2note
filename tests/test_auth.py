@@ -89,6 +89,18 @@ def test_login_sets_refresh_cookie(anon: TestClient) -> None:
     assert "refresh_token" in (r.cookies or {})
 
 
+def test_cross_site_cookie_flags(monkeypatch) -> None:
+    """COOKIE_CROSS_SITE=1 → SameSite=None + Secure (link demo Vercel+tunnel)."""
+    from backend.api import _set_refresh_cookie
+    from fastapi.responses import JSONResponse
+
+    monkeypatch.setenv("COOKIE_CROSS_SITE", "1")
+    resp = JSONResponse(status_code=200, content={})
+    _set_refresh_cookie(resp, "raw-token")
+    hdr = resp.headers.get("set-cookie", "").lower()
+    assert "samesite=none" in hdr and "secure" in hdr
+
+
 # ── me / refresh / logout ─────────────────────────────────────────
 
 

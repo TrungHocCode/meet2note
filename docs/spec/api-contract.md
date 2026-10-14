@@ -103,7 +103,8 @@ Tải file export về máy user (`Content-Disposition: attachment`).
 
 - Error format: `{"detail": string}` (FastAPI mặc định); riêng gate dùng `{"error": code, ...}`.
 - Tên file output: `minutes.md`, `tasks_jira.csv` — chi tiết: `spec/export-format.md`.
-- CORS: `allow_origins=["http://localhost:5173"]` (dev), không mở wildcard.
+- CORS: `allow_origins` từ env `CORS_ORIGINS` (default `http://localhost:5173`),
+  `allow_credentials=True` để gửi refresh cookie (xem `docs/runbook/demo-link.md` khi host FE/BE khác origin).
 
 ## Transcript viewer + upload (P5)
 
