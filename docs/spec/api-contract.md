@@ -44,3 +44,30 @@ Gate R6: export chỉ sau khi **mọi item đỏ (<0.50) đã được Đồng �
 - Error format: `{"detail": string}` (FastAPI mặc định); riêng gate dùng `{"error": code, ...}`.
 - Tên file output: `minutes.md`, `tasks_jira.csv` — chi tiết: `spec/export-format.md`.
 - CORS: `allow_origins=["http://localhost:5173"]` (dev), không mở wildcard.
+
+## Transcript viewer + upload (P5)
+
+### GET /api/v1/transcript?meeting=tc2
+
+Trả turns để UI hiện context quanh evidence (±4 turns). Tìm ở `data/transcripts/`
+trước, `data/uploads/` sau.
+
+| Kết quả | Body |
+|---|---|
+| `200` | `{meeting, source, turns: [{turn, t_start, t_end, speaker, text}], limitations}` |
+| `404` | `{"detail": "transcript not found"}` |
+
+### POST /api/v1/meetings/upload (multipart/form-data)
+
+Upload transcript + chạy pipeline ngay, trả state để review luôn.
+
+Fields: `file` (.txt/.srt, bắt buộc) · `meeting_id` (trống = từ tên file, sanitize)
+· `title` · `date` (YYYY-MM-DD, bắt buộc — R2) · `participants`
+(JSON `[{name, role?, aliases?}]`, thiếu aliases → `[name]`) · `chunk_size` (40) · `overlap` (10).
+
+| Kết quả | Body |
+|---|---|
+| `200` | `{meeting_id, state, turns_count, out_dir}` — file + meta lưu `data/uploads/` (gitignored) |
+| `400` | sai ext/date/participants/file rỗng |
+| `422` | parse transcript lỗi |
+| `503` | thiếu LLM (Ollama chưa bật / chưa cấu hình `.env`) |

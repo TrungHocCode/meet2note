@@ -1,7 +1,7 @@
 [00:00:05] Lan: Chào team, hôm nay mình họp kỹ thuật về module checkout nhé.
 [00:00:14] Nam: Em chào chị Lan, em đã có research.
 [00:00:22] Hà: Em chào chị, em cũng chuẩn bị rồi.
-[00:00:32] Lan: Mục tiêu: chốt được flow thanh toán cuối chứa cho sprint tới.
+[00:00:32] Lan: Mục tiêu: chốt được flow thanh toán cuối cùng cho sprint tới.
 [00:00:42] Nam: Em so sánh Stripe và VNPay rồi ạ.
 [00:01:00] Hà: Em thì lo phần integration ạ.
 [00:01:14] Lan: Ok, em Nam trình bày đi.
@@ -37,24 +37,42 @@
 [00:07:36] Lan: Mình lưu ý KH SLA standard 1 phải báo trước 7 ngày.
 [00:07:50] Nam: Dạ em note.
 [00:07:64] Hà: Em note.
-[00:08:04] Lan: VG (vòng gọi) refund cần test với edge cases: timeout, duplicate request.
+[00:08:04] Lan: VG refund cần test với edge cases: timeout, duplicate request.
 [00:08:18] Hà: Em phụ trách test plan edge cases, deadline thứ 4 tuần sau.
 [00:08:34] Nam: Dạ em phối hợp.
 [00:08:50] Lan: Ok, em Hà test edge cases thứ 4 tuần sau.
-[00:09:02] Lan: Tiếp: vụ cập nhật documentation. Em nào phụ trách?
-[00:09:16] Hà: Em chịu trách nhiệm, deadline thứ 2 tuần sau.
-[00:09:32] Lan: Được, thứ 2 tuần sau.
-[00:09:42] Nam: Em hỗ trợ review.
-[00:09:58] Lan: Ai có thắc nào không?
-[00:10:12] Hà: Câu hỏ, nếu VNPay lỗi thì fallback sang Stripe hay treo?
-[00:10:26] Lan: Mình mở Open Issue cho vụ fallback. Em Hà làm proposal.
-[00:10:40] Hà: Dạ em làm proposal, deadline thứ 4 tuần sau.
-[00:10:58] Lan: Ừ, Open Issue về fallback.
-[00:11:14] Nam: Em note Nghiêm.
-[00:11:28] Hà: Dạ em hiểu.
-[00:11:42] Lan: Chốt task: Hà lead integration thứ 6 tuần này, Nam test plan cuối tháng, Hà update docs thứ 2 tuần sau, Hà test edge cases thứ 4 tuần sau.
-[00:11:58] Nam: Dạ em note.
-[00:12:14] Hà: Em note.
-[00:12:28] Lan: Ừ, mình kết thúc nhé. Cảm ơn team.
-[00:12:42] Nam: Cảm ơn chị.
-[00:12:58] Hà: Cảm ơn chị Lan.
+[00:09:02] Lan: À mà này, thứ 6 tuần này em Hà có lịch đi onsite với sếp không?
+[00:09:16] Hà: Dạ có, sáng thứ 6 em đi onsite ạ.
+[00:09:30] Lan: Vậy hay dời deadline lead integration sang thứ 2 tuần sau nhé?
+[00:09:44] Hà: Dạ... nhưng KH hối demo sớm, dời thì trễ demo ạ.
+[00:09:58] Nam: Em thấy KH bên ấy khó tính vụ deadline lắm ạ.
+[00:10:12] Lan: Ừ nhỉ. Thôi giữ nguyên thứ 6 tuần này, em Hà tranh thủ onsite về làm tiếp nhé.
+[00:10:26] Hà: Dạ vâng, em giữ deadline thứ 6 tuần này ạ.
+[00:10:40] Lan: Tiếp: vụ cập nhật documentation. Em nào phụ trách?
+[00:10:54] Hà: Em chịu trách nhiệm, deadline thứ 2 tuần sau.
+[00:11:08] Lan: Được, thứ 2 tuần sau.
+[00:11:22] Nam: Em hỗ trợ review.
+[00:11:36] Lan: Mà PO có yêu cầu thêm UAT trước khi release không?
+[00:11:50] Nam: Dạ PO bảo UAT xong mới cho merge vào main ạ.
+[00:12:04] Hà: UAT thì QA lo, em chỉ cần báo trước 2 ngày ạ.
+[00:12:18] Lan: Ok, note UAT vào checklist release nhé.
+[00:12:32] Nam: Dạ em note checklist ạ.
+[00:12:46] Hà: Chị ơi, cái task test plan edge cases, nếu em xong sớm thứ 6 tuần sau nữa thì có sao không ạ?
+[00:13:00] Lan: Xong sớm thì tốt, nhưng deadline vẫn là thứ 4 tuần sau nhé, đừng để trôi.
+[00:13:14] Hà: Dạ em hiểu, thứ 4 tuần sau là hạn chót ạ.
+[00:13:28] Nam: Em hỏi thêm, fallback Stripe khi VNPay lỗi thì QA test kiểu gì ạ?
+[00:13:42] Hà: Câu hỏi hay, nếu VNPay lỗi thì fallback sang Stripe hay treo? Em cũng chưa rõ.
+[00:13:56] Lan: Mình mở Open Issue cho vụ fallback. Em Hà làm proposal.
+[00:14:10] Hà: Dạ em làm proposal, deadline thứ 4 tuần sau.
+[00:14:24] Lan: Ừ, Open Issue về fallback.
+[00:14:38] Nam: Em note nghiêm túc vụ này, vì sếp hỏi là em trả lời không được đâu.
+[00:14:52] Hà: Sếp hỏi thì cứ bảo team đang evaluate, 'tuyệt vời' lắm cũng phải chờ data.
+[00:15:06] Lan: Hà đùa đấy à? Sarcasm để sau nhé, tập trung nào.
+[00:15:20] Hà: Dạ em đùa thôi, em làm proposal nghiêm túc ạ.
+[00:15:34] Lan: Chốt task nhắc lại: Hà lead integration thứ 6 tuần này, Nam test plan cuối tháng.
+[00:15:48] Lan: Hà update docs thứ 2 tuần sau, Hà test edge cases thứ 4 tuần sau.
+[00:16:02] Nam: Dạ em note đủ 4 task ạ.
+[00:16:16] Hà: Em note ạ.
+[00:16:30] Lan: Ừ, mình kết thúc nhé. Cảm ơn team.
+[00:16:44] Nam: Cảm ơn chị.
+[00:16:58] Hà: Cảm ơn chị Lan.

@@ -5,25 +5,28 @@
       "content_any": ["FastAPI", "JWT"],
       "decided_by": "Lan",
       "supersedes": [],
-      "evidence_ts": "00:02:30",
-      "evidence_ts_any": ["00:02:30", "00:02:40"]
+      "evidence_ts": "00:04:14",
+      "evidence_ts_any": ["00:04:14", "00:04:30"]
     }
   ],
   "tasks": [
     {
       "what": "Research vendor pricing",
+      "content_any": ["giá vendor", "research", "pricing", "nghiên cứu giá"],
       "owner": "Nam",
       "due": "2026-10-16",
       "link_to_decision": null
     },
     {
       "what": "Setup môi trường dev cho module mới",
+      "content_any": ["setup", "môi trường dev"],
       "owner": "Hà",
       "due": "2026-10-19",
       "link_to_decision": null
     },
     {
       "what": "Viết test plan thanh toán",
+      "content_any": ["test plan thanh toán"],
       "owner": "Minh",
       "due": "2026-10-21",
       "link_to_decision": null

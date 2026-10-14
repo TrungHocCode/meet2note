@@ -53,3 +53,23 @@ export async function getHealth() {
   const res = await fetch(`${BASE}/health`)
   return _jsonOrThrow(res)
 }
+
+export async function getTranscript(meeting) {
+  const url = `${BASE}/api/v1/transcript?meeting=${encodeURIComponent(meeting)}`
+  const res = await fetch(url, { method: 'GET' })
+  return _jsonOrThrow(res)
+}
+
+export async function uploadMeeting({ file, meetingId, title, date, participants }) {
+  const form = new FormData()
+  form.append('file', file)
+  if (meetingId) form.append('meeting_id', meetingId)
+  form.append('title', title || file?.name || 'Cuộc họp upload')
+  form.append('date', date)
+  form.append('participants', participants || '[]')
+  const res = await fetch(`${BASE}/api/v1/meetings/upload`, {
+    method: 'POST',
+    body: form,
+  })
+  return _jsonOrThrow(res)
+}

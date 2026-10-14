@@ -15,77 +15,84 @@
 [00:02:54] Lan: Ok, ghi nhận.
 [00:03:06] Nam: Em đề xuất Spring Boot vẫn ạ.
 [00:03:18] Hà: Em đề xuất FastAPI ạ.
-[00:03:32] Lan: Mình test nghiêm nay xem phản ứng KH ra sao.
+[00:03:32] Lan: Mình test nghiêm túc xem phản ứng KH ra sao.
 [00:03:42] Nam: KH có technical lead là anh Khải, anh ấy thích Java.
 [00:03:54] Hà: Nhưng team vận hành giỏi Python hơn.
-[00:04:02] Lan: Ừ, hai bên có lý tính. Mình tạm ngưng, họp lại sau.
-[00:04:14] Nam: Dạ hay sau ạ.
-[00:04:28] Hà: Em sẽ chuẩn bị benchmark.
-[00:04:36] Lan: Em Hà làm benchmark FastAPI vs Spring Boot, deadline thứ 4 tuần sau nhé.
-[00:04:50] Hà: Dạ em làm, deadline thứ 4 tuần sau.
-[00:05:04] Nam: Em sẽ chuẩn bị POC Spring Boot.
-[00:05:18] Lan: Em Nam làm POC Spring Boot, deadline thứ 5 tuần sau.
-[00:05:32] Nam: Dạ em làm POC, thứ 5 tuần sau.
-[00:05:46] Lan: Vậy mình quay lại sau khi mình có data. Hẹn thứ 3 tuần sau.
-[00:05:58] Hà: Dạ hẹn thứ 3.
-[00:06:14] Nam: Em note.
-[00:06:30] Lan: (Các turn 7-25: thảo luận tiếp với chồng lấn speaker, lan truyền giữa Nam và Hà)
-[00:06:44] Nam: Em vẫn giữ ý kiến Spring Boot ạ.
-[00:06:58] Hà: Em vẫn giữ FastAPI ạ.
-[00:07:08] Lan: Lan chưa biết chọn bên nào.
-[00:07:22] Nam: Chị ơi, em xin phép trình bày thêm về Spring Boot.
-[00:07:36] Hà: Em xin phép trình bày về FastAPI.
-[00:07:50] Nam: Spring Boot có actuator sẵn, monitoring tốt.
-[00:08:04] Hà: FastAPI có Pydantic, validation tự động.
-[00:08:18] Lan: (cut) Ok, hai bên đều có lý. Mình CHỐT Spring Boot nhé.
-[00:08:34] Nam: Dạ em đồng ý Spring Boot.
-[00:08:50] Hà: Dạ em đồng ý.
-[00:09:02] Lan: Vậy quyết định là Spring Boot.
-[00:09:16] Nam: Dạ Spring Boot.
-[00:09:32] Hà: Dạ.
-[00:09:42] Lan: Em Nam làm lead migration Spring Boot, deadline cuối tháng.
-[00:09:58] Nam: Dạ em làm lead, cuối tháng.
-[00:10:12] Lan: Em Hà support docs, deadline thứ 2 tuần sau.
-[00:10:26] Hà: Dạ em support docs, thứ 2 tuần sau.
-[00:10:40] Lan: Tiếp: Mình bàn quyết định tech stack Frontend.
-[00:10:58] Hà: Em đề xuất Vue vì nhẹ, dễ tiếp cận.
-[00:11:14] Nam: Em đề xuất React vì team đã quen.
-[00:11:28] Lan: Ừ, hai bên có lý. Mình CHỐT React nhé.
-[00:11:44] Hà: Dạ em đồng ý React.
-[00:11:58] Nam: Dạ React.
-[00:12:14] Lan: Ok, chốt Frontend React.
-[00:12:28] Nam: Dạ.
-[00:12:42] Hà: Dạ.
-[00:12:58] Lan: (Bất ngờng, sau break 30 phút) Mọi người ơi, em suy nghĩ lại rồi.
-[00:13:12] Lan: Spring Boot có quá nhiều boilerplate, mình CHUYỂN sang FastAPI nhé.
-[00:13:26] Nam: Ơ, chị ơi — mình vừa chốt Spring Boot mà?
-[00:13:40] Hà: Em đồng ý FastAPI ạ.
-[00:13:54] Lan: Ừ, mình đổi ý, quyết định cuối cùng là FastAPI.
-[00:14:08] Nam: Dạ... em cũng đồng ý FastAPI.
-[00:14:22] Lan: Vậy chốt FastAPI.
-[00:14:36] Hà: Dạ FastAPI.
-[00:14:50] Lan: (Lại suy nghị) Khoan, mình nghĩ kỹ lại.
-[00:15:04] Lan: Spring Boot có community lớn, KH thích. Vũ quay lại Spring Boot.
-[00:15:18] Hà: Em... em đồng ý ạ.
-[00:15:32] Nam: Dạ em đồng ý.
-[00:15:46] Lan: Vậy quyết định cuối: Spring Boot.
-[00:16:00] Nam: Dạ Spring Boot.
-[00:16:14] Hà: Dạ.
-[00:16:28] Lan: (Cộc lắc) Nhưng mà... thôi để tuần sau quyết mình lại nhé.
-[00:16:42] Nam: Dạ tuần sau.
-[00:16:58] Hà: Dạ.
-[00:17:14] Lan: Mình không nhé. Mọi người nghĩ thêm đi rồi mình họp lại.
-[00:17:28] Nam: Dạ.
-[00:17:42] Hà: Dạ em hiểu.
-[00:17:58] Lan: Một ý nữa, deadline dự án cần chốt trước cuối quý.
-[00:18:14] Nam: Dạ cuối quý.
-[00:18:28] Hà: Dạ.
-[00:18:42] Lan: Mình hẹn họp lại thứ 3 tuần sau.
-[00:18:58] Nam: Dạ.
-[00:19:14] Hà: Dạ.
-[00:19:28] Lan: Vậy mình tạm ngưng, ai có ý kiến gì ghi vào sharepoint nhé.
-[00:19:42] Nam: Dạ.
-[00:19:58] Hà: Dạ.
-[00:20:14] Lan: Bye cả nhóm.
-[00:20:28] Nam: Bye chị.
-[00:20:42] Hà: Bye mọi người.
+[00:04:02] Lan: Ừ, hai bên có lý. Mình thảo luận sâu hơn đi.
+[00:04:14] Nam: Dạ, để em phân tích kỹ. Spring Boot có actuator, monitoring enterprise sẵn.
+[00:04:32] Hà: FastAPI có Pydantic, docs tự sinh, deploy nhẹ hơn hẳn ạ.
+[00:04:50] Lan: Nghe cả hai bên rồi. Bên nào cũng có điểm mạnh.
+[00:05:04] Nam: Em nói thẳng: team Java bên KH sẽ review code mình, Python họ chê đấy ạ.
+[00:05:20] Hà: Em cũng nói thẳng: team mình có 1 người biết Java là anh Khải... à không, anh ấy bên KH.
+[00:05:36] Lan: Ý Hà là team mình không ai rành Java đúng không?
+[00:05:48] Hà: Dạ đúng, học Java mất ít nhất 1 sprint, timeline sẽ trượt ạ.
+[00:06:02] Nam: Trượt 1 sprint còn hơn maintain codebase Python mà KH không approve ạ.
+[00:06:18] Hà: Anh Nam nói vậy em không đồng ý. KH approve architecture rồi, chỉ review thôi ạ.
+[00:06:34] Lan: Hai đứa bình tĩnh. Để chị hỏi: deadline dự án là khi nào?
+[00:06:48] Nam: Cuối quý ạ, còn khoảng 10 tuần.
+[00:07:02] Hà: 10 tuần mà học Java + build thì vừa khít, không có buffer ạ.
+[00:07:16] Lan: Không buffer là rủi ro lớn. Ghi nhận ý này.
+[00:07:30] Nam: Nhưng FastAPI 'tuyệt vời' đến mấy thì ecosystem Java vẫn hơn hẳn ạ.
+[00:07:44] Hà: Anh lại sarcasm em rồi. Ecosystem hơn nhưng team mình dùng được mới quan trọng ạ.
+[00:07:58] Lan: Thôi không cà khịa nhau nữa. Mình vote nhanh đi.
+[00:08:12] Nam: Em vote Spring Boot ạ.
+[00:08:24] Hà: Em vote FastAPI ạ.
+[00:08:36] Lan: Hòa 1-1. Chị là người quyết định cuối vậy.
+[00:08:50] Lan: (cut) Ok, hai bên đều có lý. Mình CHỐT Spring Boot nhé.
+[00:09:04] Nam: Dạ em đồng ý Spring Boot.
+[00:09:18] Hà: Dạ em đồng ý.
+[00:09:32] Lan: Vậy quyết định là Spring Boot.
+[00:09:46] Nam: Dạ Spring Boot.
+[00:10:00] Hà: Dạ.
+[00:10:14] Lan: Em Nam làm lead migration Spring Boot, deadline cuối tháng.
+[00:10:28] Nam: Dạ em làm lead, cuối tháng.
+[00:10:42] Lan: Em Hà support docs, deadline thứ 2 tuần sau.
+[00:10:56] Hà: Dạ em support docs, thứ 2 tuần sau.
+[00:11:10] Lan: Tiếp: Mình bàn quyết định tech stack Frontend.
+[00:11:28] Hà: Em đề xuất Vue vì nhẹ, dễ tiếp cận.
+[00:11:44] Nam: Em đề xuất React vì team đã quen.
+[00:11:58] Lan: Ừ, hai bên có lý. Mình CHỐT React nhé.
+[00:12:14] Hà: Dạ em đồng ý React.
+[00:12:28] Nam: Dạ React.
+[00:12:44] Lan: Ok, chốt Frontend React.
+[00:12:58] Nam: Dạ.
+[00:13:12] Hà: Dạ.
+[00:13:26] Lan: (Bất ngờ, sau break 30 phút) Mọi người ơi, em suy nghĩ lại rồi.
+[00:13:40] Lan: Spring Boot có quá nhiều boilerplate, mình CHUYỂN sang FastAPI nhé.
+[00:13:54] Nam: Ơ, chị ơi — mình vừa chốt Spring Boot mà?
+[00:14:08] Hà: Em đồng ý FastAPI ạ.
+[00:14:22] Lan: Ừ, mình đổi ý, quyết định cuối cùng là FastAPI.
+[00:14:36] Nam: Dạ... em cũng đồng ý FastAPI.
+[00:14:50] Lan: Vậy chốt FastAPI.
+[00:15:04] Hà: Dạ FastAPI.
+[00:15:18] Lan: (Lại suy nghĩ) Khoan, mình nghĩ kỹ lại.
+[00:15:32] Lan: Spring Boot có community lớn, KH thích. Vậy quay lại Spring Boot.
+[00:15:46] Hà: Em... em đồng ý ạ.
+[00:16:00] Nam: Dạ em đồng ý.
+[00:16:14] Lan: Vậy quyết định cuối: Spring Boot.
+[00:16:28] Nam: Dạ Spring Boot.
+[00:16:42] Hà: Dạ.
+[00:16:56] Lan: Nhưng mà... để chắc ăn, vậy mình chốt— [nói đè] thôi, tuần sau mình quyết lại nhé.
+[00:17:10] Nam: Dạ tuần sau.
+[00:17:24] Hà: Dạ.
+[00:17:38] Lan: Mình tạm ngưng ở đây. Mọi người nghĩ thêm đi rồi mình họp lại.
+[00:17:52] Nam: Dạ.
+[00:18:06] Hà: Dạ em hiểu.
+[00:18:20] Lan: Một ý nữa, deadline dự án cần chốt trước cuối quý.
+[00:18:34] Nam: Dạ cuối quý.
+[00:18:48] Hà: Dạ.
+[00:19:02] Lan: Em Nam nhắn riêng anh Khải bên KH hỏi ý kiến Java vs Python nhé, đừng để lộ là team mình đang cãi nhau.
+[00:19:16] Nam: Dạ em nhắn kín ạ.
+[00:19:30] Hà: Chị ơi, vụ discount license Spring Boot 20% bên sales chào, mình có tính không ạ?
+[00:19:44] Lan: Discount thì để sau, giờ chưa phải lúc bàn tiền.
+[00:19:58] Nam: Dạ để sau ạ.
+[00:20:12] Hà: Dạ.
+[00:20:26] Lan: Mình hẹn họp lại thứ 3 tuần sau.
+[00:20:40] Nam: Dạ.
+[00:20:54] Hà: Dạ.
+[00:21:08] Lan: Vậy mình tạm ngưng, ai có ý kiến gì ghi vào sharepoint nhé.
+[00:21:22] Nam: Dạ.
+[00:21:36] Hà: Dạ em hiểu.
+[00:21:50] Lan: Bye cả nhóm.
+[00:22:04] Nam: Bye chị.
+[00:22:18] Hà: Bye mọi người.

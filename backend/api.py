@@ -5,11 +5,13 @@ backend/api.py — FastAPI layer mỏng (ADR-0005) cho P2 review workflow + P3 e
 KHÔNG chứa logic pipeline — chỉ adapter theo `docs/spec/api-contract.md`.
 Export gọi `pipeline.export.export_meeting` (P3) — không tự render.
 
-Endpoints (theo spec §1-§3):
+Endpoints (theo spec §1-§3 + P5 upload/transcript):
 - GET  /health
 - GET  /api/v1/review?meeting=tc2              → 200 state.json | 404
 - PUT  /api/v1/review?meeting=tc2              → ghi confirmed_state.json + append review_log
 - POST /api/v1/export?meeting=tc2              → 403 gate_red_items | 200 files | 404
+- GET  /api/v1/transcript?meeting=tc2          → 200 turns | 404
+- POST /api/v1/meetings/upload (multipart)     → chạy pipeline, 200 state | 400/422/503
 
 CORS chỉ http://localhost:5173 (React dev theo AGENTS.md §2).
 """
@@ -24,7 +26,7 @@ import time
 from pathlib import Path
 from typing import Any
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, File, Form, HTTPException, Query, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
@@ -281,6 +283,184 @@ def post_export(meeting: str) -> JSONResponse:
         content={
             "files": result["files"],
             "generated_at": result["generated_at"],
+        },
+    )
+
+
+# ──────────────────────────────────────────────────────────────────────
+# Transcript viewer + upload (P5)
+# ──────────────────────────────────────────────────────────────────────
+
+
+def _find_transcript_file(meeting_id: str) -> Path | None:
+    """Tìm transcript: data/transcripts/ trước, data/uploads/ sau."""
+    for base in ("transcripts", "uploads"):
+        d = PROJECT_ROOT / "data" / base
+        if not d.is_dir():
+            continue
+        for ext in (".txt", ".srt"):
+            for f in sorted(d.glob(f"{meeting_id}*{ext}")):
+                return f
+    return None
+
+
+@app.get("/api/v1/transcript")
+def get_transcript(meeting: str = Query(..., min_length=1)) -> JSONResponse:
+    """Trả turns transcript để UI hiện context quanh evidence (P5).
+
+    200: {meeting, source, turns:[{turn,t_start,t_end,speaker,text}], limitations}.
+    404: không tìm thấy transcript.
+    """
+    from pipeline.ingest import parse_transcript
+
+    path = _find_transcript_file(meeting)
+    if path is None:
+        return JSONResponse(
+            status_code=404,
+            content={"detail": "transcript not found"},
+        )
+    turns, limitations = parse_transcript(path)
+    return JSONResponse(
+        status_code=200,
+        content={
+            "meeting": meeting,
+            "source": path.name,
+            "turns": turns,
+            "limitations": limitations,
+        },
+    )
+
+
+_MEETING_ID_RE = None  # lazy-compile dưới để tránh import re ở top
+
+
+def _valid_meeting_id(mid: str) -> bool:
+    import re
+
+    global _MEETING_ID_RE
+    if _MEETING_ID_RE is None:
+        _MEETING_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$")
+    return bool(_MEETING_ID_RE.match(mid or ""))
+
+
+@app.post("/api/v1/meetings/upload")
+async def upload_meeting(
+    file: UploadFile = File(...),
+    meeting_id: str = Form(""),
+    title: str = Form("Cuộc họp upload"),
+    date: str = Form(...),
+    participants: str = Form("[]"),
+    chunk_size: int = Form(40),
+    overlap: int = Form(10),
+) -> JSONResponse:
+    """Upload transcript (.txt/.srt) + chạy pipeline ngay, trả state để review.
+
+    - meeting_id trống → lấy từ tên file (bỏ đuôi, sanitize).
+    - participants: JSON string list [{name, role?, aliases?}] (aliases thiếu → [name]).
+    - date: YYYY-MM-DD (dùng để resolve ngày tương đối — R2).
+    - File + meta lưu ở data/uploads/ (gitignored — transcript người dùng
+      KHÔNG bao giờ commit). Chạy live LLM qua .env (thiếu key → 503).
+    - 400: sai định dạng/ext; 422: parse transcript lỗi; 503: thiếu LLM;
+      200: {meeting_id, state, out_dir, turns_count}.
+    """
+    import json as _json
+    import re as _re
+
+    from pipeline.service import run_pipeline
+
+    filename = file.filename or ""
+    ext = Path(filename).suffix.lower()
+    if ext not in (".txt", ".srt"):
+        return JSONResponse(
+            status_code=400,
+            content={"detail": f"chỉ nhận .txt/.srt, got {filename!r}"},
+        )
+    mid = (meeting_id or "").strip() or _re.sub(r"\.[^.]+$", "", filename)
+    mid = _re.sub(r"[^A-Za-z0-9_-]", "_", mid)[:64] or "uploaded"
+    if not _valid_meeting_id(mid):
+        return JSONResponse(
+            status_code=400, content={"detail": f"meeting_id không hợp lệ: {mid!r}"}
+        )
+    if not _re.match(r"^\d{4}-\d{2}-\d{2}$", date or ""):
+        return JSONResponse(
+            status_code=400, content={"detail": "date phải YYYY-MM-DD"}
+        )
+    try:
+        parts = _json.loads(participants or "[]")
+        if not isinstance(parts, list):
+            raise ValueError("participants phải là JSON array")
+    except (ValueError, _json.JSONDecodeError) as e:
+        return JSONResponse(status_code=400, content={"detail": f"participants lỗi: {e}"})
+    norm_parts = []
+    for p in parts:
+        if not isinstance(p, dict) or not str(p.get("name", "")).strip():
+            return JSONResponse(
+                status_code=400,
+                content={"detail": "mỗi participant cần {name}"},
+            )
+        name = str(p["name"]).strip()
+        norm_parts.append({
+            "name": name,
+            "role": str(p.get("role", "") or "member").strip(),
+            "aliases": list(p.get("aliases") or [name]),
+        })
+
+    uploads = PROJECT_ROOT / "data" / "uploads"
+    uploads.mkdir(parents=True, exist_ok=True)
+    transcript_path = uploads / f"{mid}{ext}"
+    content = await file.read()
+    if not content.strip():
+        return JSONResponse(status_code=400, content={"detail": "file rỗng"})
+    transcript_path.write_bytes(content)
+    meta = {
+        "id": mid,
+        "title": title.strip() or mid,
+        "date": date,
+        "participants": norm_parts,
+        "glossary": {},
+    }
+    (uploads / f"{mid}_meta.json").write_text(
+        json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
+
+    # Brief live (fail → None, pipeline vẫn chạy).
+    brief_raw = None
+    try:
+        from pipeline.extract import extract_brief as _brief_fn
+        from pipeline.ingest import parse_transcript as _parse
+
+        turns, _ = _parse(transcript_path)
+        try:
+            brief_raw = _brief_fn(meta, turns)
+        except RuntimeError:
+            brief_raw = None
+        result = run_pipeline(
+            meeting_id=mid,
+            meta=meta,
+            transcript_path=transcript_path,
+            runs_dir=PROJECT_ROOT / "runs",
+            chunk_size=max(1, chunk_size),
+            overlap=max(0, overlap),
+            brief_raw=brief_raw,
+            pipeline_version="upload",
+        )
+    except FileNotFoundError as e:
+        return JSONResponse(status_code=422, content={"detail": str(e)})
+    except RuntimeError as e:
+        # Thường là thiếu LLM config (extract gọi call_llm).
+        return JSONResponse(
+            status_code=503,
+            content={"detail": f"LLM chưa sẵn sàng: {e}"},
+        )
+
+    state = result["state"]
+    return JSONResponse(
+        status_code=200,
+        content={
+            "meeting_id": mid,
+            "state": json.loads(state.model_dump_json()),
+            "turns_count": result["turns_count"],
+            "out_dir": str(result["out_dir"].relative_to(PROJECT_ROOT)),
         },
     )
 

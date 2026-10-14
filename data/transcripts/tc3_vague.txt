@@ -21,8 +21,8 @@
 [00:04:02] Hà: Em cũng note, cần ý kiến thêm từ KH.
 [00:04:14] Lan: Ừ, mình hẹn họp lại sau khi có đủ thông tin nhé.
 [00:04:28] Nam: Dạ hẹn họp sau.
-[00:04:36] Hà: Em sẽ triển khai research nhé (chưa chốt task cụ thể).
-[00:04:50] Lan: Ok, anh em triển khai nhé (chưa giao deadline).
+[00:04:36] Hà: Em sẽ triển khai research nhé.
+[00:04:50] Lan: Ok, anh em triển khai nhé.
 [00:05:04] Nam: Dạ em triển khai nhé.
 [00:05:18] Hà: Em cũng triển khai nhé.
 [00:05:32] Lan: Mình chưa quyết được hôm nay, để tuần sau họp lại.
@@ -46,21 +46,41 @@
 [00:09:42] Lan: Sẽ xem xét thêm, cần ý kiến KH.
 [00:09:58] Nam: Dạ sẽ xem xét.
 [00:10:12] Hà: Em hỗ trợ.
-[00:10:26] Lan: Anh em triển khai nhé (chưa có deadline cụ thể).
+[00:10:26] Lan: Anh em triển khai nhé.
 [00:10:40] Nam: Dạ triển khai.
 [00:10:58] Hà: Em triển khai.
-[00:11:14] Lan: Chốt là chưa chốt gì nhé, cần thêm dữ liệu.
-[00:11:28] Nam: Dạ em hiểu.
-[00:11:44] Hà: Em cũng hiểu.
-[00:11:58] Lan: Ai có câu hỏi gì không?
-[00:12:14] Nam: Em không có ạ.
-[00:12:28] Hà: Em cũng không.
-[00:12:42] Lan: Vậy mình end meeting, cảm ơn cả nhóm.
-[00:12:58] Nam: Cảm ơn chị.
-[00:13:12] Hà: Em cảm ơn.
-[00:13:26] Lan: Hẹn gặp tuần sau nhé.
-[00:13:40] Nam: Dạ hẹn gặp.
-[00:13:54] Hà: Hẹn gặp chị.
-[00:14:08] Lan: Bye cả nhóm.
-[00:14:22] Nam: Bye chị.
-[00:14:36] Hà: Bye mọi người.
+[00:11:14] Lan: À mà này, hay là mình chốt luôn Stripe đi cho nhanh nhỉ?
+[00:11:28] Nam: Dạ... chốt luôn ạ?
+[00:11:40] Hà: Khoan chị, em chưa có số liệu, chốt bây giờ rủi ro lắm ạ.
+[00:11:54] Lan: Ừ nhỉ, chị nói vậy thôi chứ chưa đủ dữ liệu. Thôi chưa chốt nhé.
+[00:12:08] Nam: Dạ, để có số liệu rồi tính tiếp ạ.
+[00:12:22] Hà: Em đồng ý, không nên vội ạ.
+[00:12:36] Lan: Chốt là chưa chốt gì nhé, cần thêm dữ liệu.
+[00:12:50] Nam: Dạ em hiểu.
+[00:13:04] Hà: Em cũng hiểu.
+[00:13:18] Lan: Mà này, nếu KH hỏi tuần này thì mình trả lời sao?
+[00:13:32] Nam: Em bảo đang đánh giá, hẹn tuần sau có kết quả ạ.
+[00:13:46] Hà: Em thấy trả lời vậy ổn ạ.
+[00:14:00] Lan: Ok, Nam em phụ trách trả lời KH nhé, khi nào cũng được.
+[00:14:14] Nam: Dạ... khi nào cũng được là khi nào ạ?
+[00:14:28] Lan: Thì sớm sớm nhé, đừng để KH chờ lâu.
+[00:14:42] Nam: Dạ em sẽ cố sớm ạ.
+[00:14:56] Hà: Chị ơi, còn vụ refund flow thì sao ạ?
+[00:15:10] Lan: Refund flow cũng chưa chốt, để chung với đợt sau nhé.
+[00:15:24] Nam: Dạ, gộp chung ạ.
+[00:15:38] Hà: Vậy tóm lại hôm nay mình chưa quyết gì đúng không chị?
+[00:15:52] Lan: Đúng rồi, toàn bộ để open, tuần sau có data rồi họp lại.
+[00:16:06] Nam: Dạ rõ ạ.
+[00:16:20] Hà: Em rõ ạ.
+[00:16:34] Lan: Ai có câu hỏi gì không?
+[00:16:48] Nam: Em không có ạ.
+[00:17:02] Hà: Em cũng không.
+[00:17:16] Lan: Vậy mình end meeting, cảm ơn cả nhóm.
+[00:17:30] Nam: Cảm ơn chị.
+[00:17:44] Hà: Em cảm ơn.
+[00:17:58] Lan: Hẹn gặp tuần sau nhé.
+[00:18:12] Nam: Dạ hẹn gặp.
+[00:18:26] Hà: Hẹn gặp chị.
+[00:18:40] Lan: Bye cả nhóm.
+[00:18:54] Nam: Bye chị.
+[00:19:08] Hà: Bye mọi người.

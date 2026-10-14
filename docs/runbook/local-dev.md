@@ -39,6 +39,14 @@ python -m uvicorn backend.api:app --reload   # :8000, GET /health
 Set-Location frontend; npm install; npm run dev
 ```
 
+## 3b. Upload transcript + chạy trực tiếp trên UI (P5)
+
+1. Bật API + React như §3 (bạn tự bật trong terminal riêng — agent không bật server).
+2. Sidebar → form "Upload transcript": chọn file `.txt/.srt`, điền id/title/date/participants → **Upload + chạy**.
+3. Pipeline chạy đồng bộ (vài phút với model local) → state hiện ngay để review.
+4. Bấm timestamp evidence bất kỳ → drawer transcript hiện ±4 turns quanh câu đó.
+5. File upload nằm ở `data/uploads/` (gitignored — không bao giờ commit).
+
 ## 4. Chạy test + eval
 
 ```powershell

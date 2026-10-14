@@ -21,6 +21,7 @@ frontend/.vite/
 # ── Runs (output versioned — local only) ───────────────────────
 runs/*
 !runs/.gitkeep
+data/uploads/
 
 # ── Private docs (coursework / sensitive — never push) ─────────
 docs/private/

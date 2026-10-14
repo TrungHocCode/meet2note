@@ -140,9 +140,16 @@ def _merge_duplicates(
             continue
 
         # Nhiều bản cùng id → nhóm theo evidence signature.
+        # NGOẠI LỆ: evidence rỗng KHÔNG chứng minh được trùng khít
+        # (2 item khác nhau đều có thể evidence=[]) → mỗi bản 1 nhóm riêng,
+        # để _resolve_same_id_conflict phân xử (arbitrate/rename theo nội dung).
         sig_groups: dict[tuple, list[dict[str, Any]]] = {}
         for _, raw in instances:
-            sig = _ev_signature(raw.get("evidence", []))
+            evs = raw.get("evidence", []) or []
+            if not evs:
+                sig_groups.setdefault(("__no_evidence__", id(raw)), []).append(raw)
+                continue
+            sig = _ev_signature(evs)
             sig_groups.setdefault(sig, []).append(raw)
         sigs = list(sig_groups.keys())
 
@@ -233,13 +240,30 @@ def _pick_winner(
     return winner[1], losers
 
 
+def _item_text(raw: dict[str, Any]) -> str:
+    """Nội dung chính của item (task dùng `what`, còn lại dùng `content`)."""
+    if raw.get("type") == "task":
+        return str(raw.get("what") or "")
+    return str(raw.get("content") or "")
+
+
+def _sig_tokens(text: str) -> set[str]:
+    """Tokens significant (len≥4) để đo overlap — dùng chung cho merge/split."""
+    return {t for t in _norm_text(text or "").split() if len(t) >= 4}
+
+
 def _resolve_same_id_conflict(
     items: list[dict[str, Any]],
-    chunk_items: list[list[dict[str, Any]]],
+    chunk_items: list[dict[str, Any]],
     limitations: list[str],
 ) -> list[dict[str, Any]]:
     """Cùng id + khác evidence → majority / latest-decide → 1 winner.
 
+    NGOẠI LỆ (live tc4): model tái dùng id chung chung (T1..T8) cho TASK KHÁC
+    NHAU ở mỗi chunk. Cùng id + nội dung KHÁC NHAU ở task (và các loại trừ
+    decision) = id collision, KHÔNG phải conflict → tách cluster theo nội
+    dung, cluster sau đổi id mới (giữ vết limitation). Decision giữ nguyên
+    (cùng id = cùng quyết định → trọng tài).
     Loser ghi limitations (audit, KHÔNG xoá — cần trace).
     Returns list items sau resolve.
     """
@@ -248,11 +272,61 @@ def _resolve_same_id_conflict(
     for raw in items:
         by_id.setdefault(str(raw.get("id", "")), []).append(raw)
 
+    used_ids: set[str] = set(by_id.keys())
     out: list[dict[str, Any]] = []
     for iid, group in by_id.items():
         if len(group) == 1:
             out.append(group[0])
             continue
+
+        first_type = group[0].get("type")
+        if first_type != "decision":
+            # Cluster theo nội dung: cùng nội dung → arbitrate trong cluster;
+            # khác nội dung → id collision → cluster sau rename id mới.
+            clusters: list[list[dict[str, Any]]] = []
+            for raw in group:
+                placed = False
+                for cl in clusters:
+                    other = _item_text(cl[0])
+                    mine = _item_text(raw)
+                    # Text ít hơn 2 tokens significant thì không đủ phân biệt
+                    # trùng/khác → KHÔNG tách (trọng tài như cũ; mất task thật
+                    # tệ hơn trùng task).
+                    if min(len(_sig_tokens(mine)), len(_sig_tokens(other))) < 2:
+                        cl.append(raw)
+                        placed = True
+                        break
+                    if _contents_match(mine, other):
+                        cl.append(raw)
+                        placed = True
+                        break
+                if not placed:
+                    clusters.append([raw])
+            if len(clusters) > 1:
+                for n, cl in enumerate(clusters):
+                    if n > 0:
+                        new_id = f"{iid}_{n + 1}"
+                        k = 2
+                        while new_id in used_ids:
+                            k += 1
+                            new_id = f"{iid}_{k}"
+                        used_ids.add(new_id)
+                        for raw in cl:
+                            limitations.append(
+                                f"id collision: {iid} ở chunk khác là task khác "
+                                f"({str(_item_text(raw))[:50]!r}) → đổi id {new_id}"
+                            )
+                            raw["id"] = new_id
+                    instances = [(c, r) for c, r in
+                                 [(_find_chunk_idx(raw, chunk_items), raw) for raw in cl]]
+                    winner, losers = _pick_winner(instances)
+                    out.append(winner)
+                    if losers:
+                        limitations.append(
+                            f"same-id conflict id={winner.get('id')}: "
+                            f"giữ 1 bản, bỏ {len(losers)} bản trùng nội dung"
+                        )
+                continue
 
         # Gán chunk_idx cho từng instance để majority dựa trên xuyên chunk.
         instances: list[tuple[int, dict[str, Any]]] = []
@@ -272,9 +346,124 @@ def _resolve_same_id_conflict(
             limitations.append(
                 f"same-id conflict id={iid}: chọn bản @{winner_ts} "
                 f"({len(instances) - len(losers)} winner-majority hoặc latest-decide). "
-                f"Bản thua: {loser_summaries} — giữ không xoáy (R4 audit)."
+                f"Bản thua: {loser_summaries} — giữ không xóa (R4 audit)."
             )
     return out
+
+
+def _demote_finals_without_decide(
+    items: list[dict[str, Any]], limitations: list[str]
+) -> None:
+    """Hạ final không có evidence chốt THẬT → proposal (in-place).
+
+    Luật business (glossary "Chốt vs nói chơi"): chốt cần câu chốt rõ.
+    Evidence role=decide nhưng quote là TƯỜNG THUẬT ("Em note lại: chốt...",
+    live tc1 D0/Nam) cũng không tính — chỉ ghi chú/đồng thuận lại ≠ chốt.
+    Giữ làm proposal để audit, không xóa.
+    """
+    for raw in items:
+        if raw.get("type") != "decision" or raw.get("status") != "final":
+            continue
+        real_decide = any(
+            (ev.get("role_in_discussion") or "") == "decide"
+            and not _is_recap(ev.get("quote", ""))
+            for ev in (raw.get("evidence") or [])
+        )
+        if not real_decide:
+            raw["status"] = "proposal"
+            limitations.append(
+                f"demote: {raw.get('id')} final→proposal (không có evidence "
+                f"chốt thật — chỉ là ghi chú/tường thuật lại, không phải chốt)"
+            )
+
+
+def _contents_match(a: str, b: str, min_len: int = 12) -> bool:
+    """Hai content có phải cùng một quyết định? (normalized containment).
+
+    Chỉ containment — KHÔNG dùng token-overlap (thử nghiệm cho thấy overlap
+    gộp nhầm 2 chốt thật sự khác nhau khi cùng scaffolding câu chữ).
+    Diễn đạt lại nhưng cùng ý mà không chứa nhau → để host phân xử ở review
+    (an toàn hơn gộp nhầm).
+    """
+    na, nb = _norm_text(a or ""), _norm_text(b or "")
+    if len(na) < min_len or len(nb) < min_len:
+        return False
+    return na in nb or nb in na
+
+
+# Câu tường thuật lại (recap), KHÔNG phải câu chốt — dù model có gán role=decide.
+_RECAP_RE = re.compile(
+    r"note lại|ghi lại|tóm lại|recap|tổng hợp lại|nhắc lại|ghi chép|tóm tắt lại"
+)
+
+
+def _is_recap(quote: str) -> bool:
+    return bool(_RECAP_RE.search(quote or ""))
+
+
+def _merge_same_content_finals(
+    items: list[dict[str, Any]], limitations: list[str]
+) -> None:
+    """Gộp finals CÙNG nội dung khác id (in-place) — vd model đặt D0 và D1
+    cho cùng một chốt ở 2 chunk. Winner = evidence decide muộn nhất;
+    union evidence + supersedes (bỏ self-ref); quyết định khác nội dung
+    KHÔNG đụng (để reversal detection xử — R4).
+    """
+    finals = [it for it in items
+              if it.get("type") == "decision" and it.get("status") == "final"]
+    merged_ids: set[str] = set()
+    for i, a in enumerate(finals):
+        if a.get("id") in merged_ids:
+            continue
+        group = [a]
+        for b in finals[i + 1 :]:
+            if b.get("id") in merged_ids:
+                continue
+            if _contents_match(a.get("content", ""), b.get("content", "")):
+                group.append(b)
+                merged_ids.add(b.get("id"))
+        if len(group) < 2:
+            continue
+
+        def _decide_ts(raw: dict[str, Any]) -> str:
+            # Chỉ tính evidence decide KHÔNG phải recap ("Em note lại: chốt..."
+            # là tường thuật, không phải chốt — live tc1 D0/Nam thua D1/Lan).
+            ts = ""
+            for ev in raw.get("evidence") or []:
+                if ev.get("role_in_discussion") == "decide" and not _is_recap(
+                    ev.get("quote", "")
+                ):
+                    if ev.get("timestamp", "") > ts:
+                        ts = ev["timestamp"]
+            return ts
+
+        winner = max(group, key=lambda r: (_decide_ts(r), str(r.get("id"))))
+        # Union evidence (theo signature) + supersedes (bỏ self-ref).
+        seen_sigs: set = set()
+        merged_ev: list[dict[str, Any]] = []
+        for raw in group:
+            for ev in raw.get("evidence") or []:
+                sig = (_norm_text(ev.get("quote", "")), ev.get("timestamp", ""),
+                       ev.get("speaker", ""))
+                if sig not in seen_sigs:
+                    seen_sigs.add(sig)
+                    merged_ev.append(ev)
+        sup: list[str] = []
+        for raw in group:
+            for s in raw.get("supersedes") or []:
+                if s not in sup:
+                    sup.append(s)
+        winner["evidence"] = merged_ev
+        winner["supersedes"] = [s for s in sup if s != winner.get("id")]
+        losers = [r.get("id") for r in group if r is not winner]
+        limitations.append(
+            f"merge: finals cùng nội dung {losers} → {winner.get('id')} "
+            f"(decide muộn nhất {_decide_ts(winner) or '??'} thắng)"
+        )
+        merged_ids.add(winner.get("id"))
+        for r in group:
+            if r is not winner:
+                items.remove(r)
 
 
 def _find_chunk_idx(
@@ -698,6 +887,14 @@ def resolve(
 
     # Bước 2: same-id conflict — chọn winner, loser → limitations
     items_after_conflict = _resolve_same_id_conflict(merged, chunk_items, limitations)
+
+    # Bước 2b: hạ final không có evidence decide nào → proposal (glossary
+    # "Chốt vs nói chơi": ghi chú/đồng thuận lại ≠ chốt).
+    _demote_finals_without_decide(items_after_conflict, limitations)
+
+    # Bước 2c: gộp finals CÙNG nội dung khác id (model đặt D0/D1 cho cùng 1 chốt).
+    # Khác nội dung thì giữ nguyên để reversal detection xử (R4).
+    _merge_same_content_finals(items_after_conflict, limitations)
 
     # Bước 3: nối supersedes xuyên chunk (proposal early + final late, khác id).
     _link_supersedes_xuyen_chunk(items_after_conflict, limitations)

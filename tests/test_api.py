@@ -386,6 +386,8 @@ def test_cli_run_calls_resolve_and_writes_state(
         env=env,
         capture_output=True,
         text=True,
+        encoding="utf-8",
+        errors="replace",
         timeout=60,
     )
     assert result.returncode == 0, (
@@ -404,3 +406,92 @@ def test_cli_run_calls_resolve_and_writes_state(
     assert "by_type" in state["stats"]
     assert "items_total" in state["stats"]
     assert state["stats"]["items_total"] >= 1
+
+
+# ──────────────────────────────────────────────────────────────────────
+# 5. GET /api/v1/transcript (P5 — click evidence xem context)
+# ──────────────────────────────────────────────────────────────────────
+
+
+def test_transcript_404(client: TestClient, runs_dir: Path) -> None:
+    r = client.get("/api/v1/transcript", params={"meeting": "nope"})
+    assert r.status_code == 404
+
+
+def test_transcript_200(client: TestClient, runs_dir: Path) -> None:
+    d = runs_dir / "data" / "transcripts"
+    d.mkdir(parents=True)
+    (d / "tx.txt").write_text(
+        "[00:00:05] Lan: Chào.\n[00:00:10] Nam: Ok.\n", encoding="utf-8"
+    )
+    r = client.get("/api/v1/transcript", params={"meeting": "tx"})
+    assert r.status_code == 200
+    body = r.json()
+    assert body["source"] == "tx.txt"
+    assert len(body["turns"]) == 2
+    assert body["turns"][0]["speaker"] == "Lan"
+    assert body["turns"][1]["turn"] == 2
+
+
+# ──────────────────────────────────────────────────────────────────────
+# 6. POST /api/v1/meetings/upload (P5 — upload chạy pipeline)
+# ──────────────────────────────────────────────────────────────────────
+
+
+def test_upload_bad_extension(client: TestClient, runs_dir: Path) -> None:
+    r = client.post(
+        "/api/v1/meetings/upload",
+        files={"file": ("x.pdf", "hello", "application/pdf")},
+        data={"date": "2026-10-13"},
+    )
+    assert r.status_code == 400
+
+
+def test_upload_bad_date_and_participants(client: TestClient, runs_dir: Path) -> None:
+    files = {"file": ("x.txt", "[00:00:05] Lan: Chào.\n", "text/plain")}
+    r = client.post(
+        "/api/v1/meetings/upload", files=files,
+        data={"meeting_id": "up1", "date": "13/10/2026"},
+    )
+    assert r.status_code == 400
+    r = client.post(
+        "/api/v1/meetings/upload", files=files,
+        data={"meeting_id": "up1", "date": "2026-10-13",
+              "participants": "không phải json"},
+    )
+    assert r.status_code == 400
+
+
+def test_upload_success_mocked(
+    client: TestClient, runs_dir: Path, tmp_path: Path, monkeypatch
+) -> None:
+    """Upload OK (pipeline mock — không cần LLM): file + meta lưu uploads/."""
+    from pipeline.schema import Meeting, MeetingState, Stats
+
+    st = MeetingState(
+        meeting=Meeting(
+            id="up1", title="Up", date="2026-10-13", participants=[],
+            source_file="up1.txt", pipeline_version="t",
+        ),
+        items=[], no_decision=False, stats=Stats(), known_limitations=[],
+    )
+    out_dir = tmp_path / "runs" / "up1" / "ts"
+    monkeypatch.setattr(
+        "pipeline.service.run_pipeline",
+        lambda **kw: {"state": st, "out_dir": out_dir, "turns_count": 2},
+    )
+    monkeypatch.setattr(
+        "pipeline.extract.extract_brief", lambda *a, **k: None
+    )
+    r = client.post(
+        "/api/v1/meetings/upload",
+        files={"file": ("up1.txt", "[00:00:05] Lan: Chào.\n", "text/plain")},
+        data={"meeting_id": "up1", "title": "Up", "date": "2026-10-13",
+              "participants": '[{"name": "Lan", "role": "PM"}]'},
+    )
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["meeting_id"] == "up1"
+    assert body["turns_count"] == 2
+    assert (tmp_path / "data" / "uploads" / "up1.txt").exists()
+    assert (tmp_path / "data" / "uploads" / "up1_meta.json").exists()

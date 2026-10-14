@@ -154,16 +154,29 @@ def compare(tc_id: str, state, golden: dict[str, Any]) -> dict[str, Any]:
             f"expected={golden['no_decision']} actual={state.no_decision}")
 
     # decisions_final (content_any/evidence_ts_any: biến thể ngữ nghĩa tương đương,
-    # vd live paraphrase "vendor Y" thay vì "phương án B" — đúng ý vẫn đạt)
+    # vd live paraphrase "vendor Y" thay vì "phương án B" — đúng ý vẫn đạt).
+    # Best-match (không greedy-first): ứng viên đúng nhiều sub-check nhất thắng.
     for idx, gd in enumerate(golden.get("decisions_final", [])):
         variants = [gd.get("content", "")] + list(gd.get("content_any", []))
-        cand = [f for f in finals
-                if any(_contains(v, f.content or "") for v in variants if v)]
-        if not cand:
+        cands = [f for f in finals
+                 if any(_contains(v, f.content or "") for v in variants if v)]
+        if not cands:
             put(f"decision[{idx}]", False,
                 f"không tìm thấy final khớp content~{gd.get('content', '')!r}")
             continue
-        f = cand[0]
+
+        def _dscore(f) -> int:
+            s = 0
+            if gd.get("decided_by") and f.decided_by == gd["decided_by"]:
+                s += 1
+            if gd.get("supersedes") and set(f.supersedes or []) == set(gd["supersedes"]):
+                s += 1
+            want = list(gd.get("evidence_ts_any") or ([gd["evidence_ts"]] if gd.get("evidence_ts") else []))
+            if want and any((ev.timestamp if ev else None) in want for ev in (f.evidence or [])):
+                s += 1
+            return s
+
+        f = max(cands, key=_dscore)
         ok = True
         notes = [f"{f.id} content~ok"]
         if gd.get("decided_by"):
@@ -182,34 +195,67 @@ def compare(tc_id: str, state, golden: dict[str, Any]) -> dict[str, Any]:
             notes.append(f"evidence_ts~{got} (expect một trong {want} ở ≥1 evidence)")
         put(f"decision[{idx}]", ok, "; ".join(notes))
 
-    # tasks (what dùng content_any tương tự decisions)
+    # tasks (what dùng content_any tương tự decisions; best-match).
+    # Lọc ứng viên theo owner+due TRƯỚC (hard identifiers), rồi mới xét what —
+    # vì model paraphrase what (thậm chí EN↔VN) nhưng owner/due là sự thật
+    # kiểm chứng được. what vẫn phải khớp biến thể mới đạt.
     for idx, gt in enumerate(golden.get("tasks", [])):
         variants = [gt.get("what", "")] + list(gt.get("content_any", []))
-        cand = [i for i in items if getattr(i, "type", "") == "task"
-                and any(_contains(v, getattr(i, "what", "") or "") for v in variants if v)]
-        if not cand:
+        pool = [i for i in items if getattr(i, "type", "") == "task"]
+
+        def _check_task(t) -> None:
+            ok = True
+            notes = [f"{t.id} what~ok"]
+            if gt.get("owner"):
+                match = t.owner == gt["owner"]
+                ok &= match
+                notes.append(f"owner={t.owner} (expect {gt['owner']})")
+            if gt.get("due"):
+                match = t.due == gt["due"]
+                ok &= match
+                notes.append(f"due={t.due} (expect {gt['due']})")
+            if gt.get("link_to_decision"):
+                match = t.link_to_decision == gt["link_to_decision"]
+                ok &= match
+                notes.append(f"link={t.link_to_decision} (expect {gt['link_to_decision']})")
+            if gt.get("due_hint") is not None:
+                match = _contains(gt["due_hint"], t.due_hint or "")
+                ok &= match
+                notes.append(f"due_hint~{t.due_hint!r} (expect~{gt['due_hint']!r})")
+            put(f"task[{idx}]", ok, "; ".join(notes))
+
+        def _content_ok(t) -> bool:
+            return any(_contains(v, getattr(t, "what", "") or "") for v in variants if v)
+
+        def _hard_ok(t) -> bool:
+            if gt.get("owner") and t.owner != gt["owner"]:
+                return False
+            if gt.get("due") and t.due != gt["due"]:
+                return False
+            return True
+
+        def _tscore(t) -> int:
+            s = 0
+            if gt.get("owner") and t.owner == gt["owner"]:
+                s += 1
+            if gt.get("due") and t.due == gt["due"]:
+                s += 1
+            if gt.get("link_to_decision") and t.link_to_decision == gt["link_to_decision"]:
+                s += 1
+            if gt.get("due_hint") is not None and _contains(gt["due_hint"], t.due_hint or ""):
+                s += 1
+            return s
+
+        hard = [t for t in pool if _hard_ok(t) and _content_ok(t)]
+        if hard:
+            _check_task(max(hard, key=_tscore))
+            continue
+        # Fallback: nới owner/due để báo chi tiết (phân biệt "sai task" vs "sai field").
+        loose = [t for t in pool if _content_ok(t)]
+        if not loose:
             put(f"task[{idx}]", False, f"không tìm thấy task~{gt.get('what', '')!r}")
             continue
-        t = cand[0]
-        ok = True
-        notes = [f"{t.id} what~ok"]
-        if gt.get("owner"):
-            match = t.owner == gt["owner"]
-            ok &= match
-            notes.append(f"owner={t.owner} (expect {gt['owner']})")
-        if gt.get("due"):
-            match = t.due == gt["due"]
-            ok &= match
-            notes.append(f"due={t.due} (expect {gt['due']})")
-        if gt.get("link_to_decision"):
-            match = t.link_to_decision == gt["link_to_decision"]
-            ok &= match
-            notes.append(f"link={t.link_to_decision} (expect {gt['link_to_decision']})")
-        if gt.get("due_hint") is not None:
-            match = _contains(gt["due_hint"], t.due_hint or "")
-            ok &= match
-            notes.append(f"due_hint~{t.due_hint!r} (expect~{gt['due_hint']!r})")
-        put(f"task[{idx}]", ok, "; ".join(notes))
+        _check_task(max(loose, key=_tscore))
 
     # open_issues_min
     if golden.get("open_issues_min"):
@@ -222,11 +268,12 @@ def compare(tc_id: str, state, golden: dict[str, Any]) -> dict[str, Any]:
         put("unresolved_reversal", len(flagged) >= 2,
             f"flagged={len(flagged)} finals (expect≥2, tc5 DỰ KIẾN không chốt được)")
 
-    # expected_red_count
-    if golden.get("expected_red_count") is not None:
+    # expected_red_min (số thẻ đỏ TỐI THIỂU — model có thể flag thêm, không phạt thừa)
+    red_min = golden.get("expected_red_min", golden.get("expected_red_count"))
+    if red_min is not None:
         reds = sum(1 for i in items if _badge(float(i.confidence)) == "red")
-        put("red_count", reds == golden["expected_red_count"],
-            f"red={reds} (expect {golden['expected_red_count']})")
+        put("red_count", reds >= red_min,
+            f"red={reds} (expect≥{red_min})")
 
     # brief (taxonomy §8): có thì outcomes phải trỏ ID tồn tại (verify đã enforce).
     # Golden chưa có brief → chỉ ghi nhận thông tin, không tính fail.

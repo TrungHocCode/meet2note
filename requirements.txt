@@ -1,6 +1,7 @@
 # Core
 pydantic>=2
 fastapi
+python-multipart
 uvicorn[standard]
 jinja2
 python-dotenv

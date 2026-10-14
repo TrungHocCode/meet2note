@@ -21,17 +21,12 @@ from __future__ import annotations
 import argparse
 import json
 import sys
-import time
 from pathlib import Path
 from typing import Any
 
 from dotenv import load_dotenv
 
-from .extract import extract
 from .ingest import parse_transcript
-from .resolve import resolve
-from .schema import Meeting, Participant
-from .verify import verify_state
 
 load_dotenv()  # nạp .env (Ollama/hosted key) — file này gitignored
 
@@ -138,17 +133,12 @@ def cmd_run(args: argparse.Namespace) -> int:
         return 2
     print(f"[cli] transcript={transcript_path}")
 
-    # Ingest
+    # Ingest trước (cần turns cho brief) — service dùng lại turns này.
+    # (service.run_pipeline dùng chung với API upload — ADR-0005.)
+    from .service import run_pipeline
+
     turns, ingest_limitations = parse_transcript(transcript_path)
     print(f"[cli] ingest: {len(turns)} turns, {len(ingest_limitations)} limitations")
-
-    # Output dir (versioned theo timestamp)
-    ts = time.strftime("%Y%m%d-%H%M%S")
-    out_dir = runs_dir / meeting_id / ts
-    out_dir.mkdir(parents=True, exist_ok=True)
-    print(f"[cli] output dir: {out_dir}")
-
-    log_path = out_dir / "llm_log.jsonl"
 
     # Quyết định LLM extract: live (call_llm) hay fixture mock
     extract_llm_fn = None
@@ -174,29 +164,6 @@ def cmd_run(args: argparse.Namespace) -> int:
         print(f"[cli] using LLM fixture (mock) for resolve: {fix_path}")
         resolve_llm_fn = _make_fixture_llm(fix_path)
 
-    # Extract
-    try:
-        extraction = extract(
-            meta, turns,
-            log_path=log_path,
-            llm_fn=extract_llm_fn,
-            chunk_size=args.chunk_size,
-            overlap=args.overlap,
-        )
-    except RuntimeError as e:
-        # Thiếu config LLM → in hướng dẫn, không crash im lặng
-        print(f"[cli] extract FAILED: {e}")
-        print("[cli] Tip: copy .env.example → .env và điền OPENAI_BASE_URL + MODEL_NAME.")
-        print("[cli]     Hoặc dùng --llm-fixture <path.json> để chạy mock end-to-end.")
-        print("[cli]     Test vẫn pass nhờ mock LLM (xem tests/test_extract.py).")
-        return 2
-
-    print(
-        f"[cli] extract: {len(extraction['items'])} items, "
-        f"{len(extraction['chunk_items'])} chunks, "
-        f"{len(extraction['known_limitations'])} chunk failures"
-    )
-
     # Brief — 1 call toàn transcript (taxonomy §8). Live: luôn gọi.
     # Fixture: chỉ gọi khi có --brief-fixture (tránh ăn response của extract).
     from .extract import extract_brief
@@ -221,44 +188,46 @@ def cmd_run(args: argparse.Namespace) -> int:
         except RuntimeError as e:
             print(f"[cli] brief FAILED (không chặn pipeline): {e}")
 
-    # Build Meeting
-    meeting = Meeting(
-        id=meta["id"],
-        title=meta["title"],
-        date=meta["date"],
-        participants=[Participant(**p) for p in meta.get("participants", [])],
-        source_file=str(transcript_path),
-        pipeline_version=PIPELINE_VERSION,
-    )
+    # Chạy pipeline qua service dùng chung với API (ADR-0005).
+    try:
+        result = run_pipeline(
+            meeting_id=meeting_id,
+            meta=meta,
+            transcript_path=transcript_path,
+            runs_dir=runs_dir,
+            chunk_size=args.chunk_size,
+            overlap=args.overlap,
+            extract_llm_fn=extract_llm_fn,
+            resolve_llm_fn=resolve_llm_fn,
+            brief_raw=brief_raw,
+            pipeline_version=PIPELINE_VERSION,
+            turns=turns,
+            ingest_limitations=ingest_limitations,
+        )
+    except RuntimeError as e:
+        # Thiếu config LLM → in hướng dẫn, không crash im lặng
+        print(f"[cli] extract FAILED: {e}")
+        print("[cli] Tip: copy .env.example → .env và điền OPENAI_BASE_URL + MODEL_NAME.")
+        print("[cli]     Hoặc dùng --llm-fixture <path.json> để chạy mock end-to-end.")
+        print("[cli]     Test vẫn pass nhờ mock LLM (xem tests/test_extract.py).")
+        return 2
 
-    # Resolve — trọng tài xuyên chunk + entity-link (P2)
-    resolution = resolve(
-        meta,
-        extraction["chunk_items"],
-        llm_fn=resolve_llm_fn,
+    state = result["state"]
+    out_dir = result["out_dir"]
+    extraction = result["extraction"]
+    resolution = result["resolution"]
+    print(
+        f"[cli] extract: {len(extraction['items'])} items, "
+        f"{len(extraction['chunk_items'])} chunks, "
+        f"{len(extraction['known_limitations'])} chunk failures"
     )
     print(
         f"[cli] resolve: {len(resolution['items'])} items, "
         f"{len(resolution['known_limitations'])} arbitration notes"
     )
 
-    # Verify
-    state = verify_state(
-        meeting=meeting,
-        items_raw=resolution["items"],
-        conf_llm_map=extraction["conf_llm_map"],
-        turns=turns,
-        limitations=list(ingest_limitations)
-        + extraction["known_limitations"]
-        + resolution["known_limitations"],
-        brief_raw=brief_raw,
-    )
-
-    # Save state.json
-    state_path = out_dir / "state.json"
-    state_path.write_text(state.model_dump_json(indent=2), encoding="utf-8")
-
     # Tóm tắt output
+    state_path = out_dir / "state.json"
     print(f"[cli] saved state: {state_path}")
     print(f"[cli] stats: {state.stats}")
     print(f"[cli] no_decision={state.no_decision}")

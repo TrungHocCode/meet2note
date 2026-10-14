@@ -346,13 +346,6 @@ def verify_state(
     limitations = list(limitations or [])
     participants = meeting.participants
 
-    # Count final decisions để phát hiện contradiction (R4 — phần đơn giản)
-    final_count = sum(
-        1 for raw in items_raw
-        if raw.get("type") == "decision" and raw.get("status") == "final"
-    )
-    has_contradiction = final_count > 1
-
     validated_items: list[Item] = []
     type_counter: Counter[str] = Counter()
     badge_counter: Counter[str] = Counter()
@@ -445,14 +438,27 @@ def verify_state(
             if not quote:
                 mismatch_any = True
                 continue
-            if not quote:
-                mismatch_any = True
-                continue
             matched, _ratio, _idx, _method = find_quote_in_turns(
                 quote, turns, claimed_turn
             )
             if matched:
                 quote_matched_any = True
+                # Sửa ts/turn/speaker về turn KHỚP THẬT (model hay gán sai ts
+                # vài giây dù quote đúng — live tc1: quote 04:14 gán ts 04:24).
+                if _idx is not None and 0 <= _idx < len(turns):
+                    t = turns[_idx]
+                    if (
+                        ev.get("timestamp") != t.get("t_start")
+                        or ev.get("turn") != t.get("turn")
+                    ):
+                        limitations.append(
+                            f"item {item_id} ({item_type}): evidence ts "
+                            f"{ev.get('timestamp')} → {t.get('t_start')} "
+                            f"(khớp quote tại turn {t.get('turn')})"
+                        )
+                    ev["timestamp"] = t.get("t_start", ev.get("timestamp"))
+                    ev["turn"] = t.get("turn", ev.get("turn"))
+                    ev["speaker"] = t.get("speaker", ev.get("speaker"))
             else:
                 mismatch_any = True
 
@@ -467,10 +473,6 @@ def verify_state(
             evidence_mismatch=mismatch_any,
             item_dict=item_dict,
         )
-        # Contradiction penalty (R4) — chỉ áp cho final decisions khi >1 final
-        if has_contradiction and item_type == "decision" and item_dict.get("status") == "final":
-            final_conf = max(0.0, final_conf - 0.20)
-            conf_reason += "; contradiction -0.20"
         # unresolved_reversal penalty (P2 R4) — đã được resolve flag + O_REV
         if (
             item_type == "decision"
@@ -547,22 +549,45 @@ def verify_state(
                 "O_SYS (system, confidence 0.0). Host bắt buộc review."
             )
 
-    # ─── 6. Stats + contradiction log ───
+    # ─── 6. Contradiction trên finals SỐNG SÓT (không phạt oan).
+    # Penalty cũ tính trên raw input (kể cả item sau đó rớt) → stale.
+    # Chỉ khi ≥2 final cùng tồn tại sau validate mới trừ điểm + log.
+    surviving_finals = [
+        it for it in validated_items
+        if isinstance(it, Decision) and it.status == "final"
+    ]
+    if len(surviving_finals) > 1:
+        for it in surviving_finals:
+            it.confidence = max(0.0, float(it.confidence) - 0.20)
+            it.confidence_reason += "; contradiction -0.20"
+        # Tính lại badge (penalty có thể đổi màu).
+        badge_counter = Counter(badge_for(it.confidence) for it in validated_items)
+        limitations.append(
+            f"R4: {len(surviving_finals)} Decision final cùng tồn tại — "
+            f"mâu thuẫn tiềm ẩn, mỗi final -0.20"
+        )
+
+    # ─── 7. Stats ───
     stats = Stats(
         by_type=dict(type_counter),
         items_total=sum(type_counter.values()),
         by_badge=dict(badge_counter),
     )
 
-    if has_contradiction:
-        limitations.append(
-            f"R4: {final_count} Decision có status=final — mâu thuẫn tiềm ẩn "
-            "(resolve phase sẽ xử lý A→B→A / 2 final cùng chủ đề ở P2)"
-        )
-
     # ─── 7. Brief ref-check (taxonomy §8): outcome phải trỏ tới ID đã chốt.
     # "Nói ra" ≠ "chốt" — outcome không có ref tương ứng thì không tồn tại.
     brief = _verify_brief(brief_raw, validated_items, limitations)
+
+    # ─── 8. Toàn vẹn link: link_to_decision phải trỏ tới item TỒN TẠI.
+    # Model hay link tới ID tưởng tượng (live tc1: link=D2 không tồn tại).
+    valid_ids = {it.id for it in validated_items}
+    for it in validated_items:
+        link = getattr(it, "link_to_decision", None)
+        if link and link not in valid_ids:
+            limitations.append(
+                f"item {it.id}: link_to_decision={link} không tồn tại → null"
+            )
+            it.link_to_decision = None
 
     return MeetingState(
         meeting=meeting,

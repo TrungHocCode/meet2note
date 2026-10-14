@@ -1,42 +1,5 @@
 [
-  {
-    "items": [
-      {
-        "id": "O1",
-        "type": "open_issue",
-        "content": "Chưa chốt hướng tích hợp thanh toán (Stripe vs VNPay)",
-        "next_step": "Hẹn họp lại sau khi có thêm dữ liệu từ KH",
-        "next_step_owner": "Lan",
-        "confidence": 0.5,
-        "confidence_reason": "chưa rõ ý kiến, họp lại sau",
-        "evidence": [{
-          "quote": "Sẽ xem xét thêm, cần ý kiến KH",
-          "timestamp": "00:09:42",
-          "speaker": "Lan",
-          "turn": 33,
-          "role_in_discussion": "info"
-        }]
-      },
-      {
-        "id": "T1",
-        "type": "task",
-        "what": "Triển khai research thanh toán",
-        "owner": "TBD",
-        "owner_source": "tbd",
-        "due": "TBD",
-        "due_source": "tbd",
-        "due_hint": "sớm nhé",
-        "link_to_decision": null,
-        "confidence": 0.3,
-        "confidence_reason": "owner + due mơ hồ — không ai cam kết",
-        "evidence": [{
-          "quote": "Anh em triển khai nhé",
-          "timestamp": "00:04:50",
-          "speaker": "Lan",
-          "turn": 24,
-          "role_in_discussion": "info"
-        }]
-      }
-    ]
-  }
+ "```json\n{\n  \"items\": [\n    {\n      \"id\": \"R0\", \"type\": \"requirement\", \"content\": \"Cần xác nhận với khách hàng về volume nội địa vs quốc tế\", \"raised_by\": \"Lan\", \"origin\": \"discussion\", \"confidence\": 0.9, \"confidence_reason\": \"Lan nêu rõ và có ngữ cảnh cụ thể trong cuộc họp\", \"evidence\": [{\"quote\": \"Cần xác nhận với KH về volume nội địa vs quốc tế.\", \"timestamp\": \"00:08:18\", \"speaker\": \"Lan\", \"turn\": 40, \"role_in_discussion\": \"info\"}]\n    },\n    {\n      \"id\": \"T1\", \"type\": \"task\", \"what\": \"Triển khai nghiên cứu về phương án tích hợp thanh toán\", \"owner\": \"Nam\", \"owner_source\": \"explicit\", \"due\": \"tbd\", \"due_source\": \"tbd\", \"due_hint\": \"sớm nhé\", \"link_to_decision\": null, \"confidence\": 0.8, \"confidence_reason\": \"Các thành viên đều xác nhận sẽ nghiên cứu, có hành động cụ thể\", \"evidence\": [{\"quote\": \"Em sẽ research thêm trong tuần.\", \"timestamp\": \"00:02:18\", \"speaker\": \"Nam\", \"turn\": 11, \"role_in_discussion\": \"propose\"}, {\"quote\": \"Em cũng vậy, tìm hiểu thêm đã.\", \"timestamp\": \"00:02:28\", \"speaker\": \"Hà\", \"turn\": 12, \"role_in_discussion\": \"propose\"}]}\n  ]\n}\n```",
+ "```json\n{\n  \"items\": [\n    {\n      \"id\": \"R0\", \"type\": \"requirement\", \"content\": \"Xem xét việc kết hợp Stripe quốc tế và VNPay nội địa\", \"raised_by\": \"Lan\", \"origin\": \"discussion\", \"confidence\": 0.8, \"confidence_reason\": \"Được nêu rõ trong cuộc họp và có sự đồng thuận từ các thành viên\", \"evidence\": [{\"quote\": \"Một ý nữa, có nên kết hợp Stripe quốc tế + VNPay nội địa không?\", \"timestamp\": \"00:07:36\", \"speaker\": \"Lan\", \"turn\": 34, \"role_in_discussion\": \"info\"}]\n    },\n    {\n      \"id\": \"O1\", \"type\": \"open_issue\", \"content\": \"Xác nhận với KH về volume nội địa vs quốc tế\", \"next_step\": \"Hỏi KH về volume nội địa và quốc tế\", \"next_step_owner\": \"Nam\", \"confidence\": 0.9, \"confidence_reason\": \"Lan đề xuất rõ ràng và Nam xác nhận sẽ thực hiện\", \"evidence\": [{\"quote\": \"Cần xác nhận với KH về volume nội địa vs quốc tế.\", \"timestamp\": \"00:08:18\", \"speaker\": \"Lan\", \"turn\": 40, \"role_in_discussion\": \"info\"}]}\n  ]\n}\n```",
+ "```json\n{\n  \"items\": [\n    {\n      \"id\": \"O1\", \"type\": \"open_issue\",\n      \"content\": \"Trả lời khách hàng khi được hỏi về tình trạng tích hợp thanh toán\",\n      \"next_step\": \"Xác định nội dung trả lời cho KH\",\n      \"next_step_owner\": \"Nam\",\n      \"confidence\": 0.8,\n      \"confidence_reason\": \"Lan đề xuất trả lời 'đang đánh giá', Nam xác nhận sẽ phụ trách, Lan yêu cầu 'sớm sớm' nhưng không định rõ thời gian\",\n      \"evidence\": [\n        {\n          \"quote\": \"Mà này, nếu KH hỏi tuần này thì mình trả lời sao?\",\n          \"timestamp\": \"00:13:18\",\n          \"speaker\": \"Lan\",\n          \"turn\": 61,\n          \"role_in_discussion\": \"info\"\n        },\n        {\n          \"quote\": \"Em bảo đang đánh giá, hẹn tuần sau có kết quả ạ.\",\n          \"timestamp\": \"00:13:32\",\n          \"speaker\": \"Nam\",\n          \"turn\": 62,\n          \"role_in_discussion\": \"propose\"\n        },\n        {\n          \"quote\": \"Ok, Nam em phụ trách trả lời KH nhé, khi nào cũng được.\",\n          \"timestamp\": \"00:14:00\",\n          \"speaker\": \"Lan\",\n          \"turn\": 64,\n          \"role_in_discussion\": \"decide\"\n        },\n        {\n          \"quote\": \"Thì sớm sớm nhé, đừng để KH chờ lâu.\",\n          \"timestamp\": \"00:14:28\",\n          \"speaker\": \"Lan\",\n          \"turn\": 66,\n          \"role_in_discussion\": \"info\"\n        }\n      ]\n    },\n    {\n      \"id\": \"O2\", \"type\": \"open_issue\",\n      \"content\": \"Xác định flow hoàn trả (refund) trong hệ thống\",\n      \"next_step\": \"Chờ kết quả từ đợt sau để chốt flow\",\n      \"next_step_owner\": \"tbd\",\n      \"confidence\": 0.6,\n      \"confidence_reason\": \"Lan nói 'chưa chốt', Nam gộp chung với đợt sau, không có ai đề xuất giải pháp cụ thể\",\n      \"evidence\": [\n        {\n          \"quote\": \"Chị ơi, còn vụ refund flow thì sao ạ?\",\n          \"timestamp\": \"00:14:56\",\n          \"speaker\": \"Hà\",\n          \"turn\": 68,\n          \"role_in_discussion\": \"info\"\n        },\n        {\n          \"quote\": \"Refund flow cũng chưa chốt, để chung với đợt sau nhé.\",\n          \"timestamp\": \"00:15:10\",\n          \"speaker\": \"Lan\",\n          \"turn\": 69,\n          \"role_in_discussion\": \"decide\"\n        },\n        {\n          \"quote\": \"Dạ, gộp chung ạ.\",\n          \"timestamp\": \"00:15:24\",\n          \"speaker\": \"Nam\",\n          \"turn\": 70,\n          \"role_in_discussion\": \"confirm\"\n        }\n      ]\n    },\n    {\n      \"id\": \"O3\", \"type\": \"open_issue\",\n      \"content\": \"Tóm lại hôm nay chưa có quyết định nào đúng\",\n      \"next_step\": \"Họp lại tuần sau để cập nhật tiến độ\",\n      \"next_step_owner\": \"Lan\",\n      \"confidence\": 1.0,\n      \"confidence_reason\": \"Lan rõ ràng khẳng định: 'Đúng rồi, toàn bộ để open, tuần sau có data rồi họp lại'\",\n      \"evidence\": [\n        {\n          \"quote\": \"Vậy tóm lại hôm nay mình chưa quyết gì đúng không chị?\",\n          \"timestamp\": \"00:15:38\",\n          \"speaker\": \"Hà\",\n          \"turn\": 71,\n          \"role_in_discussion\": \"info\"\n        },\n        {\n          \"quote\": \"Đúng rồi, toàn bộ để open, tuần sau có data rồi họp lại.\",\n          \"timestamp\": \"00:15:52\",\n          \"speaker\": \"Lan\",\n          \"turn\": 72,\n          \"role_in_discussion\": \"decide\"\n        }\n      ]\n    }\n  ]\n}\n```"
 ]

@@ -11,11 +11,11 @@
 
 | # | File | Bối cảnh / quy mô | Điểm khó | Kỳ vọng |
 |---|---|---|---|---|
-| tc1 | `tc1_happy.txt` ~50 lượt | Sprint planning: 1 QĐ rõ (chọn B), 3 task đủ owner+deadline, 1 blocker | Không — tường minh | D.final=B xanh; 3/3 task đủ; evidence 100% |
-| tc2 | `tc2_atob.txt` ~70 lượt | Chọn vendor: Nam đề xuất A (10'), Lan phản đối + chốt B (45'), task gắn B | Đảo chiều, giữ lý do | D1.final=B supersedes=[D0], D0 discarded, evidence 45:30, T1 link D1 |
-| tc3 | `tc3_vague.txt` ~60 lượt | Brainstorm vòng vo: `sẽ xem xét`, `sớm nhé`, `anh em triển khai nhé`, không chốt | Chống bịa | `no_decision=true`, ≥1 Open Issue + next_step, TBD + hint, confidence đỏ/vàng |
-| tc4 | `tc4_entity.txt` ~80 lượt | Họp kỹ thuật: `em/anh/chị`, `tuần sau/thứ 6/cuối tháng`, viết tắt KH/VG/SLA | Quy đổi đại từ + ngày | owner inferred đúng, due ISO đúng, không tên ngoài participants |
-| tc5 | `tc5_fail.txt` ~90 lượt — DỰ KIẾN THẤT BẠI | Họp căng: đảo A→B→A, 2 QĐ mâu thuẫn, chồng lấn speaker, sarcasm `A 'tuyệt vời' lắm` | Tất cả cùng lúc | Trung thực **Chưa đạt** + bài học (cần module chồng lấn / pass-3 arbitration) |
+| tc1 | `tc1_happy.txt` ~90 lượt | Sprint planning: 1 QĐ rõ (chọn B), 3 task đủ owner+deadline, 1 blocker + nhiễu (CI hỏng, đùa chốt nghỉ trưa, giao-nhận task đảo rồi hoàn) | Tường minh nhưng nhiễu: chốt giả phải loại, timestamp evidence phải sửa về turn khớp | D.final=B; 3/3 task đủ; evidence đúng turn khớp |
+| tc2 | `tc2_atob.txt` ~100 lượt | Chọn vendor: Nam đề xuất A + bào chữa vòng 2, decoy vendor Z, sarcasm nhẹ, QĐ phụ (lịch demo PoC), Lan chốt B | Đảo chiều + decoy + đa quyết định | D1.final=B supersedes=[D0], D0 discarded, evidence câu chốt cuối, T1 link D1 |
+| tc3 | `tc3_vague.txt` ~85 lượt | Brainstorm vòng vo + **chốt giả** ("chốt luôn Stripe đi" rồi rút lại vì thiếu data) | Chống bịa + chống chốt giả | `no_decision=true`, ≥1 Open Issue + next_step, TBD + hint |
+| tc4 | `tc4_entity.txt` ~80 lượt | Họp kỹ thuật: đại từ dày, code-switch, viết tắt UAT/PO/QA, deadline sửa-rồi-hoàn, `thứ 6 tuần sau nữa` (không parse → TBD), sarcasm | Quy đổi đại từ + ngày + nhiễu sửa đổi | owner inferred đúng, due ISO đúng, không tên ngoài participants |
+| tc5 | `tc5_fail.txt` ~100 lượt — DỰ KIẾN THẤT BẠI | War A→B→A khốc liệt: hùng biện 2 phe, chốt ngắt câu (`chốt—` rồi lái), sarcasm ×2, deal riêng, 2 final đối đầu | Tất cả cùng lúc | Trung thực **Chưa đạt** + bài học |
 
 Mỗi transcript: tiếng Việt, timestamp tăng dần, ≥3 speaker. `meta.json`: `{id, title, date, participants[], glossary{}}`.
 `golden`: JSON kỳ vọng tối thiểu `{decisions_final[], tasks[], no_decision}` để runner so.

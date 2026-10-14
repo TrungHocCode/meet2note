@@ -57,22 +57,47 @@
 [00:12:28] Nam: Dạ đúng ạ, A chỉ cam kết best-effort ạ.
 [00:12:42] Lan: Best-effort nghĩa là vendor có thể từ chối đền bù. Đây là rủi ro lớn.
 [00:12:58] Hà: Em đồng ý với chị, best-effort là deal-breaker với em ạ.
-[00:13:12] Nam: Dạ em cũng thấy vậy ạ.
-[00:13:26] Lan: Vậy mình tạm dừng 5 phút, ai muốn suy nghĩ thêm không?
-[00:13:40] Hà: Em đồng ý tạm dừng ạ.
-[00:13:44] Nam: Em đồng ý ạ.
-[00:13:54] Lan: Mọi người nghỉ 5 phút, 13:59 quay lại nhé.
-[00:45:30] Lan: A rủi ro vượt 30% nếu phát sinh. Vậy chốt B nhé, cả team đồng ý không?
-[00:45:42] Hà: Dạ em đồng ý B ạ.
-[00:45:46] Nam: Em đồng ý B ạ.
-[00:45:54] Lan: Ok mình chốt: chọn vendor Y, gói premium, SLA 99.9%, support tiếng Việt.
-[00:46:05] Nam: Dạ em gửi báo giá B cho khách trước 12/10.
-[00:46:18] Lan: Tốt. Em Nam gửi báo giá Y và confirm scope trước 12/10 nhé.
-[00:46:32] Hà: Em sẽ chuẩn bị sandbox test Y để bàn giao team dev sau khi ký hợp đồng ạ.
-[00:46:48] Nam: Dạ em làm báo giá, deadline 12/10 ạ.
-[00:47:00] Lan: Em update proposal vào sharepoint giúp cả nhóm nhé.
-[00:47:12] Nam: Dạ em update trong hôm nay ạ.
-[00:47:24] Lan: Còn câu hỏi nào khác không?
-[00:47:30] Hà: Em hết ạ.
-[00:47:34] Nam: Em hết ạ.
-[00:47:42] Lan: Vậy mình end meeting nhé. Cảm ơn cả nhóm.
+[00:13:12] Nam: Dạ em cũng thấy vậy ạ. Nhưng chị cho em bào chữa A thêm một ý được không?
+[00:13:26] Lan: Ừ, em nói đi.
+[00:13:36] Nam: Nếu mình mua A cho phase 1 rẻ, phase 2 migrate sang Y khi có budget, tổng vẫn rẻ hơn mua Y ngay ạ.
+[00:13:52] Hà: Migrate giữa chừng tốn gấp đôi effort test lại, em đã trải qua rồi, đừng ạ.
+[00:14:06] Nam: Nhưng phase 1 mình chỉ cần 3 user, rủi ro downtime thấp ạ.
+[00:14:20] Lan: Phase 1 thấp nhưng KH demo mà sập thì mất cả hợp đồng. Không đánh đổi được.
+[00:14:34] Nam: Dạ... em hết ý bào chữa rồi ạ.
+[00:14:46] Hà: A rẻ thì rẻ thật, downtime thì cũng thật. Em nói vậy thôi chứ em theo team.
+[00:15:00] Lan: Câu đó của Hà nghe như thơ ấy. Ghi nhận tinh thần theo team nhé.
+[00:15:12] Nam: À mà còn bên Z thì sao ạ, mình loại hẳn à chị?
+[00:15:24] Lan: Z giá ngang Y mà track record mỏng, lại không có local team. Loại.
+[00:15:38] Hà: Đồng ý loại Z, em check reference của Z toàn công ty nhỏ ạ.
+[00:15:52] Nam: Dạ vậy còn A với B thôi ạ.
+[00:16:04] Lan: Ừ. Nhân tiện, trước khi chốt vendor, mình chốt luôn lịch demo PoC nhé.
+[00:16:18] Hà: Demo PoC cho KH xem Y chạy thật đúng không chị?
+[00:16:30] Lan: Đúng. Thứ Năm tuần này demo PoC, em Hà chuẩn bị môi trường.
+[00:16:44] Hà: Dạ, thứ Năm demo PoC, em chuẩn bị.
+[00:16:58] Lan: Vậy mình chốt lịch demo PoC thứ Năm nhé, cả team ok không?
+[00:17:10] Nam: Dạ ok ạ.
+[00:17:14] Hà: Dạ ok ạ.
+[00:17:22] Lan: Rồi, quay lại vendor. Em Nam tóm tắt lần cuối A vs B đi.
+[00:17:36] Nam: A rẻ hơn 10% tổng 3 năm nhưng 3 rủi ro lớn. B đắt hơn 10% nhưng an toàn, SLA rõ ràng ạ.
+[00:17:52] Hà: Em bổ sung: Y có local team, sự cố gọi 5 phút có mặt ạ.
+[00:18:06] Lan: Nghe xong ai còn lăn tăn A không?
+[00:18:18] Nam: Dạ em hết lăn tăn, em theo B ạ.
+[00:18:30] Hà: Em theo B từ đầu ạ.
+[00:18:40] Lan: Vậy mình tạm dừng 5 phút, ai muốn suy nghĩ thêm không?
+[00:18:54] Hà: Em đồng ý tạm dừng ạ.
+[00:19:00] Nam: Em đồng ý ạ.
+[00:19:10] Lan: Mọi người nghỉ 5 phút, xong quay lại chốt nhé.
+[00:52:10] Lan: A rủi ro vượt 30% nếu phát sinh. Vậy chốt B nhé, cả team đồng ý không?
+[00:52:22] Hà: Dạ em đồng ý B ạ.
+[00:52:26] Nam: Em đồng ý B ạ.
+[00:52:34] Lan: Ok mình chốt: chọn vendor Y, gói premium, SLA 99.9%, support tiếng Việt.
+[00:52:45] Nam: Dạ em gửi báo giá B cho khách trước 12/10.
+[00:52:58] Lan: Tốt. Em Nam gửi báo giá Y và confirm scope trước 12/10 nhé.
+[00:53:12] Hà: Em sẽ chuẩn bị sandbox test Y để bàn giao team dev sau khi ký hợp đồng ạ.
+[00:53:28] Nam: Dạ em làm báo giá, deadline 12/10 ạ.
+[00:53:40] Lan: Em update proposal vào sharepoint giúp cả nhóm nhé.
+[00:53:52] Nam: Dạ em update trong hôm nay ạ.
+[00:54:04] Lan: Còn câu hỏi nào khác không?
+[00:54:10] Hà: Em hết ạ.
+[00:54:14] Nam: Em hết ạ.
+[00:54:22] Lan: Vậy mình end meeting nhé. Cảm ơn cả nhóm.

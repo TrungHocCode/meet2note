@@ -193,8 +193,8 @@ def test_tc1_fixture_parses(fixtures_dir: Path) -> None:
     if not f.exists():
         pytest.skip(f"fixture chưa có: {f}")
     turns, _ = parse_transcript(f)
-    # io-formats / eval-plan: ~50 turns; để biên độ ±10
-    assert 40 <= len(turns) <= 60, f"tc1 expected ~50 turns, got {len(turns)}"
+    # Transcripts v2 (dài + nhiễu): tc1 ~90 turns; để biên độ rộng
+    assert 80 <= len(turns) <= 110, f"tc1 expected ~90 turns, got {len(turns)}"
 
 
 def test_tc2_fixture_parses(fixtures_dir: Path) -> None:
@@ -202,7 +202,7 @@ def test_tc2_fixture_parses(fixtures_dir: Path) -> None:
     if not f.exists():
         pytest.skip(f"fixture chưa có: {f}")
     turns, _ = parse_transcript(f)
-    assert 60 <= len(turns) <= 80, f"tc2 expected ~70 turns, got {len(turns)}"
+    assert 90 <= len(turns) <= 120, f"tc2 expected ~100 turns, got {len(turns)}"
     # Quote then chốt phải tồn tại đúng nguyên văn
     full = " ".join(t["text"] for t in turns)
     assert "Em đề xuất phương án A, bên X rẻ hơn 20%." in full

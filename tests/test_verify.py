@@ -869,6 +869,31 @@ def test_verify_state_includes_ingest_limitations() -> None:
     assert any("malformed" in lim for lim in state.known_limitations)
 
 
+def test_verify_link_to_nonexistent_id_nulled() -> None:
+    """link_to_decision trỏ ID ma (live tc1: link=D2) → null + limitation."""
+    raw = [{
+        "id": "T1", "type": "task",
+        "what": "Làm gì đó",
+        "owner": "Nam", "owner_source": "explicit",
+        "due": "2026-10-16", "due_source": "explicit",
+        "due_hint": None, "link_to_decision": "D2",
+        "confidence": 0.8, "confidence_reason": "ok",
+        "evidence": [{
+            "quote": "Nam làm gì đó nhé", "timestamp": "00:00:10",
+            "speaker": "Lan", "turn": 1, "role_in_discussion": "info",
+        }],
+    }]
+    state = verify_state(
+        meeting=_meeting("tc_x"),
+        items_raw=raw,
+        conf_llm_map={"T1": 0.8},
+        turns=[{"turn": 1, "t_start": "00:00:10", "t_end": "00:00:10",
+                "speaker": "Lan", "text": "Nam làm gì đó nhé"}],
+    )
+    assert state.items[0].link_to_decision is None
+    assert any("link_to_decision" in lim for lim in state.known_limitations)
+
+
 # ──────────────────────────────────────────────────────────────────────
 # Brief ref-check (taxonomy §8)
 # ──────────────────────────────────────────────────────────────────────
