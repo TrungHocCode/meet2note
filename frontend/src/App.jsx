@@ -112,7 +112,7 @@ function EvidenceLines({ evidence, onShow }) {
           </button>{' '}
           <span className="font-semibold">{ev.speaker}</span>{' '}
           <span className="text-xs text-muted-foreground">({ev.role_in_discussion})</span>:{' '}
-          <q className="italic">{ev.quote}</q>
+          <q className="italic break-words">“{ev.quote}”</q>
         </div>
       ))}
       {evidence.length > 2 && (
@@ -245,6 +245,7 @@ function ItemCard({
   }))
   const level = levelOf(item.confidence)
   const red = level === 'red'
+  const yellow = level === 'yellow'
   const contentText = item.type === 'task' ? item.what || '' : item.content || ''
   const showActions = editing || focused || red
 
@@ -255,10 +256,12 @@ function ItemCard({
       data-testid={`card-${item.id}`}
       aria-label={`${TYPE_LABEL[item.type] ?? item.type} ${item.id}, confidence ${item.confidence}, mức ${LEVEL_VN[level]}`}
       className={[
-        'p-3 transition-shadow duration-150 ease-out hover:shadow-card hover:-translate-y-px',
+        'break-words p-3 transition-shadow duration-150 ease-out hover:shadow-card hover:-translate-y-px',
         'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
         focused ? 'outline-2 outline-offset-2 outline-ring' : '',
         red ? 'border-conf-red/40 border-l-4 bg-conf-red-bg/40' : '',
+        yellow ? 'border-conf-amber/40 border-l-4 bg-conf-amber-bg/30' : '',
+        !red && !yellow ? 'border-conf-green/30 border-l-4 bg-conf-green-bg/30' : '',
         confirmed ? 'opacity-60' : '',
       ].join(' ')}
     >
@@ -282,7 +285,7 @@ function ItemCard({
         {confirmed && <Badge variant="conf-green">✓ đã xác nhận</Badge>}
       </div>
 
-      <p className="mt-2 text-sm font-medium leading-relaxed">{contentText}</p>
+      <p className="mt-2 text-sm font-medium leading-relaxed break-words">{contentText}</p>
 
       <div className="mt-2">
         <SemanticAlerts item={item} />
@@ -544,16 +547,22 @@ export default function App() {
       .map((it) => (editedItems[it.id] ? { ...it, ...editedItems[it.id] } : it))
   }, [state, removedIds, editedItems])
 
-  async function load(target) {
+  async function load(target, opts = {}) {
+    const { keepOverlay = false } = opts
     setBusy(true)
     setLoadError(null)
     setExportFiles(null)
     setExportError(null)
-    setConfirmedIds(new Set())
-    setRemovedIds(new Set())
-    setEditedItems({})
-    setFocusedId(null)
-    setDrawer(null)
+    if (!keepOverlay) {
+      // Chỉ reset overlay khi đổi meeting / upload mới. Reload sau PUT phải
+      // GIỮ overlay (confirmed/removed/edited) — xóa là mất pill "đã xác nhận",
+      // card nháy về như cũ (bug: bấm Đồng ý chỉ thấy nhấp nháy).
+      setConfirmedIds(new Set())
+      setRemovedIds(new Set())
+      setEditedItems({})
+      setFocusedId(null)
+      setDrawer(null)
+    }
     try {
       const data = await getReview(target)
       setState(data)
@@ -579,7 +588,7 @@ export default function App() {
     setBusy(true)
     try {
       const resp = await putReview(meetingId, itemsToSend, changes)
-      await load(meetingId)
+      await load(meetingId, { keepOverlay: true })
       return resp
     } finally {
       setBusy(false)

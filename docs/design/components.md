@@ -55,7 +55,12 @@ Thứ tự trên card (từ trên xuống):
 6. **Hành động:** `Đồng ý / Sửa / Loại` equal-width, `ok`/`outline`/`destructive`.
    - Hiện khi `hover` **hoặc** card đang `focus` (bàn phím) **hoặc** thẻ đỏ (đỏ luôn cần hành động).
 
-- Card nghỉ: `border` 1px, không shadow. Hover: `shadow-card` + `-translate-y-px`, `duration-150`.
+- Card nghỉ: `border` 1px + **vạch trái 4px + nền tint nhạt theo mức confidence**
+  (đỏ `conf-red`, vàng `conf-amber`, xanh `conf-green`) — toàn ô mang màu mức độ,
+  không chỉ badge (phản hồi review UI: chỉ badge có màu gây khó quét).
+  Hover: `shadow-card` + `-translate-y-px`, `duration-150`.
+- Mọi text trong card (`content`, quote, pill) phải `break-words` — lý do dài không
+  được tràn khung (lỗi thực tế: reason dài tràn khỏi card quyết định).
 - Thẻ đỏ: `border-conf-red/40` + vạch trái 3px `conf-red` + nền `conf-red-bg/40`.
 - Thẻ đã xử lý: `opacity-60` + pill `✓ đã xác nhận`.
 - Cột sắp xếp theo **rủi ro tăng dần** (đỏ → vàng → xanh); thẻ đã xử lý trôi xuống cuối.
