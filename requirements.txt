@@ -8,6 +8,13 @@ jinja2
 python-dotenv
 httpx
 
+# P6a — Database + Auth
+sqlalchemy>=2
+alembic
+psycopg[binary]
+pwdlib[argon2]
+pyjwt
+
 # Verify (fuzzy quote match)
 rapidfuzz
 

@@ -66,3 +66,16 @@ Set-Location frontend; npm install; npm run dev
 pytest tests -q
 python -m pipeline.cli eval   # 5 ca → eval/report.md
 ```
+
+## 5. Database Postgres (P6a)
+
+```powershell
+docker compose up -d db                                  # Postgres :5434 (tránh 5432 native, 5433 project khác)
+python -m backend.db_cli migrate                         # alembic upgrade head
+python -m backend.db_cli create-admin --email admin@local --password <pass-8+kt>
+python -m backend.db_cli sync-db --owner admin@local     # quét runs/ upsert (chạy lại không duplicate)
+```
+
+- `.env`: `DATABASE_URL` (mặc định đã trỏ `localhost:5434`, không cần set nếu dùng default),
+  `ADMIN_EMAIL`/`ADMIN_PASSWORD` (thay cho flag), `JWT_SECRET` (P6b mới dùng).
+- Test PG thật: `$env:TEST_DATABASE_URL='postgresql+psycopg://meet2note:meet2note@localhost:5434/meet2note'; pytest tests/test_db.py -q`.

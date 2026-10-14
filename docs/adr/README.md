@@ -19,6 +19,7 @@ tạo ADR mới và đánh status file cũ thành `Superseded by NNNN`.
 | 0006 | Decision model làm arbitration scorer sau MVP (chưa chọn model) | Proposed |
 | 0007 | service.run_pipeline dùng chung cho CLI và API | Accepted |
 | 0008 | Tailwind CSS v4 + shadcn/ui cho frontend review (kèm design tokens) | Accepted |
+| 0009 | Postgres local + JWT cho P6 (metadata DB, file ở disk) | Accepted |
 
 ## Mẫu file ADR
 
