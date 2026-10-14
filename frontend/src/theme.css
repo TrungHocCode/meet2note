@@ -50,3 +50,12 @@
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
 }
+
+/* Chevron trong CollapsibleTrigger xoay theo data-state của Radix
+   (mở = chúc lên, đóng = chúc xuống) — không cần state React. */
+[data-slot="collapsible-trigger"] > svg:first-child {
+  transition: transform 150ms ease;
+}
+[data-slot="collapsible-trigger"][data-state="open"] > svg:first-child {
+  transform: rotate(180deg);
+}
