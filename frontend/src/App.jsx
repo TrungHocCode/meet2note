@@ -277,8 +277,8 @@ function SemanticAlerts({ item }) {
 // ─── Card item ───────────────────────────────────────────────────────────────
 
 function ItemCard({
-  item, allIds, focused, confirmed, cardRef,
-  onAgree, onEdit, onRemove, onShowEvidence,
+  item, allIds, focused, hovered, confirmed, cardRef,
+  onAgree, onEdit, onRemove, onShowEvidence, onHover,
 }) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(() => ({
@@ -291,12 +291,15 @@ function ItemCard({
   const red = level === 'red'
   const yellow = level === 'yellow'
   const contentText = item.type === 'task' ? item.what || '' : item.content || ''
-  const showActions = editing || focused || red
+  // Nút hiện khi: đang sửa, card focus/hover (chuột), hoặc thẻ đỏ (luôn cần hành động).
+  const showActions = editing || focused || hovered || red
 
   return (
     <Card
       ref={cardRef}
       tabIndex={0}
+      onMouseEnter={() => onHover && onHover(item.id)}
+      onMouseLeave={() => onHover && onHover(null)}
       data-testid={`card-${item.id}`}
       aria-label={`${TYPE_LABEL[item.type] ?? item.type} ${item.id}, confidence ${item.confidence}, mức ${LEVEL_VN[level]}`}
       className={[
@@ -591,6 +594,7 @@ export default function App() {
   const [upBusy, setUpBusy] = useState(false)
   // Keyboard focus.
   const [focusedId, setFocusedId] = useState(null)
+  const [hoveredId, setHoveredId] = useState(null)
   const cardRefs = useRef({})
   const onAgreeRef = useRef(null)
   const onRemoveRef = useRef(null)
@@ -661,13 +665,34 @@ export default function App() {
   function onAgree(item) {
     const changes = [{ item_id: item.id, action: 'agree', old: null, new: null }]
     setConfirmedIds((s) => new Set(s).add(item.id))
-    sendPut(currentItemsForPut(), changes).catch(() => {
-      setConfirmedIds((s) => {
-        const n = new Set(s)
-        n.delete(item.id)
-        return n
+    sendPut(currentItemsForPut(), changes)
+      .then(() => {
+        // Xong 1 thẻ → nhảy focus sang thẻ kế tiếp để host xử lý liên tục
+        // (không đứng yên khiến bấm tiếp bị "reset").
+        advanceFocus(item.id)
       })
-    })
+      .catch(() => {
+        setConfirmedIds((s) => {
+          const n = new Set(s)
+          n.delete(item.id)
+          return n
+        })
+      })
+  }
+
+  // Nhảy focus tới thẻ kế tiếp sau khi xử lý xong 1 thẻ.
+  // excludeId: id vừa bị loại (focus vào thẻ thế chỗ).
+  function advanceFocus(fromId, excludeId = null) {
+    const ids = flatVisibleIds.filter((id) => id !== excludeId)
+    if (ids.length === 0) {
+      setFocusedId(null)
+      return
+    }
+    let idx = ids.indexOf(fromId)
+    if (idx === -1) idx = 0
+    else if (!excludeId) idx = Math.min(idx + 1, ids.length - 1)
+    else idx = Math.min(idx, ids.length - 1)
+    focusCard(ids[idx])
   }
 
   function onEdit(item, draft) {
@@ -713,13 +738,17 @@ export default function App() {
     sendPut(
       currentItemsForPut().filter((it) => it.id !== item.id),
       [{ item_id: item.id, action: 'remove', old: null, new: null }],
-    ).catch(() => {
-      setRemovedIds((s) => {
-        const n = new Set(s)
-        n.delete(item.id)
-        return n
+    )
+      .then(() => {
+        advanceFocus(item.id, item.id)
       })
-    })
+      .catch(() => {
+        setRemovedIds((s) => {
+          const n = new Set(s)
+          n.delete(item.id)
+          return n
+        })
+      })
     toast(`Đã loại ${item.id}`, {
       description: 'Item vẫn nằm trong runs/ (audit).',
       duration: 8000,
@@ -966,6 +995,8 @@ export default function App() {
       item: it,
       allIds,
       focused: focusedId === it.id,
+      hovered: hoveredId === it.id,
+      onHover: setHoveredId,
       confirmed: confirmedIds.has(it.id),
       cardRef: (el) => {
         cardRefs.current[it.id] = el
