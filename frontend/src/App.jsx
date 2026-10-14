@@ -658,8 +658,8 @@ function LoginScreen({ onDone }) {
 }
 
 export default function App() {
-  const [meetingId, setMeetingId] = useState('tc2')
-  const [meetingInput, setMeetingInput] = useState('tc2')
+  const [meetingId, setMeetingId] = useState('')
+  const [meetingInput, setMeetingInput] = useState('')
   const [state, setState] = useState(null)
   const [busy, setBusy] = useState(false)
   const [filter, setFilter] = useState('all')
@@ -734,7 +734,7 @@ export default function App() {
       }
       setLoadError(
         e.status === 404
-          ? `Chưa chạy cli run cho meeting này (404). Chạy: python -m pipeline.cli run --meeting ${target}`
+          ? `Không tìm thấy meeting này (404). Kiểm tra id, hoặc upload transcript mới ở mục ③ Upload.`
           : `GET /api/v1/review → ${e.status ?? '?'}: ${JSON.stringify(e.body)}`,
       )
       setState(null)
@@ -761,9 +761,10 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // Load meeting mặc định SAU khi biết đã login (tránh 401 lúc mở trang).
+  // Không auto-load meeting mẫu: new user chưa có gì — họ upload trước
+  // (section ③ Upload mở sẵn). Meeting cũ thì nhập id ở ① Meeting → Load.
   useEffect(() => {
-    if (authChecked && user) load('tc2')
+    if (authChecked && user) setMeetingInput('')
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authChecked, user])
 
@@ -992,8 +993,12 @@ export default function App() {
     } catch (e) {
       if (e.status === 503) {
         setUpMsg('LLM chưa sẵn sàng (503): bật Ollama rồi thử lại.')
+      } else if (e.status === 409) {
+        setUpMsg(
+          'Meeting id này đã có người khác dùng. Đổi "Meeting id" khác (ví dụ thêm tên bạn) rồi upload lại.',
+        )
       } else {
-        setUpMsg(`Lỗi (${e.status ?? '?'}): ${JSON.stringify(e.body)}`)
+        setUpMsg(`Lỗi (${e.status ?? '?'}): ${e.body?.detail ?? JSON.stringify(e.body)}`)
       }
     } finally {
       setUpBusy(false)
@@ -1159,7 +1164,7 @@ export default function App() {
       <Toaster />
       <div className="grid min-h-screen xl:grid-cols-[280px_1fr]">
         {/* ─── Sidebar ──────────────────────────────────────────── */}
-        <aside className="flex flex-col gap-4 border-b bg-card p-4 xl:h-screen xl:overflow-y-auto xl:border-r xl:border-b-0">
+        <aside className="flex min-w-0 flex-col gap-4 overflow-x-hidden border-b bg-card p-4 xl:h-screen xl:overflow-y-auto xl:border-r xl:border-b-0">
           <div>
             <h1 className="font-heading text-xl font-bold">meet2note</h1>
             <div className="mt-1 flex items-center justify-between gap-2">
@@ -1175,7 +1180,7 @@ export default function App() {
               </button>
             </div>
             {state?.meeting && (
-              <p className="text-xs text-muted-foreground">
+              <p className="truncate text-xs text-muted-foreground" title={state.meeting.title}>
                 {state.meeting.title} · {state.meeting.date}
               </p>
             )}
@@ -1201,7 +1206,7 @@ export default function App() {
               </Button>
               {loadError && (
                 <Alert variant="destructive">
-                  <AlertDescription>{loadError}</AlertDescription>
+                  <AlertDescription className="break-words">{loadError}</AlertDescription>
                 </Alert>
               )}
               {busy && !state && (
@@ -1214,6 +1219,9 @@ export default function App() {
             </CollapsibleContent>
           </Collapsible>
 
+          {/* ② chỉ có nghĩa khi đã load meeting — new user chưa upload thì ẩn,
+              tránh progress 0 + cảnh báo đỏ gây hiểu lầm. */}
+          {state && (
           <Collapsible defaultOpen>
             <CollapsibleTrigger className="flex w-full items-center gap-1 text-sm font-semibold">
               <ChevronDown className="size-4" /> ② Review
@@ -1230,7 +1238,7 @@ export default function App() {
                   className="mt-1"
                 />
               </div>
-              <ToggleGroup type="single" value={filter} onValueChange={(v) => v && setFilter(v)}>
+              <ToggleGroup type="single" value={filter} onValueChange={(v) => v && setFilter(v)} className="flex-wrap">
                 <ToggleGroupItem value="all">tất cả {counts.all}</ToggleGroupItem>
                 <ToggleGroupItem value="red">🔴 {counts.red}</ToggleGroupItem>
                 <ToggleGroupItem value="yellow">🟡 {counts.yellow}</ToggleGroupItem>
@@ -1257,7 +1265,7 @@ export default function App() {
                     <ul>
                       {exportFiles.map((f) => (
                         <li key={f}>
-                          <code className="text-xs">{f}</code>
+                          <code className="text-xs break-all">{f}</code>
                         </li>
                       ))}
                     </ul>
@@ -1286,8 +1294,10 @@ export default function App() {
               )}
             </CollapsibleContent>
           </Collapsible>
+          )}
 
-          <Collapsible>
+          {/* ③ mở sẵn để new user thấy ngay lối vào đầu tiên: upload. */}
+          <Collapsible defaultOpen>
             <CollapsibleTrigger className="flex w-full items-center gap-1 text-sm font-semibold">
               <ChevronDown className="size-4" /> ③ Upload
             </CollapsibleTrigger>
@@ -1337,7 +1347,7 @@ export default function App() {
                 <Upload className="size-4" />
                 {upBusy ? 'Đang chạy pipeline…' : 'Upload + chạy'}
               </Button>
-              {upMsg && <p className="text-xs">{upMsg}</p>}
+              {upMsg && <p className="text-xs break-words">{upMsg}</p>}
             </CollapsibleContent>
           </Collapsible>
 
@@ -1352,9 +1362,16 @@ export default function App() {
         {/* ─── Main ─────────────────────────────────────────────── */}
         <main className="min-w-0 p-4 xl:h-screen xl:overflow-y-auto">
           {!state && !busy && (
-            <p className="text-sm text-muted-foreground">
-              Chưa load meeting. Nhập id ở sidebar → Load (gợi ý: tc1..tc5).
-            </p>
+            <Card className="mx-auto mt-10 max-w-md p-6 text-center">
+              <h2 className="font-heading text-lg font-semibold">Chưa có meeting nào</h2>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Upload file transcript (.txt / .srt / .docx) ở mục ③ Upload bên trái —
+                pipeline sẽ trích xuất quyết định, công việc, vướng mắc để bạn review.
+              </p>
+              <p className="mt-2 text-xs text-muted-foreground">
+                Đã từng upload? Nhập meeting id ở mục ① Meeting → Load.
+              </p>
+            </Card>
           )}
           {busy && !state && (
             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
