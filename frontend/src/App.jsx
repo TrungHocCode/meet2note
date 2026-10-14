@@ -603,8 +603,12 @@ export default function App() {
   const allIds = useMemo(() => new Set((state?.items ?? []).map((i) => i.id)), [state])
 
   const visibleItems = useMemo(() => {
+    // Chỉ item review được mới vào đếm/tiến độ/gate/phím: loại discarded
+    // (hiển thị thu gọn dưới final, không cần host xác nhận — trước đây nó
+    // vẫn bị đếm nên "cần xác nhận 5" trong khi chỉ có 4 thẻ).
     return (state?.items ?? [])
       .filter((it) => !removedIds.has(it.id))
+      .filter((it) => !(it.type === 'decision' && it.status === 'discarded'))
       .map((it) => (editedItems[it.id] ? { ...it, ...editedItems[it.id] } : it))
   }, [state, removedIds, editedItems])
 
@@ -904,8 +908,10 @@ export default function App() {
     const finalDecisions = byRisk(items.filter((it) => it.type === 'decision' && it.status === 'final'))
     const discardedByFinal = {}
     finalDecisions.forEach((fd) => {
-      discardedByFinal[fd.id] = items.filter(
-        (it) => it.type === 'decision' && (fd.supersedes || []).includes(it.id),
+      // Lịch sử lấy từ state gốc (gồm cả discarded đã loại khỏi review),
+      // trừ item host đã Loại trong phiên này.
+      discardedByFinal[fd.id] = (state?.items ?? []).filter(
+        (it) => it.type === 'decision' && (fd.supersedes || []).includes(it.id) && !removedIds.has(it.id),
       )
     })
     return {
@@ -917,7 +923,7 @@ export default function App() {
       requirements: byRisk(items.filter((it) => it.type === 'requirement')),
       knowledge: byRisk(items.filter((it) => it.type === 'knowledge')),
     }
-  }, [visibleItems, filter, confirmedIds])
+  }, [visibleItems, filter, confirmedIds, state, removedIds])
 
   const flatVisibleIds = useMemo(() => {
     const cols = [

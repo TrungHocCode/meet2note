@@ -256,7 +256,19 @@ def post_export(meeting: str) -> JSONResponse:
             content={"detail": "meeting state not found"},
         )
     state = _read_json(state_path)
-    reds = _red_items(state)
+    # Gate R6 trên trạng thái ĐÃ xử lý: thẻ đỏ mà host đã Đồng ý/Sửa/Loại
+    # (có entry trong review_log.json) thì không chặn nữa — ngược lại host
+    # xử lý xong vẫn bị 403 mãi (bug thực tế: PUT agree xong export vẫn khóa).
+    handled: set[str] = set()
+    log_path = run_dir / "review_log.json"
+    if log_path.exists():
+        try:
+            for ch in _read_json(log_path).get("entries", []):
+                if isinstance(ch, dict) and ch.get("item_id"):
+                    handled.add(str(ch["item_id"]))
+        except (ValueError, AttributeError):
+            pass
+    reds = [i for i in _red_items(state) if i not in handled]
     if reds:
         return JSONResponse(
             status_code=403,
