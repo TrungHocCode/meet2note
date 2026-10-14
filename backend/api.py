@@ -161,10 +161,16 @@ app = FastAPI(
     description="Lớp mỏng đọc/ghi runs/ — không chứa logic pipeline (ADR-0005).",
 )
 
-# CORS chỉ React dev (AGENTS.md §2 + api-contract §4).
+# CORS: React dev local + domain demo (Vercel) qua env CORS_ORIGINS
+# (phân tách phẩy). allow_credentials=True để gửi refresh cookie.
+_CORS_ORIGINS = [
+    o.strip()
+    for o in os.environ.get("CORS_ORIGINS", "http://localhost:5173").split(",")
+    if o.strip()
+]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=_CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["GET", "PUT", "POST", "OPTIONS"],
     allow_headers=["*"],
@@ -225,12 +231,16 @@ def _issue_refresh(db: Session, user: User) -> str:
 
 
 def _set_refresh_cookie(resp: JSONResponse, raw: str) -> None:
+    # Demo link (FE Vercel ≠ BE tunnel): cookie qua site khác bắt buộc
+    # SameSite=None + Secure — bật bằng COOKIE_CROSS_SITE=1. Local giữ lax.
+    cross = os.environ.get("COOKIE_CROSS_SITE", "") == "1"
     resp.set_cookie(
         REFRESH_COOKIE,
         raw,
         max_age=REFRESH_DAYS * 24 * 3600,
         httponly=True,
-        samesite="lax",
+        samesite="none" if cross else "lax",
+        secure=cross,
         path="/auth",
     )
 

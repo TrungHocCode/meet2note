@@ -5,7 +5,9 @@
  * không cần parse status từ Error message.
  */
 
-const BASE = '' // proxy Vite đã trỏ `/api` + `/health` + `/auth` → :8000.
+// Prod (Vercel): set VITE_API_URL=https://<tunnel-backend> lúc build.
+// Dev local: bỏ trống → dùng proxy Vite (same-origin, không cần CORS).
+const BASE = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
 
 // ─── Auth (P6b): access token trong localStorage, refresh trong cookie httpOnly ─
 
