@@ -1103,14 +1103,34 @@ export default function App() {
               <ChevronDown className="size-4" /> ③ Upload
             </CollapsibleTrigger>
             <CollapsibleContent className="mt-2 flex flex-col gap-2">
-              <Label htmlFor="up-file">File .txt/.srt/.docx</Label>
+              <Label htmlFor="up-file">File transcript</Label>
               <Input
                 id="up-file"
                 type="file"
                 accept=".txt,.srt,.docx"
                 onChange={(e) => setUpFile(e.target.files?.[0] ?? null)}
                 data-testid="upload-file"
+                className="hidden"
               />
+              <Label
+                htmlFor="up-file"
+                className="flex cursor-pointer flex-col items-center gap-1 rounded-lg border-2 border-dashed border-primary/40 bg-primary/5 px-3 py-4 text-center text-xs text-foreground transition-colors hover:border-primary hover:bg-primary/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+              >
+                <Upload className="size-5 text-primary" />
+                {upFile ? (
+                  <>
+                    <span className="font-semibold break-words">{upFile.name}</span>
+                    <span className="text-muted-foreground">
+                      {(upFile.size / 1024).toFixed(1)} KB — bấm để đổi file
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <span className="font-semibold">Bấm để chọn file</span>
+                    <span className="text-muted-foreground">.txt / .srt / .docx</span>
+                  </>
+                )}
+              </Label>
               <Label htmlFor="up-id">Meeting id (trống = từ tên file)</Label>
               <Input id="up-id" value={upId} onChange={(e) => setUpId(e.target.value)} />
               <Label htmlFor="up-title">Title</Label>
@@ -1133,7 +1153,7 @@ export default function App() {
           </Collapsible>
 
           <Separator />
-          <p className="text-[11px] text-muted-foreground">
+          <p className="text-xs text-muted-foreground">
             Phím tắt: <code>j/k</code> di chuyển · <code>a</code> đồng ý ·{' '}
             <code>e</code> sửa · <code>x</code> loại · <code>Enter</code> mở transcript ·{' '}
             <code>1–4</code> lọc
