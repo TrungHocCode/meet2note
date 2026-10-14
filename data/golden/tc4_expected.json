@@ -11,7 +11,7 @@
   "tasks": [
     {"what": "Lead integration VNPay", "content_any": ["lead integration", "lead"], "owner": "Hà", "due": "2026-10-16", "due_hint": "thứ 6 tuần này"},
     {"what": "Viết test plan thanh toán", "content_any": ["test plan"], "owner": "Nam", "due": "2026-10-31", "due_hint": "cuối tháng"},
-    {"what": "Update documentation", "content_any": ["update docs", "documentation"], "owner": "Hà", "due": "2026-10-19", "due_hint": "thứ 2 tuần sau"},
+    {"what": "Update documentation", "content_any": ["update docs", "documentation", "cập nhật tài liệu"], "owner": "Hà", "due": "2026-10-19", "due_hint": "thứ 2 tuần sau"},
     {"what": "Test edge cases refund", "content_any": ["edge cases"], "owner": "Hà", "due": "2026-10-21", "due_hint": "thứ 4 tuần sau"}
   ],
   "no_decision": false,

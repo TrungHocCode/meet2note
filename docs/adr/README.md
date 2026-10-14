@@ -17,6 +17,7 @@ tạo ADR mới và đánh status file cũ thành `Superseded by NNNN`.
 | 0004 | Filesystem versioned thay DB ở MVP | Proposed |
 | 0005 | Pipeline ở root, API là adapter mỏng | Accepted |
 | 0006 | Decision model làm arbitration scorer sau MVP (chưa chọn model) | Proposed |
+| 0007 | service.run_pipeline dùng chung cho CLI và API | Accepted |
 
 ## Mẫu file ADR
 

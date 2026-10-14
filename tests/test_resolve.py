@@ -728,6 +728,46 @@ def test_resolve_no_merge_distinct_tasks() -> None:
     assert sorted(i["id"] for i in out["items"]) == ["T1", "T2"]
 
 
+def test_resolve_id_collision_splits_tasks() -> None:
+    """Cùng id T2 nhưng task KHÁC nhau ở 2 chunk → tách + rename (live tc4).
+
+    Model tái dùng T1..T8 mỗi chunk. Khác nội dung = collision, không phải conflict.
+    """
+    a = _t("T2", "Xây dựng test plan cho thanh toán chi tiết", "Nam", "2026-10-31")
+    b = _t("T2", "Phụ trách test plan edge cases cho flow refund mới", "Hà", "2026-10-24")
+    out = resolve({"id": "tc4", "date": "2026-10-15", "participants": []}, [[a], [b]])
+    ids = sorted(i["id"] for i in out["items"])
+    assert ids == ["T2", "T2_2"]
+    assert any("id collision" in lim for lim in out["known_limitations"])
+
+
+def test_resolve_short_text_no_split() -> None:
+    """What quá ngắn không đủ phân biệt → trọng tài như cũ (không tách bừa)."""
+    a = _t("T7", "Ghi vào docs", "Hà", "2026-10-12")
+    b = _t("T7", "Note checklist", "Nam", "2026-10-12")
+    out = resolve({"id": "tc4", "date": "2026-10-15", "participants": []}, [[a], [b]])
+    assert len([i for i in out["items"] if i["type"] == "task"]) == 1
+    assert not any("id collision" in lim for lim in out["known_limitations"])
+
+
+def test_resolve_merge_recap_loses_to_real_decide() -> None:
+    """Cùng nội dung, bản note-lại (recap) bị hạ → bản chốt thật thắng.
+
+    Live tc1: D0/Nam @04:36 "Em note lại: chốt..." bị hạ thành proposal,
+    D1/Lan @04:24 giữ final (không cần merge vì khác id khác vai trò).
+    """
+    note = _fin("D0", "Chốt dùng FastAPI và JWT cho hệ thống", "Nam", "00:04:36", "decide")
+    note["evidence"][0]["quote"] = "Em note lại: chốt dùng FastAPI nhé."
+    real = _fin("D1", "Chốt dùng FastAPI và JWT mới", "Lan", "00:04:24", "decide")
+    real["evidence"][0]["quote"] = "Vậy mình chốt FastAPI nhé."
+    out = resolve({"id": "tc1", "date": "2026-10-13", "participants": []},
+                  [[note], [real]])
+    by_id = {i["id"]: i for i in out["items"]}
+    assert by_id["D0"]["status"] == "proposal"  # recap → hạ, dù role=decide
+    assert by_id["D1"]["status"] == "final"
+    assert any("demote" in lim for lim in out["known_limitations"])
+
+
 def test_resolve_merge_unions_hint_from_dropped() -> None:
     """Gộp: bản giữ thiếu due_hint thì lấy từ bản thua (live tc4 T1/T6)."""
     a = _t("T1", "Viết test plan cho flow refund", "Nam", "2026-10-31", None)
@@ -736,3 +776,53 @@ def test_resolve_merge_unions_hint_from_dropped() -> None:
     ids = [i["id"] for i in out["items"]]
     assert ids == ["T1"]
     assert out["items"][0]["due_hint"] == "cuối tháng"
+
+
+# ──────────────────────────────────────────────────────────────────────
+# Demote final thiếu decide + merge finals cùng nội dung (live tc1)
+# ──────────────────────────────────────────────────────────────────────
+
+
+def _fin(fid: str, content: str, by: str, ts: str, role: str) -> dict[str, Any]:
+    return {
+        "id": fid, "type": "decision", "content": content,
+        "status": "final", "decided_by": by,
+        "confidence": 0.9, "confidence_reason": "ok",
+        "evidence": [{
+            "quote": content[:20], "timestamp": ts,
+            "speaker": by, "turn": 1, "role_in_discussion": role,
+        }],
+    }
+
+
+def test_resolve_demote_final_without_decide() -> None:
+    """Final mà evidence toàn confirm/info (ghi chú lại) → proposal + limitation."""
+    note = _fin("D0", "Chốt dùng FastAPI", "Nam", "00:04:36", "confirm")
+    out = resolve({"id": "tc1", "date": "2026-10-13", "participants": []}, [[note]])
+    assert out["items"][0]["status"] == "proposal"
+    assert any("demote" in lim for lim in out["known_limitations"])
+
+
+def test_resolve_keep_final_with_decide() -> None:
+    """Final có evidence decide → giữ nguyên."""
+    d = _fin("D1", "Chốt phương án B", "Lan", "00:52:10", "decide")
+    out = resolve({"id": "tc2", "date": "2026-10-12", "participants": []}, [[d]])
+    assert out["items"][0]["status"] == "final"
+
+
+def test_resolve_merge_same_content_finals() -> None:
+    """2 finals cùng nội dung khác id → gộp (winner decide muộn nhất)."""
+    a = _fin("D0", "Chọn vendor Y gói premium", "Lan", "00:52:10", "decide")
+    b = _fin("D1", "Chọn vendor Y gói premium SLA cao", "Lan", "00:52:34", "decide")
+    out = resolve({"id": "tc2", "date": "2026-10-12", "participants": []}, [[a], [b]])
+    ids = [i["id"] for i in out["items"]]
+    assert len(ids) == 1 and ids[0] == "D1"  # decide muộn nhất thắng
+    assert any("cùng nội dung" in lim for lim in out["known_limitations"])
+
+
+def test_resolve_no_merge_different_content_finals() -> None:
+    """Finals khác nội dung → giữ cả hai để reversal detection xử (R4)."""
+    a = _fin("D_A", "Chốt dùng Spring Boot vì ecosystem", "Lan", "00:09:02", "decide")
+    b = _fin("D_B", "Chuyển sang FastAPI vì team quen Python", "Lan", "00:14:22", "decide")
+    out = resolve({"id": "tc5", "date": "2026-10-14", "participants": []}, [[a], [b]])
+    assert sorted(i["id"] for i in out["items"]) == ["D_A", "D_B"]

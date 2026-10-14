@@ -15,13 +15,13 @@ Chuyển **transcript cuộc họp có sẵn** (txt/srt + timestamp + speaker) �
 
 | Đường dẫn | Nội dung |
 |---|---|
-| `pipeline/` | **Lõi** (root, độc lập): `schema ingest extract resolve verify export store cli` |
-| `backend/api.py` | Lớp mỏng FastAPI: GET/PUT state, POST export (gate R6) — sẽ tạo ở P2 |
-| `frontend/` | React review — **tạo bằng `npm create vite@latest frontend -- --template react`** (P3), không tạo tay |
-| `prompts/` | `system_extract.md`, `system_resolve.md`, `fewshot_atob.md` — tách khỏi code |
-| `data/` | `transcripts/` `meta/` `golden/` — **bắt buộc SYNTHETIC** (repo public) |
-| `tests/` | `test_schema test_ingest test_verify test_resolve_rules` |
-| `eval/` | lệnh `cli eval` ghi `eval/report.md` |
+| `pipeline/` | **Lõi** (root, độc lập): `schema ingest extract resolve verify export service cli` (`service.run_pipeline` dùng chung cho CLI + API) |
+| `backend/api.py` | Lớp mỏng FastAPI: review (GET/PUT), export (POST + gate R6), transcript viewer (GET), upload chạy pipeline (POST) |
+| `frontend/` | React review: 4 cột + brief + drawer transcript (±4 turns) + form upload |
+| `prompts/` | `system_extract.md`, `system_resolve.md`, `system_brief.md`, `fewshot_atob.md` — tách khỏi code |
+| `data/` | `transcripts/` `meta/` `golden/` — **bắt buộc SYNTHETIC** (repo public); `uploads/` gitignored (file người dùng) |
+| `tests/` | `test_schema test_ingest test_verify test_resolve test_api test_export` (+ `test_eval` nếu có) |
+| `eval/` | `runner.py` (fixture + live, so golden) + `report.md` + `results_*.json` |
 | `runs/` | Output versioned, gitignored: `state.json confirmed.json review_log.json llm_log.jsonl` |
 | `docs/` | `c4/` (kiến trúc), `adr/` (quyết định), `spec/` (taxonomy, io-formats, api-contract, export-format, eval-plan, acceptance), `runbook/`, `glossary.md` |
 | `docs/private/` | 🔒 gitignored — PLAN_MVP.md + Mission1.docx. **KHÔNG commit, KHÔNG trích nội dung vào output public** |
@@ -35,7 +35,7 @@ python -m uvicorn backend.api:app --reload   # API :8000 (P2+)
 pytest tests -q                              # test
 ```
 
-## 4. Schema — 6 loại item + 7 quy tắc cứng
+## 4. Schema — 6 loại item + 8 quy tắc cứng
 
 Chi tiết đầy đủ: `docs/spec/taxonomy.md`. Tóm tắt:
 
@@ -44,15 +44,16 @@ Chi tiết đầy đủ: `docs/spec/taxonomy.md`. Tóm tắt:
 - **Mỗi item:** `confidence 0-1` + `confidence_reason` + ≥1 evidence trừ Knowledge.
 - **Evidence:** quote **nguyên văn** (cấm viết lại) + timestamp + speaker + turn + `role_in_discussion`.
 
-| # | Quy tắc cứng (enforce bằng code ở verify.py, KHÔNG tin LLM) |
+| # | Quy tắc cứng (enforce bằng code, KHÔNG tin LLM) |
 |---|---|
 | R1 | Không bịa owner/deadline → `TBD` |
-| R2 | Cấm đoán ngày: `sớm/gấp/asap` → `due TBD` + `due_hint` giữ nguyên gốc |
-| R3 | Hợp không chốt gì → `no_decision=true` + ≥1 Open Issue có next_step |
+| R2 | Cấm đoán ngày + deterministic override (due ISO sai → recompute từ hint; due quá khứ → TBD) |
+| R3 | Họp không chốt gì → `no_decision=true` + ≥1 Open Issue có next_step (trắng hẳn → O_SYS) |
 | R4 | Giữ vết `supersedes`; A→B→A không tự chọn → `unresolved_reversal` + Open Issue cho host |
-| R5 | Quote khớp transcript fuzzy ≥85% (normalize + difflib), không khớp → `evidence_mismatch` |
+| R5 | Quote khớp transcript (fuzzy/substring); ts sai → sửa về turn khớp thật; không khớp → `evidence_mismatch` |
 | R6 | Export chỉ sau confirm (gate ở React + backend) |
 | R7 | Không xoá tranh luận → lưu vào `objections` của Decision |
+| R8 | `link_to_decision` phải trỏ ID tồn tại, không thì null + limitation |
 
 **Confidence:** `<0.50` đỏ (khoá export) · `0.50-0.75` vàng · `≥0.75` xanh.
 

@@ -5,7 +5,7 @@ Hợp đồng dữ liệu vào/ra cho `ingest.py` (P0). Nguồn: PLAN_MVP §3, �
 
 ## 1. Transcript đầu vào (`data/transcripts/`)
 
-Hai định dạng được chấp nhận: `.txt` và `.srt`. Cả hai đều **synthetic** (repo public),
+Ba định dạng được chấp nhận: `.txt`, `.srt` và `.docx`. Tất cả đều **synthetic** (repo public),
 tiếng Việt, ≥3 speaker, timestamp tăng dần.
 
 ### 1.1. `.txt` — mỗi dòng = 1 turn
@@ -34,7 +34,13 @@ Nam: Em xin phép trình bày phương án A.
 - Text có thể 1-2 dòng → **gộp thành 1 turn**.
 - Speaker tách theo pattern `Tên:` như .txt; nếu không có → `speaker=""`, để pass-2 xử lý.
 
-### 1.3. Chuẩn hoá (cả 2 định dạng)
+### 1.3. `.docx` — mỗi paragraph (và mỗi cell table) = 1 dòng, parse như `.txt`
+
+- Chỉ dòng đúng format `[HH:MM:SS] Tên: nội dung` mới thành turn; đoạn khác → skip + limitation
+  (KHÔNG bịa timestamp — evidence cần timestamp thật).
+- File không có dòng nào parse được → ingest vẫn trả turns rỗng + limitation (caller báo 422).
+
+### 1.4. Chuẩn hoá (cả 3 định dạng)
 
 - `t_start`/`t_end`: chuẩn về `HH:MM:SS` (bỏ phần mmm).
 - Trim khoảng trắng dư; **không tự sửa nội dung** (giữ nguyên văn để verify quote — R5).
@@ -80,6 +86,10 @@ Kỳ vọng **tối thiểu** để eval runner so (chi tiết tiêu chí: `spec
 
 - Chỉ so các trường then chốt; phần mơ hồ/sarcasm chấm tay (host).
 - ID item (D1/T1): **không so cứng thứ tự** — so theo nội dung.
+- Key mở rộng (không bắt buộc, để eval công bằng với paraphrase của LLM):
+  `content_any[]` (biến thể ngữ nghĩa tương đương — đúng ý vẫn đạt),
+  `evidence_ts_any[]` (các timestamp đều là câu decide thật),
+  `open_issues_min`, `unresolved_reversal_expected`, `expected_red_min` (số đỏ tối thiểu).
 
 ## 5. Quy tắc parse (tóm tắt cho code)
 

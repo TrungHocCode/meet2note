@@ -338,3 +338,78 @@ html, body, #root {
   font-size: 11px;
   color: #92400e;
 }
+
+.brief {
+  background: #f0f9ff;
+  border: 1px solid #7dd3fc;
+  border-radius: 6px;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+  font-size: 13px;
+}
+.brief ul {
+  margin: 4px 0 0;
+  padding-left: 20px;
+}
+
+.ts-btn {
+  font-family: monospace;
+}
+
+.drawer {
+  position: fixed;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: min(480px, 90vw);
+  background: #fff;
+  border-left: 2px solid #d1d5db;
+  box-shadow: -4px 0 12px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  z-index: 50;
+}
+.drawer-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  border-bottom: 1px solid #e5e7eb;
+  font-size: 13px;
+}
+.drawer-body {
+  overflow-y: auto;
+  padding: 8px 12px;
+  font-size: 12px;
+}
+.drawer-body p {
+  margin: 4px 0;
+  padding: 4px 6px;
+  border-radius: 4px;
+}
+.turn-hl {
+  background: #fef9c3;
+  border: 1px solid #facc15;
+}
+
+.upload-block {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+}
+.upload-block h3 {
+  margin: 0;
+  font-size: 13px;
+}
+.upload-block label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.upmsg {
+  font-size: 12px;
+}

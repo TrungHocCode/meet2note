@@ -5,12 +5,14 @@
       "content_any": ["phương án B", "vendor Y"],
       "decided_by": "Lan",
       "supersedes": ["D0"],
-      "evidence_ts": "00:45:30"
+      "evidence_ts": "00:52:10",
+      "evidence_ts_any": ["00:52:10", "00:52:34"]
     }
   ],
   "tasks": [
     {
       "what": "Gửi báo giá B cho khách",
+      "content_any": ["báo giá"],
       "owner": "Nam",
       "due": "2026-10-12",
       "link_to_decision": "D1"

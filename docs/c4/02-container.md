@@ -2,24 +2,28 @@
 
 | Container | Công nghệ | Trách nhiệm |
 |---|---|---|
-| `frontend` — review app | React (Vite), 1 trang | Hiển thị 4 cột, badge confidence, sửa owner/due, gate thẻ đỏ, nút Export |
-| `backend` — API mini | FastAPI | `GET/PUT /api/v1/review` (đọc/ghi state), `POST /api/v1/export` (chặn khi còn thẻ đỏ) |
-| `pipeline` — CLI | Python + Pydantic v2 | `run / eval`: ingest→extract→resolve→verify→export→store, chạy độc lập không cần server |
+| `frontend` — review app | React (Vite), 1 trang | 4 cột + brief + badge, sửa owner/due, gate thẻ đỏ, nút Export, drawer transcript (±4 turns), form upload |
+| `backend` — API mini | FastAPI | review (GET/PUT), export (POST + gate R6), transcript viewer (GET), upload + chạy pipeline qua `service` (POST) |
+| `pipeline` — lõi | Python + Pydantic v2 | ingest→extract→resolve→verify→export; `service.run_pipeline` dùng chung cho CLI + API; `cli` chỉ còn args + in tiến trình |
 | `runs/` — filesystem | JSON files | `runs/<meeting_id>/<ts>/`: state, confirmed, review_log, llm_log (versioned, thay DB ở MVP) |
-| `data/` — fixtures | `.txt/.srt` + JSON | transcripts tc1–tc5, meta, golden để eval |
+| `data/` — fixtures | `.txt/.srt/.docx` + JSON | transcripts tc1–tc5, meta, golden để eval; `uploads/` (gitignored) cho file người dùng |
 
 ```mermaid
 flowchart TB
-    React[frontend — React review app<br/>1 trang, 4 cột]
-    API[backend — FastAPI mini<br/>review + export]
-    Pipe[pipeline — CLI Python<br/>6 bước]
+    React[frontend — React review app<br/>review + drawer + upload]
+    API[backend — FastAPI mini<br/>review + export + upload]
+    Svc[pipeline.service<br/>run_pipeline dùng chung]
+    Pipe[pipeline — modules<br/>ingest→extract→resolve→verify→export]
     FS[(runs/ — JSON versioned)]
     Data[(data/ — transcripts/meta/golden)]
+    Up[(data/uploads — gitignored)]
     LLM[(LLM API)]
     React -->|REST| API
-    API --> Pipe
+    API --> Svc
+    Svc --> Pipe
     Pipe --> FS
     Pipe --> Data
+    API --> Up
     Pipe <--> LLM
 ```
 

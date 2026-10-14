@@ -1,5 +1,5 @@
 """
-ingest.py — Parse transcript (.txt / .srt) → list[dict] turns.
+ingest.py — Parse transcript (.txt / .srt / .docx) → list[dict] turns.
 
 Hợp đồng: `docs/spec/io-formats.md` §1, §2, §5.
 Output `turns` là input cho `extract` (pass-1 LLM) ở P1+.
@@ -179,6 +179,57 @@ def _parse_srt(path: Path) -> tuple[list[dict[str, Any]], list[str]]:
     return turns, limitations
 
 
+def _parse_docx(path: Path) -> tuple[list[dict[str, Any]], list[str]]:
+    """Parse .docx: mỗi paragraph (và mỗi cell table) là 1 dòng text,
+    parse theo format `[HH:MM:SS] Tên: nội dung` như .txt (io-formats §1.3).
+
+    Đoạn không đúng format → skip + limitation (KHÔNG bịa timestamp —
+    evidence cần timestamp thật).
+    """
+    try:
+        from docx import Document
+    except ImportError as e:
+        raise RuntimeError(
+            "thiếu dependency python-docx (pip install python-docx)"
+        ) from e
+
+    doc = Document(str(path))
+    lines: list[str] = [p.text for p in doc.paragraphs]
+    for table in doc.tables:
+        for row in table.rows:
+            for cell in row.cells:
+                lines.append(cell.text)
+
+    turns: list[dict[str, Any]] = []
+    limitations: list[str] = []
+    for lineno, line in enumerate(lines, start=1):
+        line = (line or "").rstrip()
+        if not line.strip():
+            continue
+        m = RE_TXT.match(line)
+        if m is None:
+            limitations.append(
+                f"docx para {lineno}: không đúng format '[HH:MM:SS] Tên: ...', "
+                f"skipped -> '{line[:60]}'"
+            )
+            continue
+        t_start = _hms(f"{m.group('h')}:{m.group('m')}:{m.group('s')}")
+        turns.append(
+            {
+                "turn": 0,  # gán ở bước cuối (1-indexed)
+                "t_start": t_start,
+                "t_end": t_start,  # như .txt (đánh dấu đơn điểm)
+                "speaker": m.group("speaker").strip(),
+                "text": m.group("text").strip(),
+            }
+        )
+    for i, t in enumerate(turns, start=1):
+        t["turn"] = i
+    if not turns:
+        limitations.append("docx: không có đoạn nào parse được (cần format '[HH:MM:SS] Tên: ...')")
+    return turns, limitations
+
+
 # ──────────────────────────────────────────────────────────────────────
 # Public API
 # ──────────────────────────────────────────────────────────────────────
@@ -190,7 +241,7 @@ def parse_transcript(
     """Parse transcript file → (turns, limitations).
 
     Args:
-        path: đường dẫn tới file `.txt` hoặc `.srt` (utf-8).
+        path: đường dẫn tới file `.txt` / `.srt` / `.docx` (utf-8).
 
     Returns:
         turns: list[dict] — `[{turn, t_start, t_end, speaker, text}, ...]`
@@ -203,7 +254,7 @@ def parse_transcript(
 
     Raises:
         FileNotFoundError: file không tồn tại.
-        ValueError: extension không phải .txt / .srt.
+        ValueError: extension không phải .txt / .srt / .docx.
     """
     p = Path(path)
     if not p.exists():
@@ -213,9 +264,11 @@ def parse_transcript(
         return _parse_txt(p)
     if ext == ".srt":
         return _parse_srt(p)
+    if ext == ".docx":
+        return _parse_docx(p)
     raise ValueError(
         f"unsupported transcript extension: '{ext}' "
-        "(chỉ chấp nhận .txt hoặc .srt theo io-formats §1)"
+        "(chỉ chấp nhận .txt / .srt / .docx theo io-formats §1)"
     )
 
 

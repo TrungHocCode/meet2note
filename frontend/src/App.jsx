@@ -14,7 +14,7 @@
  */
 
 import { useEffect, useMemo, useState } from 'react'
-import { getReview, putReview, postExport } from './api.js'
+import { getReview, putReview, postExport, getTranscript, uploadMeeting } from './api.js'
 import './App.css'
 
 // ─── Badge helpers ────────────────────────────────────────────────────────
@@ -30,7 +30,7 @@ function isRed(conf) {
 }
 
 // ─── Card component ──────────────────────────────────────────────────────
-function ItemCard({ item, onAgree, onEdit, onRemove }) {
+function ItemCard({ item, onAgree, onEdit, onRemove, onShowEvidence }) {
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(() => initialDraft(item))
@@ -167,7 +167,13 @@ function ItemCard({ item, onAgree, onEdit, onRemove }) {
             <ul>
               {item.evidence.map((ev, i) => (
                 <li key={i}>
-                  <span className="ts">[{ev.timestamp}]</span>{' '}
+                  <button
+                    className="link ts-btn"
+                    title="Xem transcript quanh lượt này"
+                    onClick={() => onShowEvidence && onShowEvidence(ev)}
+                  >
+                    [{ev.timestamp}]
+                  </button>{' '}
                   <span className="speaker">{ev.speaker}</span>{' '}
                   <span className="role">({ev.role_in_discussion})</span>:{' '}
                   <span className="quote">“{ev.quote}”</span>
@@ -227,6 +233,16 @@ export default function App() {
   const [filter, setFilter] = useState('all') // all | red | yellow | green
   const [exportFiles, setExportFiles] = useState(null)
   const [exportError, setExportError] = useState(null)
+  // Transcript drawer: { meeting, turns, source, targetTurn } | null
+  const [transcript, setTranscript] = useState(null)
+  const [transcriptCache, setTranscriptCache] = useState({})
+  // Upload form
+  const [upFile, setUpFile] = useState(null)
+  const [upId, setUpId] = useState('')
+  const [upTitle, setUpTitle] = useState('')
+  const [upDate, setUpDate] = useState(() => new Date().toISOString().slice(0, 10))
+  const [upParts, setUpParts] = useState('Lan (PM)\nNam (BA)\nHà (Dev)')
+  const [upMsg, setUpMsg] = useState(null)
 
   // Gọi GET /api/v1/review
   async function load(target) {
@@ -358,6 +374,73 @@ export default function App() {
     ])
   }
 
+  // ── Transcript drawer: bấm evidence → hiện ±4 turns quanh turn đó ──
+  async function showEvidence(ev) {
+    if (!ev) return
+    setBusy(true)
+    try {
+      let entry = transcriptCache[meetingId]
+      if (!entry) {
+        const data = await getTranscript(meetingId)
+        entry = { turns: data.turns || [], source: data.source || '' }
+        setTranscriptCache((c) => ({ ...c, [meetingId]: entry }))
+      }
+      setTranscript({ meeting: meetingId, ...entry, targetTurn: ev.turn ?? null })
+    } catch (e) {
+      setError(`GET /api/v1/transcript → ${e.status ?? '?'}: ${JSON.stringify(e.body)}`)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  function parseParticipants(text) {
+    // Mỗi dòng: "Tên (role)" — aliases tự = [tên].
+    return (text || '')
+      .split('\n')
+      .map((l) => l.trim())
+      .filter(Boolean)
+      .map((l) => {
+        const m = l.match(/^(.*?)\s*\((.*?)\)\s*$/)
+        const name = (m ? m[1] : l).trim()
+        const role = (m ? m[2] : 'member').trim() || 'member'
+        return { name, role, aliases: [name] }
+      })
+      .filter((p) => p.name)
+  }
+
+  // ── Upload transcript + chạy pipeline ngay ──────────────────────────
+  async function doUpload() {
+    setUpMsg(null)
+    setError(null)
+    if (!upFile) {
+      setUpMsg('Chưa chọn file (.txt/.srt).')
+      return
+    }
+    setBusy(true)
+    try {
+      const resp = await uploadMeeting({
+        file: upFile,
+        meetingId: upId.trim(),
+        title: upTitle.trim() || upFile.name,
+        date: upDate,
+        participants: JSON.stringify(parseParticipants(upParts)),
+      })
+      setState(resp.state)
+      setMeetingId(resp.meeting_id)
+      setMeetingInput(resp.meeting_id)
+      setTranscriptCache((c) => ({ ...c, [resp.meeting_id]: null }))
+      setUpMsg(`✅ Xong: ${resp.turns_count} turns → ${resp.state.items?.length ?? 0} items. Review bên dưới.`)
+    } catch (e) {
+      if (e.status === 503) {
+        setUpMsg(`⏳ LLM chưa sẵn sàng (503): bật Ollama rồi thử lại. Chi tiết: ${JSON.stringify(e.body)}`)
+      } else {
+        setUpMsg(`❌ Upload lỗi (${e.status ?? '?'}): ${JSON.stringify(e.body)}`)
+      }
+    } finally {
+      setBusy(false)
+    }
+  }
+
   // ── Export ──────────────────────────────────────────────────────────
   function doExport() {
     setBusy(true)
@@ -449,6 +532,46 @@ export default function App() {
           {exportError && <p className="err">{exportError}</p>}
         </div>
 
+        <div className="upload-block">
+          <h3>⬆ Upload transcript</h3>
+          <label>
+            File .txt/.srt/.docx:
+            <input
+              type="file"
+              accept=".txt,.srt,.docx"
+              onChange={(e) => setUpFile(e.target.files?.[0] ?? null)}
+            />
+          </label>
+          <label>
+            Meeting id (trống = từ tên file):
+            <input value={upId} onChange={(e) => setUpId(e.target.value)} />
+          </label>
+          <label>
+            Title:
+            <input value={upTitle} onChange={(e) => setUpTitle(e.target.value)} />
+          </label>
+          <label>
+            Date:
+            <input
+              type="date"
+              value={upDate}
+              onChange={(e) => setUpDate(e.target.value)}
+            />
+          </label>
+          <label>
+            Participants (mỗi dòng: Tên (role)):
+            <textarea
+              rows={3}
+              value={upParts}
+              onChange={(e) => setUpParts(e.target.value)}
+            />
+          </label>
+          <button onClick={doUpload} disabled={busy}>
+            {busy ? 'Đang chạy pipeline…' : 'Upload + chạy'}
+          </button>
+          {upMsg && <p className="upmsg">{upMsg}</p>}
+        </div>
+
         {error && <p className="err">{error}</p>}
       </aside>
 
@@ -498,7 +621,7 @@ export default function App() {
                       item={d}
                       onAgree={onAgree}
                       onEdit={onEdit}
-                      onRemove={onRemove}
+                      onRemove={onRemove} onShowEvidence={showEvidence}
                     />
                     <DiscardedList
                       items={partitioned.discardedByFinal[d.id] ?? []}
@@ -516,7 +639,7 @@ export default function App() {
                     item={t}
                     onAgree={onAgree}
                     onEdit={onEdit}
-                    onRemove={onRemove}
+                    onRemove={onRemove} onShowEvidence={showEvidence}
                   />
                 ))}
               </section>
@@ -533,7 +656,7 @@ export default function App() {
                     item={b}
                     onAgree={onAgree}
                     onEdit={onEdit}
-                    onRemove={onRemove}
+                    onRemove={onRemove} onShowEvidence={showEvidence}
                   />
                 ))}
                 {partitioned.openIssues.map((o) => (
@@ -542,7 +665,7 @@ export default function App() {
                     item={o}
                     onAgree={onAgree}
                     onEdit={onEdit}
-                    onRemove={onRemove}
+                    onRemove={onRemove} onShowEvidence={showEvidence}
                   />
                 ))}
               </section>
@@ -559,7 +682,7 @@ export default function App() {
                     item={r}
                     onAgree={onAgree}
                     onEdit={onEdit}
-                    onRemove={onRemove}
+                    onRemove={onRemove} onShowEvidence={showEvidence}
                   />
                 ))}
                 {partitioned.knowledge.map((k) => (
@@ -568,7 +691,7 @@ export default function App() {
                     item={k}
                     onAgree={onAgree}
                     onEdit={onEdit}
-                    onRemove={onRemove}
+                    onRemove={onRemove} onShowEvidence={showEvidence}
                   />
                 ))}
               </section>
@@ -586,6 +709,38 @@ export default function App() {
                 </div>
               )}
           </>
+        )}
+
+        {transcript && (
+          <div className="drawer">
+            <div className="drawer-head">
+              <strong>
+                📜 Transcript {transcript.meeting} ({transcript.source})
+              </strong>
+              <button onClick={() => setTranscript(null)}>Đóng ✕</button>
+            </div>
+            <div className="drawer-body">
+              {transcript.turns
+                .filter(
+                  (t) =>
+                    transcript.targetTurn == null ||
+                    Math.abs((t.turn ?? 0) - transcript.targetTurn) <= 4,
+                )
+                .map((t) => (
+                  <p
+                    key={t.turn}
+                    className={
+                      t.turn === transcript.targetTurn ? 'turn-hl' : ''
+                    }
+                  >
+                    <code>
+                      [{t.t_start}] {t.speaker}:
+                    </code>{' '}
+                    {t.text}
+                  </p>
+                ))}
+            </div>
+          </div>
         )}
       </main>
     </div>

@@ -41,6 +41,10 @@ quote, timestamp, speaker, turn (số nguyên copy từ [turn N]), role_in_discu
 
 Chỉ trả về **JSON hợp lệ theo schema**. Không thêm giải thích ngoài JSON.
 
+NGÔN NGỮ: toàn bộ output tiếng Việt. `quote` copy NGUYÊN VĂN từ transcript —
+CẤM dịch sang tiếng Anh, CẤM diễn đạt lại. `content`/`what` viết bằng tiếng Việt
+theo cách transcript diễn đạt.
+
 OUTPUT SHAPE (bắt buộc — đúng 1 object, đúng key này, không key nào khác):
 
 ```json
