@@ -1,0 +1,47 @@
+[00:00:05] Lan: Chào cả nhóm, hôm nay mình đàm phán gói license với bên DataFlow nhé. Họ báo giá rồi.
+[00:00:18] Nam: Em chào chị. Họ báo bao nhiêu ạ?
+[00:00:26] Lan: Gói team 10 user: 120 triệu/năm, thanh toán 1 lần.
+[00:00:38] Hà: Đắt thế ạ? Ngân sách mình còn bao nhiêu chị?
+[00:00:48] Lan: Budget quý còn 90 triệu cho tool. Nên mình phải ép xuống dưới 90.
+[00:00:58] Nam: Em đề xuất phương án đàm phán cứng: báo họ mình có Plan B là tự build, ép giá.
+[00:01:12] Hà: Tự build tốn 2 dev-tháng, quy ra cũng gần 80 triệu. Không rẻ hơn nhiều đâu anh.
+[00:01:26] Lan: Đúng, tự build không phải Plan B thật. Mình cần chiến thuật khác.
+[00:01:38] Nam: Vậy mình xin trial 1 tháng trước, vừa test vừa câu giờ quý sau có budget mới ạ?
+[00:01:52] Lan: Ý hay. Trial 1 tháng, nếu ok thì ký từ quý sau.
+[00:02:04] Hà: Nhưng project cần tool ngay tuần này, trial thì kịp không chị?
+[00:02:16] Lan: Trial active trong 24h sau khi ký trial agreement. Kịp.
+[00:02:28] Nam: Em lo trial xong họ tăng giá, lúc đó mình bị kẹt ạ.
+[00:02:40] Lan: Nên mình chốt giá NGAY trong trial agreement: lock giá 85 triệu/năm nếu ký chính thức.
+[00:02:54] Hà: 85 triệu vẫn gần hết budget, còn 5 triệu dự phòng thôi ạ.
+[00:03:06] Lan: 5 triệu đủ rồi, tool này không phát sinh thêm.
+[00:03:18] Nam: Chị ơi, em vừa nhớ: bên DataFlow có chính sách startup discount 20% năm đầu ạ.
+[00:03:32] Lan: Thật không? Vậy 120 triệu giảm 20% còn 96 triệu, vẫn trên 90.
+[00:03:44] Hà: 96 mà lock 2 năm, năm 2 giữ nguyên thì trung bình 2 năm vẫn ok ạ?
+[00:03:58] Lan: Không, budget tính theo quý/năm, không tính trung bình được.
+[00:04:10] Nam: Vậy hướng trial + lock 85 triệu là tốt nhất hiện tại ạ.
+[00:04:22] Hà: Em đồng ý. Trial trước, lock giá sau.
+[00:04:34] Lan: Khoan, còn vụ support nữa. Gói 85 triệu có support tiếng Việt không?
+[00:04:48] Nam: Em check proposal: support tiếng Anh thôi ạ, tiếng Việt phải gói enterprise.
+[00:05:00] Hà: Team mình đọc tiếng Anh ok mà, support tiếng Việt không bắt buộc đâu chị.
+[00:05:12] Lan: Ừ, vậy bỏ yêu cầu support Việt. Tập trung vào giá và SLA.
+[00:05:24] Nam: SLA gói này 99.5%, đền bù 10% phí tháng nếu vi phạm ạ.
+[00:05:36] Lan: 99.5% chấp nhận được. Vậy mình chốt phương án: xin trial 1 tháng + lock giá 85 triệu/năm.
+[00:05:52] Hà: Dạ em đồng ý ạ.
+[00:05:56] Nam: Em đồng ý ạ.
+[00:06:04] Lan: Ok chốt nhé: trial 1 tháng, lock 85 triệu. Ai làm việc với sales bên họ?
+[00:06:18] Nam: Em làm ạ, em quen bạn sales tên Linh bên đó.
+[00:06:28] Lan: Được, em Nam liên hệ Linh, deadline cuối tuần này có trial agreement nhé.
+[00:06:42] Nam: Dạ, cuối tuần này em gửi draft agreement cho chị duyệt ạ.
+[00:06:54] Hà: Em review giúp phần điều khoản SLA nhé, em rành mấy cái này.
+[00:07:06] Lan: Ừ, Hà review SLA, Nam đàm phán chính. Hai em phối hợp.
+[00:07:18] Nam: Dạ rõ ạ.
+[00:07:22] Hà: Dạ rõ ạ.
+[00:07:30] Lan: Mà này, nếu họ không chịu lock 85 triệu thì plan B là gì?
+[00:07:42] Nam: Thì mình trả giá 80 triệu, gặp nhau ở giữa 82-83 ạ.
+[00:07:54] Hà: Em nghĩ floor của họ khoảng 80, mình đừng ép quá mất quan hệ ạ.
+[00:08:06] Lan: Đồng ý. Trần 85, sàn 80, ngoài khoảng đó thì về báo cáo lại, không tự quyết.
+[00:08:20] Nam: Dạ em nhớ, ngoài 80-85 em về hỏi lại ạ.
+[00:08:32] Lan: Rồi, còn gì nữa không?
+[00:08:38] Hà: Em hết ạ.
+[00:08:42] Nam: Em hết ạ.
+[00:08:48] Lan: End meeting nhé. Chúc đàm phán thành công.

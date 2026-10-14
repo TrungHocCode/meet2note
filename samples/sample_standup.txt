@@ -1,0 +1,24 @@
+[00:00:05] Lan: Chào team, standup nhanh 15 phút nhé. Hôm nay thứ Ba, sprint còn 3 ngày.
+[00:00:14] Nam: Em hôm qua xong API login, hôm nay viết unit test ạ.
+[00:00:24] Hà: Em hôm qua fix bug giỏ hàng, hôm nay test lại trên staging ạ.
+[00:00:34] Minh: Em hôm qua review PR của Nam, hôm nay làm màn hình quên mật khẩu ạ.
+[00:00:46] Lan: Có blocker gì không?
+[00:00:52] Nam: Em bị chặn ở mock server SSO, chưa có credential test ạ.
+[00:01:04] Lan: Credential test chị xin bên infra rồi, chiều nay có. Em note blocker này lại nhé.
+[00:01:16] Nam: Dạ vâng ạ.
+[00:01:22] Hà: Em cũng bị chậm vì staging reset data mỗi đêm, sáng phải seed lại ạ.
+[00:01:36] Lan: Vụ seed data này mình đã bàn rồi. Vậy chốt nhé: team dùng seed script chung, Hà em viết script, deadline thứ Năm tuần này.
+[00:01:52] Hà: Dạ em viết seed script chung, thứ Năm xong ạ.
+[00:02:04] Minh: Em dùng ké được không chị?
+[00:02:10] Lan: Được, script chung cho cả team mà.
+[00:02:18] Nam: Chị ơi, unit test login em cần keycloak dev, ai cấp ạ?
+[00:02:30] Lan: Em nhắn anh Tuấn bên infra, quote chị vào nhé.
+[00:02:40] Nam: Dạ rõ ạ.
+[00:02:46] Hà: Hôm nay ai deploy staging ạ?
+[00:02:54] Lan: Minh deploy nhé, sau 5h chiều, báo team trước 30 phút.
+[00:03:06] Minh: Dạ em deploy sau 5h, em báo team ạ.
+[00:03:16] Lan: Còn gì nữa không?
+[00:03:22] Nam: Em hết ạ.
+[00:03:26] Hà: Em hết ạ.
+[00:03:30] Minh: Em hết ạ.
+[00:03:36] Lan: Ok, end standup. Chúc cả team ngày mới năng suất.

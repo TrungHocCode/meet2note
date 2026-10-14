@@ -956,3 +956,60 @@ def test_verify_brief_dropped_when_problem_empty() -> None:
     )
     assert state.brief is None
     assert any("parse fail" in lim for lim in state.known_limitations)
+
+
+# ──────────────────────────────────────────────────────────────────────
+# Normalize thay vì drop (live brainstorm)
+# ──────────────────────────────────────────────────────────────────────
+
+
+def test_verify_requirement_bad_origin_becomes_unknown() -> None:
+    """origin câu dài → 'unknown' + limitation, GIỮ item (đừng drop cả record)."""
+    raw = [{
+        "id": "R1", "type": "requirement",
+        "content": "Cần báo trước 7 ngày",
+        "raised_by": "Lan",
+        "origin": "Discussion during evaluation of vendor support",
+        "confidence": 0.8, "confidence_reason": "ok",
+        "evidence": [{
+            "quote": "Cần báo trước 7 ngày", "timestamp": "00:00:10",
+            "speaker": "Lan", "turn": 1, "role_in_discussion": "info",
+        }],
+    }]
+    state = verify_state(
+        meeting=_meeting(),
+        items_raw=raw,
+        conf_llm_map={"R1": 0.8},
+        turns=[{"turn": 1, "t_start": "00:00:10", "t_end": "00:00:10",
+                "speaker": "Lan", "text": "Cần báo trước 7 ngày"}],
+    )
+    assert len(state.items) == 2  # R1 + O_SYS fallback (fixture không có final)
+    r1 = next(i for i in state.items if i.id == "R1")
+    assert r1.origin == "unknown"
+    assert any("origin" in lim for lim in state.known_limitations)
+
+
+def test_verify_open_issue_missing_next_step_filled() -> None:
+    """OpenIssue thiếu next_step → placeholder cho host + limitation, GIỮ item.
+
+    (Họp mơ hồ hay thiếu next_step — bỏ cả item thì mất record "chưa chốt".)
+    """
+    raw = [{
+        "id": "O1", "type": "open_issue",
+        "content": "Chưa chốt hướng tích hợp",
+        "confidence": 0.6, "confidence_reason": "mơ hồ",
+        "evidence": [{
+            "quote": "Chưa chốt hướng", "timestamp": "00:00:10",
+            "speaker": "Lan", "turn": 1, "role_in_discussion": "info",
+        }],
+    }]
+    state = verify_state(
+        meeting=_meeting(),
+        items_raw=raw,
+        conf_llm_map={"O1": 0.6},
+        turns=[{"turn": 1, "t_start": "00:00:10", "t_end": "00:00:10",
+                "speaker": "Lan", "text": "Chưa chốt hướng"}],
+    )
+    assert len(state.items) == 1
+    assert state.items[0].next_step == "Host xác định bước tiếp theo"
+    assert any("next_step" in lim for lim in state.known_limitations)
