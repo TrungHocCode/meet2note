@@ -1,16 +1,17 @@
 /**
- * src/App.jsx — meet2note Review (P3).
+ * src/App.jsx — meet2note Review.
  *
- * Spec UI: docs/spec/export-format.md §4.
- * - Sidebar: input meeting id, filter confidence (all/red/yellow/green),
- *   nút Export (khoá theo gate R6 + đếm thẻ đỏ).
- * - Main 4 cột: Quyết định | Công việc | Vướng mắc & Chưa chốt | Yêu cầu & Phản hồi.
- * - Thẻ: content + badge + evidence expandable (quote+ts+speaker+role) +
- *   3 nút Đồng ý / Sửa / Loại + form sửa inline (content/owner/due/link_to_decision).
- * - Discarded thu gọn dưới final.
- * - Banner `known_limitations` + hiển thị file export sau POST 200.
+ * Spec UI (nguồn chân lý — KHÔNG mô tả lại UI ở đây):
+ * - docs/design/layout.md      bố cục + breakpoint
+ * - docs/design/components.md  component + trạng thái + map R1-R8
+ * - docs/design/tokens.md      token (Tailwind v4 @theme)
+ * - docs/spec/ui-spec.md       hợp đồng hành vi + acceptance checklist
  *
- * Triết lý MVP: tối giản, không đẹp, gọi API thật (xem api.js).
+ * Bất biến không được vỡ khi sửa file này:
+ * - data-testid="meeting-input" / "export-btn" (cam kết ở ui-spec §9 — test UI sau này bám vào)
+ * - export-btn DISABLED khi còn item confidence < 0.50 chưa xử lý (gate R6;
+ *   tầng API đã có test_export_403_when_red_items_exist bảo vệ)
+ * - PUT /review luôn gửi kèm `changes` (audit, ADR-0004)
  */
 
 import { useEffect, useMemo, useState } from 'react'
