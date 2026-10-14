@@ -171,6 +171,47 @@ def chunk_turns(
 # ──────────────────────────────────────────────────────────────────────
 
 
+def _env(*names: str, default: str = "") -> str:
+    """Đọc env theo thứ tự ưu tiên (tên đầu thắng).
+
+    Quy ước Ollama-first: `LLM_BASE_URL`/`LLM_MODEL`/`LLM_API_KEY` trước,
+    fallback `OPENAI_*`/`API_KEY` để tương thích máy cũ + hosted endpoint.
+    """
+    for n in names:
+        v = os.environ.get(n, "")
+        if v:
+            return v
+    return default
+
+
+_items_json_schema_cache: dict[str, Any] | None = None
+
+
+def items_json_schema() -> dict[str, Any]:
+    """JSON Schema cho `{"items": [...]}` sinh từ Pydantic Literals.
+
+    Đưa tập lựa chọn (type/status/role/...) VÀO generation qua
+    `response_format: json_schema` (constrained decoding) thay vì chỉ
+    validate sau (Pydantic + retry). Cache vì schema không đổi runtime.
+    """
+    global _items_json_schema_cache
+    if _items_json_schema_cache is None:
+        from .schema import ItemTypeAdapter
+
+        _items_json_schema_cache = {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": ItemTypeAdapter.json_schema(),
+                }
+            },
+            "required": ["items"],
+            "additionalProperties": False,
+        }
+    return _items_json_schema_cache
+
+
 def call_llm(
     messages: list[dict[str, str]],
     *,
@@ -181,25 +222,29 @@ def call_llm(
 ) -> str:
     """Gọi OpenAI-compatible `/chat/completions` với temp=0.
 
-    Env:
-    - OPENAI_BASE_URL (vd: https://api.openai.com/v1 hoặc http://localhost:11434/v1 cho Ollama)
-    - MODEL_NAME (vd: gpt-4o-mini, qwen3:8b, ...)
-    - OPENAI_API_KEY / API_KEY (optional tuỳ endpoint — Ollama local không cần)
+    Env (Ollama-first, fallback tên cũ):
+    - LLM_BASE_URL | OPENAI_BASE_URL (vd: http://localhost:11434/v1 cho Ollama)
+    - LLM_MODEL | MODEL_NAME (vd: qwen3:4b-instruct-2507-q4_K_M, gpt-4o-mini)
+    - LLM_API_KEY | OPENAI_API_KEY | API_KEY (optional — Ollama local không cần)
     - LLM_TIMEOUT (giây, default 60 — model local nên đặt 300+)
+    - LLM_JSON_MODE=1: ép `response_format: json_object` (tương thích rộng)
+    - LLM_STRUCTURED=1: ép `response_format: json_schema` từ Pydantic Literals
+      (constrained decoding — model bị ép chọn trong tập cho phép; provider không
+      hỗ trợ → 400 → tự fallback về plain + log warning)
+    - LLM_NUM_CTX: passthrough `options.num_ctx` cho Ollama
 
     Raises:
         RuntimeError: nếu thiếu env config hoặc HTTP != 200.
     """
-    base_url = (base_url or os.environ.get("OPENAI_BASE_URL", "")).rstrip("/")
-    model = model or os.environ.get("MODEL_NAME", "")
-    api_key = api_key or os.environ.get(
-        "OPENAI_API_KEY", os.environ.get("API_KEY", "")
-    )
+    base_url = (base_url or _env("LLM_BASE_URL", "OPENAI_BASE_URL")).rstrip("/")
+    model = model or _env("LLM_MODEL", "MODEL_NAME")
+    api_key = api_key or _env("LLM_API_KEY", "OPENAI_API_KEY", "API_KEY")
 
     if not base_url or not model:
         raise RuntimeError(
-            "LLM chưa cấu hình: set OPENAI_BASE_URL + MODEL_NAME trong .env "
+            "LLM chưa cấu hình: set LLM_BASE_URL + LLM_MODEL trong .env "
             "(xem .env.example; Ollama local: http://localhost:11434/v1). "
+            "Tên cũ OPENAI_BASE_URL/MODEL_NAME vẫn dùng được (fallback). "
             "Hiện tại chỉ chạy được mock LLM (test) hoặc sau khi user cấp key."
         )
 
@@ -221,7 +266,18 @@ def call_llm(
     # JSON-mode ép ở request (OpenAI + Ollama mới hỗ trợ). Default TẮT để
     # tương thích rộng (parser + retry đã cover); bật bằng LLM_JSON_MODE=1
     # khi model nhỏ (vd qwen3 local) không tuân thủ shape.
-    if os.environ.get("LLM_JSON_MODE", "") == "1":
+    # LLM_STRUCTURED=1 mạnh hơn: ép cả schema enum từ Pydantic Literals.
+    use_structured = os.environ.get("LLM_STRUCTURED", "") == "1"
+    if use_structured:
+        payload["response_format"] = {
+            "type": "json_schema",
+            "json_schema": {
+                "name": "meet2note_items",
+                "strict": True,
+                "schema": items_json_schema(),
+            },
+        }
+    elif os.environ.get("LLM_JSON_MODE", "") == "1":
         payload["response_format"] = {"type": "json_object"}
     # num_ctx cho Ollama local (default 4096 — prompt tc2 ~4.4k tokens nên tràn).
     # Ollama mới chấp nhận passthrough "options" qua endpoint OpenAI-compatible.
@@ -234,6 +290,15 @@ def call_llm(
     )
     with httpx.Client(timeout=eff_timeout) as client:
         r = client.post(url, json=payload, headers=headers)
+        if r.status_code == 400 and use_structured and "response_format" in payload:
+            # Provider không hỗ trợ json_schema → fallback plain 1 lần
+            # (giữ tương thích rộng; parser + retry tầng trên vẫn cover).
+            logger.warning(
+                "LLM 400 với response_format json_schema — fallback plain. "
+                "Tắt hẳn bằng LLM_STRUCTURED=0."
+            )
+            del payload["response_format"]
+            r = client.post(url, json=payload, headers=headers)
         if r.status_code != 200:
             raise RuntimeError(f"LLM HTTP {r.status_code}: {r.text[:300]}")
         data = r.json()

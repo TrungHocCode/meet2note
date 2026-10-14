@@ -6,24 +6,35 @@
 
 ```powershell
 Set-Location -LiteralPath "F:\AI\project\next_gen\meet2note"
-Copy-Item .env.example .env   # điền OPENAI_BASE_URL + MODEL_NAME
+Copy-Item .env.example .env   # điền LLM_BASE_URL + LLM_MODEL (Ollama local)
 pip install -r requirements.txt
 ```
 
-### 1b. Dùng Ollama local (tạm thời, thay hosted LLM)
+### 1b. Dùng Ollama local (mặc định — thay hosted LLM)
 
 `.env` (gitignored — không commit):
 
 ```
-OPENAI_BASE_URL=http://localhost:11434/v1
-MODEL_NAME=qwen3:8b
+LLM_BASE_URL=http://localhost:11434/v1
+LLM_MODEL=qwen3:4b-instruct-2507-q4_K_M
 LLM_TIMEOUT=300
+LLM_JSON_MODE=1
+LLM_NUM_CTX=8192
+# LLM_STRUCTURED=1  # ép json_schema từ Pydantic (thử nghiệm, xem §1c)
 ```
 
 - Không cần API key (Ollama local bỏ qua `Authorization` khi trống).
 - Parser đã chịu được `<think>` + fence + lời dẫn của model local
   (bóc trước khi parse JSON, retry vẫn giữ).
+- Tên cũ `OPENAI_BASE_URL`/`MODEL_NAME` vẫn dùng được (fallback).
 - Chạy mock khi chưa có key: `python -m pipeline.cli run --meeting tc2 --llm-fixture data/fixtures/tc2_llm.json`
+
+### 1c. Constrained decoding (thử nghiệm)
+
+`LLM_STRUCTURED=1` gửi JSON Schema sinh từ Pydantic `Literal` theo request —
+model bị ép chọn trong tập cho phép (type/status/role/...) ngay khi sinh,
+thay vì để bịa rồi validate sau. Provider không hỗ trợ `response_format`
+thì tự fallback plain + warning (không chết chunk).
 
 ## 2. Chạy pipeline CLI (không cần server — P0/P1)
 
