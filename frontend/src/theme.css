@@ -1,0 +1,52 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+/*
+ * theme.css — design tokens DUY NHẤT (docs/design/tokens.md §0).
+ * Hợp đồng: grep hex thô trong frontend/src chỉ được khớp ở khối @theme/:root này.
+ */
+
+@theme {
+  /* tầng nền — tương thích shadcn */
+  --color-background: #f8fafc;
+  --color-foreground: #1f2937;
+  --color-card: #ffffff;
+  --color-primary: #3b5bdb;
+  --color-primary-foreground: #ffffff;
+  --color-muted: #f1f5f9;
+  --color-muted-foreground: #6b7280;
+  --color-accent: #f1f5f9;
+  --color-destructive: #dc2626;
+  --color-border: #e5e7eb;
+  --color-input: #e5e7eb;
+  --color-ring: #3b5bdb;
+
+  /* tầng domain — riêng meet2note, ngoài namespace shadcn */
+  --color-conf-red: #dc2626;
+  --color-conf-red-bg: #fef2f2;
+  --color-conf-amber: #92400e;
+  --color-conf-amber-bg: #fffbeb;
+  --color-conf-green: #047857;
+  --color-conf-green-bg: #ecfdf5;
+  --color-warn-bg: #fffbeb;
+  --color-ok-bg: #ecfdf5;
+  --color-info-bg: #f0f9ff;
+  --color-hl-bg: #fef9c3;
+  --color-hl-border: #facc15;
+  --color-evidence-bg: #f8fafc;
+  --color-evidence-rule: #cbd5e1;
+
+  --radius: 10px;
+  --shadow-card: 0 4px 12px rgb(15 23 42 / 0.08);
+  --shadow-drawer: 0 8px 24px rgb(15 23 42 / 0.12);
+
+  --font-sans: "Inter", system-ui, sans-serif;
+  --font-heading: "Be Vietnam Pro", "Inter", system-ui, sans-serif;
+}
+
+:root {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
