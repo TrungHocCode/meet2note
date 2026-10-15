@@ -5,7 +5,7 @@
 ## 1. Chuẩn bị
 
 ```powershell
-Set-Location -LiteralPath "F:\AI\project\next_gen\meet2note"
+cd meet2note   # thư mục repo vừa clone
 Copy-Item .env.example .env   # điền LLM_BASE_URL + LLM_MODEL (Ollama local)
 pip install -r requirements.txt
 ```
