@@ -38,3 +38,5 @@ llm_log.jsonl
 *.out
 *.err
 nohup.out
+.vercel
+.env*

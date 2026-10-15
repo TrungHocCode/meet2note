@@ -313,7 +313,7 @@ def test_export_400_when_no_confirmed_state(
     assert r.status_code == 400
     body = r.json()
     assert body["error"] == "not_confirmed"
-    assert "confirmed_state.json" in body["detail"]
+    assert "xác nhận" in body["detail"]  # message thân thiện, không lộ path server
 
 
 def test_export_200_writes_files(

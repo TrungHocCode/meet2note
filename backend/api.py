@@ -523,11 +523,18 @@ def post_export(
     # Gate pass → gọi export_meeting (P3).
     try:
         result = export_meeting(meeting, PROJECT_ROOT / "runs")
-    except FileNotFoundError as e:
+    except FileNotFoundError:
         # Không có confirmed_state.json → host chưa PUT lần nào.
+        # Detail thân thiện, KHÔNG lộ đường dẫn server tuyệt đối.
         return JSONResponse(
             status_code=400,
-            content={"error": "not_confirmed", "detail": str(e)},
+            content={
+                "error": "not_confirmed",
+                "detail": (
+                    "Hãy xác nhận ít nhất 1 thẻ (Đồng ý/Sửa/Loại) "
+                    "trước khi export."
+                ),
+            },
         )
     except ValueError as e:
         return JSONResponse(
