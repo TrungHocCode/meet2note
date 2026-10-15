@@ -87,7 +87,9 @@ Upload transcript → AI trích state → Host review 2 phút → Export minutes
 
 ```powershell
 # 0. Yêu cầu: Python 3.11+, Node 18+, Docker, Ollama + model qwen3:4b-instruct-2507-q4_K_M
-Set-Location -LiteralPath "F:\AI\project\next_gen\meet2note"
+cd meet2note   # thư mục repo vừa clone
+# Windows dùng .\.venv\Scripts\python.exe, Linux/Mac dùng .venv/bin/python
+# (các lệnh dưới viết theo Windows — đổi tương ứng khi dùng hệ khác)
 
 Copy-Item .env.example .env   # điền LLM_BASE_URL, LLM_MODEL, JWT_SECRET (xem § Cấu hình)
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
