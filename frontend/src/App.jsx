@@ -926,7 +926,9 @@ export default function App() {
           const reds = e.body?.red_items ?? []
           setExportError(`Còn thẻ đỏ chưa xử lý: ${reds.join(', ')}. Xử lý hết trước khi export.`)
         } else if (e.status === 400) {
-          setExportError(`Chưa confirm: ${e.body?.detail ?? ''}`)
+          setExportError(
+            e.body?.detail ?? 'Hãy xác nhận ít nhất 1 thẻ trước khi export.',
+          )
         } else {
           setExportError(`${e.status ?? '?'}: ${e.body?.detail ?? JSON.stringify(e.body)}`)
         }
