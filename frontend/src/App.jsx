@@ -160,7 +160,11 @@ function Meta({ label, children, tone = 'secondary', hint }) {
 function MetaPills({ item, allIds }) {
   const pills = []
   const missing = <span className="text-muted-foreground">—</span>
+  const confReason = String(item.confidence_reason || '')
   if (item.type === 'task') {
+    const isDueRevised = Boolean(
+      item.due_hint && (item.due_hint.includes('revised') || item.due_hint.includes('→')),
+    )
     pills.push(
       <Meta key="owner" label="Người làm" tone={item.owner === 'TBD' ? 'conf-amber' : 'secondary'}>
         {item.owner === 'TBD' ? 'TBD' : item.owner}
@@ -170,11 +174,12 @@ function MetaPills({ item, allIds }) {
       <Meta
         key="due"
         label="Hạn"
-        tone={item.due === 'TBD' ? 'conf-amber' : 'secondary'}
+        tone={item.due === 'TBD' || isDueRevised ? 'conf-amber' : 'secondary'}
         hint={item.due_hint ? `Chữ gốc trong họp: “${item.due_hint}”` : undefined}
       >
         {item.due === 'TBD' ? 'TBD' : item.due}
         {item.due_source === 'inferred' ? ' · suy luận' : ''}
+        {isDueRevised ? ' · đã dời hạn' : ''}
       </Meta>,
     )
     if (item.link_to_decision) {
@@ -196,6 +201,18 @@ function MetaPills({ item, allIds }) {
         {(item.supersedes ?? []).length > 0 ? item.supersedes.join(', ') : 'quyết định gốc'}
       </Meta>,
     )
+    if (confReason.includes('single-evidence-final')) {
+      pills.push(
+        <Meta
+          key="m3c"
+          label="Chuỗi"
+          tone="conf-amber"
+          hint="M3-C: Quyết định final chỉ có 1 evidence đơn lẻ (thiếu chuỗi propose → decide → confirm)"
+        >
+          1 evidence đơn lẻ
+        </Meta>,
+      )
+    }
   }
   if (item.type === 'blocker') {
     pills.push(
@@ -238,7 +255,20 @@ function MetaPills({ item, allIds }) {
   }
   if (item.type === 'knowledge') {
     ;(item.tags ?? []).forEach((t) => {
-      pills.push(<Badge key={`tag-${t}`} variant="outline">{t}</Badge>)
+      if (t === 'reclassify') {
+        pills.push(
+          <Meta
+            key="tag-reclassify"
+            label="M3-D"
+            tone="conf-amber"
+            hint="Tự động phân loại lại từ Task sang Knowledge (quy ước/lâu dài, không có owner/due cụ thể)"
+          >
+            tự phân loại từ Task
+          </Meta>,
+        )
+      } else {
+        pills.push(<Badge key={`tag-${t}`} variant="outline">{t}</Badge>)
+      }
     })
     if (item.context) pills.push(<Badge key="ctx" variant="outline">{item.context}</Badge>)
   }

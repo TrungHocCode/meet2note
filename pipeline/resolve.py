@@ -71,6 +71,7 @@ from .gates import (
     _apply_decision_gate,
     _apply_due_revision,
     _apply_hedge_gate,
+    _apply_owner_revision,
     _has_decide_verb,
     _has_hedge,
     _has_retract_signal,
@@ -964,9 +965,10 @@ def resolve(
     # Bước 2f (M3-D): Task ↔ Knowledge reclassify bằng code + ghi vết.
     _reclassify_knowledge_task(items_after_conflict, limitations)
 
-    # Bước 2g (CR-DUE-REV — giả định): deadline sửa giữa họp → lấy lần cuối.
+    # Bước 2g (CR-DUE-REV + CR-OWNER-REV): deadline / owner sửa giữa họp → lấy lần cuối.
     # Module độc lập, có cờ để tắt; CR thật chỉ cần thay hàm này.
     _apply_due_revision(items_after_conflict, meta, limitations)
+    _apply_owner_revision(items_after_conflict, meta, limitations)
 
     # Bước 3: nối supersedes xuyên chunk (proposal early + final late, khác id).
     _link_supersedes_xuyen_chunk(items_after_conflict, limitations)
@@ -1126,4 +1128,5 @@ __all__ = [
     "_has_hedge",
     "_reclassify_knowledge_task",
     "_apply_due_revision",
+    "_apply_owner_revision",
 ]

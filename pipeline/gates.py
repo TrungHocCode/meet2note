@@ -462,6 +462,96 @@ def _apply_due_revision(
         )
 
 
+# ──────────────────────────────────────────────────────────────────────
+# CR-OWNER-REV (CR dự phòng) — Đổi người phụ trách (owner) giữa họp
+# ──────────────────────────────────────────────────────────────────────
+
+_OWNER_REVISION_RE = re.compile(
+    r"\b(?:đổi\s*sang|chuyển\s*(?:sang\s*)?cho|nhường\s*cho|giao\s*lại\s*cho|"
+    r"bàn\s*giao\s*cho|để\s+\w+\s+làm\s*thay|làm\s*thay\s*cho)\b",
+    re.IGNORECASE,
+)
+
+
+def _apply_owner_revision(
+    items: list[dict[str, Any]],
+    meta: dict[str, Any],
+    limitations: list[str],
+) -> None:
+    """CR-OWNER-REV: người phụ trách (owner) được đổi giữa họp → lấy lần chốt CUỐI.
+
+    Luật:
+      - Nếu task có ≥2 evidence theo thứ tự turn và câu sau chứa cụm từ bàn giao/
+        chuyển việc kèm tên participant mới (∈ participants, ≠ owner cũ),
+        cập nhật `owner` sang người mới + ghi vết vào `confidence_reason` và
+        `known_limitations`.
+    """
+    raw_parts = meta.get("participants") or []
+    alias_to_canonical: list[tuple[str, str]] = []
+    for p in raw_parts:
+        name = (p.get("name") if isinstance(p, dict) else getattr(p, "name", "")) or ""
+        aliases = (
+            (p.get("aliases") if isinstance(p, dict) else getattr(p, "aliases", []))
+            or []
+        )
+        if name:
+            alias_to_canonical.append((name.lower(), name))
+            for al in aliases:
+                if al:
+                    alias_to_canonical.append((str(al).lower(), name))
+    # Ưu tiên cụm dài hơn (vd "chị lan" trước "lan")
+    alias_to_canonical.sort(key=lambda x: len(x[0]), reverse=True)
+    if not alias_to_canonical:
+        return
+
+    for raw in items:
+        if raw.get("type") != "task":
+            continue
+        evs = raw.get("evidence") or []
+        if len(evs) < 2:
+            continue
+        ordered = sorted(
+            [ev for ev in evs if isinstance(ev.get("turn"), int)],
+            key=lambda e: e["turn"],
+        )
+        if len(ordered) < 2:
+            continue
+        candidates: list[tuple[str, int]] = []
+        for ev in ordered[1:]:
+            quote = ev.get("quote") or ""
+            if not _OWNER_REVISION_RE.search(quote):
+                continue
+            q_lower = quote.lower()
+            # Tìm participant xuất hiện sau từ khóa chuyển việc (hoặc cuối câu)
+            m_kw = _OWNER_REVISION_RE.search(q_lower)
+            tail = q_lower[m_kw.start() :] if m_kw else q_lower
+            matched_owner: str | None = None
+            for alias_lc, canonical in alias_to_canonical:
+                if re.search(rf"\b{re.escape(alias_lc)}\b", tail):
+                    matched_owner = canonical
+                    break
+            if matched_owner:
+                candidates.append((matched_owner, ev["turn"]))
+        if not candidates:
+            continue
+        new_owner, revised_turn = max(candidates, key=lambda c: c[1])
+        old_owner = raw.get("owner") or TBD_SENTINEL
+        if old_owner == new_owner:
+            continue
+        raw["owner"] = new_owner
+        raw["owner_source"] = "explicit"
+        old_reason = str(raw.get("confidence_reason") or "").strip()
+        rev_note = f"owner revised {old_owner}→{new_owner} (turn {revised_turn})"
+        if rev_note not in old_reason:
+            raw["confidence_reason"] = (
+                f"{old_reason}; {rev_note}" if old_reason else rev_note
+            )
+        limitations.append(
+            f"CR-OWNER-REV: {raw.get('id')} owner {old_owner} → {new_owner} "
+            f"(câu sửa ở turn {revised_turn})"
+        )
+
+
 __all__ = [
     "ACTION_VERB_RE",
     "DECIDE_VERBS",
@@ -472,6 +562,7 @@ __all__ = [
     "_apply_decision_gate",
     "_apply_due_revision",
     "_apply_hedge_gate",
+    "_apply_owner_revision",
     "_has_decide_verb",
     "_has_hedge",
     "_has_retract_signal",
