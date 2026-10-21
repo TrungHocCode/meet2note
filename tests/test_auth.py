@@ -26,6 +26,7 @@ def tdb(tmp_path, monkeypatch) -> dict:
     from backend.db.session import make_engine
 
     monkeypatch.setenv("JWT_SECRET", "auth-suite-secret-du-32-ky-tu-abcdef")
+    monkeypatch.delenv("COOKIE_CROSS_SITE", raising=False)
     url = f"sqlite:///{tmp_path / 'auth.db'}"
     monkeypatch.setenv("DATABASE_URL", url)
     make_engine(url).connect().close()

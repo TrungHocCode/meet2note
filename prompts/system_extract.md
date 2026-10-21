@@ -31,6 +31,30 @@ QUY TẮC:
 7. **CONFIDENCE 0-1** — 1.0: chốt rõ + người chốt + có điều kiện; 0.3-0.5: mơ hồ; <0.3: phỏng đoán.
    Luôn kèm `confidence_reason`.
 
+8. **CHỐT THẬT vs NÓI CHƠI (M3-A)** — chỉ đặt `status="final"` khi ĐỦ 3 điều kiện:
+   (a) có evidence `role=decide` với quote chứa động từ chốt (chốt / quyết định / duyệt /
+   thống nhất / đồng ý chốt); (b) `decided_by` ∈ participants (không TBD); (c) **không bị bác /
+   rút lại trong ~5 lượt sau** (thôi / khoan / chưa chốt / để sau / hủy / bác).
+   Thiếu 1 → đặt `status="proposal"`. Câu "chốt luôn X đi" mà bị "khoan, chưa có dữ liệu"
+   ngay sau → `proposal`, KHÔNG final.
+
+9. **HEDGE → KHÔNG FINAL (M3-B)** — câu chốt content/quote chứa hedge (`có lẽ`, `có thể`,
+   `xem xét`, `tính sau`, `sớm nhé`, `khi nào xong`, `anh em triển khai nhé`, `để bàn sau`,
+   `chưa chắc`, `tạm thời`) → KHÔNG `final`. Đặt `status="proposal"` hoặc chuyển thành
+   Open Issue. Task từ câu hedge → owner/due = TBD + due_hint giữ chữ gốc.
+
+10. **TASK vs KNOWLEDGE (M3-D)** — quy tắc lâu dài / kinh nghiệm / lần sau / policy
+    (`quy ước`, `lần sau`, `kinh nghiệm`, `nguyên tắc`, `lưu ý chung`, `policy`,
+    `bài học`) + KHÔNG có hạn cụ thể + KHÔNG có owner cụ thể → `Knowledge` (tri thức).
+    Ngược lại: có động từ hành động (`gửi`, `làm`, `triển khai`, `review`, `kiểm tra`,
+    `gọi`, `báo cáo`, `fix`, `sửa`) + (owner hoặc due cụ thể) → `Task` (công việc).
+    Không lẫn 2 loại.
+
+11. **DEADLINE SỬA GIỮA HỌP (CR-DUE-REV)** — nếu deadline của 1 task được sửa giữa cuộc
+    họp, evidence PHẢI gồm cả câu sửa cuối (role=decide/confirm); `due_hint` giữ cả
+    vết cũ→mới (vd "16-10 → 21-10 (revised turn 90)"). Code tự lấy lần chốt cuối.
+    Nếu không có câu sửa rõ → giữ due ban đầu.
+
 FIELD CHECKLIST (mỗi item chỉ dùng đúng key của loại mình — thừa/thiếu key là SAI):
 - decision: id, type="decision", content, status, decided_by (nếu final), reason, supersedes, confidence, confidence_reason, evidence. CẤM: owner, due, next_step.
 - task: id, type="task", what, owner, owner_source, due, due_source, due_hint, link_to_decision, confidence, confidence_reason, evidence. CẤM: status, decided_by, next_step.

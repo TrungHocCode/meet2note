@@ -1,0 +1,18 @@
+{
+  "mode": "fixture-M2-baseline",
+  "items_total": 12,
+  "finals_count": 3,
+  "tasks_count": 6,
+  "knowledge_count": 1,
+  "open_issues_count": 2,
+  "badges": {
+    "red": 3,
+    "yellow": 3,
+    "green": 6
+  },
+  "false_final_count": 1,
+  "false_final_ids": [
+    "D3"
+  ],
+  "pass": true
+}

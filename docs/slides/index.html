@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>meet2note — Slide thuyết trình</title>
+<style>
+  :root {
+    --bg: #0f172a; --card: #1e293b; --line: #334155;
+    --fg: #f1f5f9; --muted: #94a3b8; --primary: #3b82f6;
+    --green: #22c55e; --red: #ef4444; --yellow: #eab308;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg); color: var(--fg);
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    height: 100vh; overflow: hidden;
+  }
+  /* Thanh tiến trình toàn deck */
+  #progress { position: fixed; top: 0; left: 0; height: 5px; background: var(--primary); width: 0; z-index: 50; transition: width .25s; }
+  .deck { height: 100vh; }
+  .slide {
+    display: none; height: 100vh; padding: 34px 56px 60px;
+    flex-direction: column; position: relative;
+    background:
+      radial-gradient(900px 400px at 85% -10%, #1d4ed822, transparent),
+      radial-gradient(700px 380px at 5% 110%, #0ea5e922, transparent),
+      var(--bg);
+  }
+  .slide.active { display: flex; animation: fade .25s ease; }
+  @keyframes fade { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; } }
+  .top { display: flex; justify-content: space-between; align-items: baseline; }
+  .kicker { color: var(--primary); font-weight: 700; letter-spacing: 2px; font-size: 13px; text-transform: uppercase; }
+  .pageno { color: var(--muted); font-size: 14px; font-variant-numeric: tabular-nums; }
+  h1 { font-size: 54px; line-height: 1.12; margin: 14px 0 10px; }
+  h2 { font-size: 34px; margin: 8px 0 4px; }
+  .sub { color: var(--muted); font-size: 18px; line-height: 1.6; max-width: 1000px; }
+  .body { flex: 1; display: flex; flex-direction: column; justify-content: center; min-height: 0; }
+  /* Liên kết nội dung: chân slide nhắc trước → sau */
+  .bridge {
+    margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--line);
+    display: flex; justify-content: space-between; color: var(--muted); font-size: 14.5px;
+  }
+  .bridge b { color: var(--fg); }
+  .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 22px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 22px; }
+  .split { display: grid; grid-template-columns: 1fr 1.2fr; gap: 28px; margin-top: 20px; align-items: start; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 20px 22px; }
+  .card.hl { border-color: var(--primary); }
+  .card.ok { border-color: var(--green); }
+  .card .icon { font-size: 30px; }
+  .card h3 { font-size: 18px; margin: 8px 0 6px; }
+  .card p, .card li { color: var(--muted); font-size: 15.5px; line-height: 1.6; }
+  .card ul { padding-left: 18px; }
+  .stat { font-size: 40px; font-weight: 800; color: var(--primary); }
+  .flow { display: flex; align-items: stretch; margin-top: 22px; }
+  .step { flex: 1; background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 18px 12px; text-align: center; }
+  .step.done { border-color: var(--green); }
+  .step .n { display: inline-block; background: var(--primary); width: 28px; height: 28px; line-height: 28px; border-radius: 50%; font-weight: 700; font-size: 14px; }
+  .step h3 { margin: 8px 0 4px; font-size: 16px; }
+  .step p { color: var(--muted); font-size: 13.5px; line-height: 1.5; }
+  .arrow { align-self: center; padding: 0 6px; color: var(--primary); font-size: 24px; font-weight: 700; }
+  .demobox { margin-top: 20px; background: #052e16; border: 2px dashed var(--green); border-radius: 12px; padding: 22px 26px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: center; }
+  .demobox a.big { color: #fff; font-size: 25px; font-weight: 800; }
+  .cred { display: inline-block; margin: 8px 6px 0 0; background: #111c33; border: 1px solid var(--line); border-radius: 8px; padding: 8px 16px; font-family: Consolas, monospace; font-size: 16px; }
+  .checklist { color: #d1fae5; font-size: 15.5px; line-height: 2; }
+  table { width: 100%; border-collapse: collapse; margin-top: 18px; font-size: 15.5px; }
+  th, td { border: 1px solid var(--line); padding: 9px 12px; text-align: left; }
+  th { background: #111c33; }
+  td.ok { color: var(--green); font-weight: 700; }
+  img.shot { width: 100%; max-height: 52vh; object-fit: contain; border-radius: 10px; border: 1px solid var(--line); margin-top: 16px; background: #fff; }
+  .badge-r { background: #450a0a; color: #fca5a5; border-radius: 6px; padding: 2px 8px; font-size: 13px; }
+  .badge-g { background: #052e16; color: #86efac; border-radius: 6px; padding: 2px 8px; font-size: 13px; }
+  .badge-y { background: #422006; color: #fde047; border-radius: 6px; padding: 2px 8px; font-size: 13px; }
+  .tag { display: inline-block; background: #111c33; border: 1px solid var(--line); border-radius: 20px; padding: 6px 15px; margin: 3px; font-size: 14.5px; }
+  .cta a { color: var(--primary); font-weight: 800; font-size: 26px; }
+  .nav { position: fixed; bottom: 10px; left: 0; right: 0; text-align: center; color: var(--muted); font-size: 13px; z-index: 50; }
+  .nav b { color: var(--fg); }
+  .cols { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 12px; margin-top: 20px; }
+  .cols .card { padding: 16px; }
+  .quote { border-left: 4px solid var(--primary); padding: 6px 0 6px 16px; color: var(--fg); font-size: 17px; font-style: italic; margin-top: 14px; }
+  .warn { margin-top: 14px; color: var(--muted); font-size: 14px; }
+</style>
+</head>
+<body>
+<div id="progress"></div>
+<div class="deck">
+
+  <!-- 1. Cover -->
+  <section class="slide active">
+    <div class="top"><span class="kicker">Sản phẩm AI ứng dụng · <span class="pageno">01 / 12</span></span><span class="pageno">meet2note</span></div>
+    <div class="body">
+      <h1>meet2note 📝<br />Biến cuộc họp thành dữ liệu dùng được</h1>
+      <p class="sub">Không tóm tắt — chốt <b style="color:var(--fg)">trạng thái cuối</b> kèm bằng chứng từng câu nói.
+      Triết lý: <b style="color:var(--fg)">LLM đề xuất, code kiểm chứng, con người chốt.</b></p>
+      <div class="grid3">
+        <div class="card"><div class="stat">60′</div><p>họp lại của team 8 người ≈ 1–1,5 ngày công lãng phí + trễ deadline</p></div>
+        <div class="card"><div class="stat">8–10h</div><p>mỗi PM mất mỗi tháng chỉ để nghe lại và hỏi lại</p></div>
+        <div class="card"><div class="stat">10–50×</div><p>chi phí sửa khi ghi sai 1 quyết định so với chi phí ghi đúng</p></div>
+      </div>
+    </div>
+    <div class="bridge"><span>Nhấn <b>→</b> để chuyển slide · <b>F</b> toàn màn hình</span><span>Tiếp: <b>vấn đề cụ thể là gì? →</b></span></div>
+  </section>
+
+  <!-- 2. Agenda -->
+  <section class="slide">
+    <div class="top"><span class="kicker">Lộ trình thuyết trình · <span class="pageno">02 / 12</span></span><span class="pageno">meet2note</span></div>
+    <div class="body">
+      <h2>Hôm nay đi qua 5 chặng 🧭</h2>
+      <div class="flow">
+        <div class="step"><span class="n">1</span><h3>Vấn đề</h3><p>3 nỗi đau đắt nhất của biên bản họp</p></div><div class="arrow">→</div>
+        <div class="step"><span class="n">2</span><h3>Giải pháp</h3><p>Luồng 4 bước dưới 5 phút</p></div><div class="arrow">→</div>
+        <div class="step"><span class="n">3</span><h3>🔴 Demo trực tiếp</h3><p>Chạy thật trên link public</p></div><div class="arrow">→</div>
+        <div class="step"><span class="n">4</span><h3>Niềm tin</h3><p>Vì sao dám tin output của AI?</p></div><div class="arrow">→</div>
+        <div class="step"><span class="n">5</span><h3>Kỹ thuật + lộ trình</h3><p>Stack, eval, bước tiếp theo</p></div>
+      </div>
+    </div>
+    <div class="bridge"><span>← Trước: <b>cover</b></span><span>Tiếp: <b>3 nỗi đau của biên bản →</b></span></div>
+  </section>
+
+  <!-- 3. Problem -->
+  <section class="slide">
+    <div class="top"><span class="kicker">01 · Vấn đề · <span class="pageno">03 / 12</span></span><span class="pageno">meet2note</span></div>
+    <div class="body">
+      <h2>Biên bản có, nhưng không hành động được 💸</h2>
+      <div class="grid3">
+        <div class="card"><div class="icon">🔀</div><h3>Sai / trôi quyết định cuối</h3><p>Đầu họp đề xuất A, cuối chốt B vì rủi ro chi phí. Biên bản liệt kê cả hai ngang nhau → team thi công nhầm A.</p><ul><li>Vấn đề thật: <b>mất trạng thái cuối</b></li></ul></div>
+        <div class="card"><div class="icon">👻</div><h3>Task mồ côi</h3><p>"Anh em triển khai nhé", "sớm nhé" → không owner, không deadline, không link tới quyết định → việc rơi vào khoảng trống.</p><ul><li>Vấn đề thật: <b>thiếu trách nhiệm + thời hạn</b></li></ul></div>
+        <div class="card"><div class="icon">🧠</div><h3>Mất ngữ cảnh &amp; tri thức</h3><p>Vì sao đổi A→B, ai phản đối, điều kiện gì thì đảo lại? Người nghỉ việc mang theo lý do.</p><ul><li>Vấn đề thật: <b>mất khả năng truy vết</b></li></ul></div>
+      </div>
+      <p class="quote">"Thách thức không phải speech-to-text hay tóm tắt — mà là mất trạng thái cuối và mất khả năng truy vết."</p>
+    </div>
+    <div class="bridge"><span>← Trước: <b>agenda</b></span><span>Tiếp: <b>luồng 4 bước giải quyết →</b></span></div>
+  </section>
+
+  <!-- 4. Solution -->
+  <section class="slide">
+    <div class="top"><span class="kicker">02 · Giải pháp · <span class="pageno">04 / 12</span></span><span class="pageno">meet2note</span></div>
+    <div class="body">
+      <h2>State, not summary — 4 bước dưới 5 phút ⚡</h2>
+      <div class="flow">
+        <div class="step"><span class="n">1</span><h3>📤 Ingest</h3><p>Transcript .txt/.srt/.docx + ngày họp + người tham gia + vai trò</p></div><div class="arrow">→</div>
+        <div class="step"><span class="n">2</span><h3>🤖 AI hiểu diễn biến</h3><p>Cắt topic, gán vai trò đề xuất/phản đối/chốt, entity-linking "em/tuần sau" → tên/ngày, phát hiện đảo ngược A→B</p></div><div class="arrow">→</div>
+        <div class="step"><span class="n">3</span><h3>✅ Review 2 phút</h3><p>Kanban 4 cột + confidence <span class="badge-r">đỏ</span> <span class="badge-y">vàng</span> <span class="badge-g">xanh</span> + sửa owner/deadline</p></div><div class="arrow">→</div>
+        <div class="step"><span class="n">4</span><h3>📥 Export</h3><p>Gate khóa khi còn thẻ đỏ → minutes.md + tasks Jira CSV tải về máy</p></div>
+      </div>
+      <div class="grid2">
+        <div class="card hl"><h3>6 loại item có cấu trúc</h3><p>Decision · Task · Blocker · Requirement · Open Issue · Knowledge — mỗi item có confidence, lý do, và ≥1 evidence.</p></div>
+        <div class="card hl"><h3>Nguyên tắc bất biến</h3><p>Quote <b>nguyên văn</b> cấm viết lại · Không bịa owner/deadline → TBD · Ai sửa gì đều log audit.</p></div>
+      </div>
+    </div>
+    <div class="bridge"><span>← Trước: <b>3 nỗi đau</b></span><span>Tiếp: <b>🔴 demo trực tiếp →</b></span></div>
+  </section>
+
+  <!-- 5. DEMO -->
+  <section class="slide">
+    <div class="top"><span class="kicker">03 · Demo trực tiếp · <span class="pageno">05 / 12</span></span><span class="pageno">meet2note</span></div>
+    <div class="body">
+      <h2>Bấm link là dùng được ngay 🔴</h2>
+      <p class="sub">Tới đây chuyển sang web demo (Alt+Tab). Khán giả chụp ảnh slide này là tự thử được sau giờ chiếu.</p>
+      <div class="demobox">
+        <div>
+          <div>🌐 <a class="big" href="https://meet2note.vercel.app" target="_blank">meet2note.vercel.app</a></div>
+          <div><span class="cred">demo@meet2note.app</span><span class="cred">Demo1234</span></div>
+        </div>
+        <div class="checklist">
+          ① Đăng nhập → 5 meetings mẫu, badge <span class="badge-r">đỏ</span><span class="badge-y">vàng</span><span class="badge-g">xanh</span><br />
+          ② Bấm 1 meeting → Đồng ý / Sửa / Loại vài thẻ<br />
+          ③ Bấm timestamp evidence → drawer câu gốc ±4 turns<br />
+          ④ Hết đỏ → Export → tải 2 file về máy
+        </div>
+      </div>
+    </div>
+    <div class="bridge"><span>← Trước: <b>luồng 4 bước</b></span><span>Tiếp: <b>nhìn lại màn hình review →</b></span></div>
+  </section>
+
+  <!-- 6. Screenshot -->
+  <section class="slide">
+    <div class="top"><span class="kicker">03 · Màn hình review · <span class="pageno">06 / 12</span></span><span class="pageno">meet2note</span></div>
+    <div class="body">
+      <h2>Host nhìn gì sau mỗi cuộc họp?</h2>
+      <div class="split">
+        <div>
+          <div class="card"><h3>4 cột Kanban</h3><p>Quyết định · Công việc · Vướng mắc &amp; Chưa chốt · Yêu cầu &amp; Phản hồi — lọc theo badge, phím tắt j/k/a/e/x.</p></div>
+          <div class="card" style="margin-top:12px"><h3>Brief đầu trang</h3><p>Vấn đề + kết quả chính, mỗi gạch đầu dòng gắn ref tới ID item đã chốt.</p></div>
+        </div>
+        <div><img class="shot" src="../images/demo.png" alt="Màn hình review meet2note" /></div>
+      </div>
+    </div>
+    <div class="bridge"><span>← Trước: <b>demo trực tiếp</b></span><span>Tiếp: <b>case đảo quyết định A→B →</b></span></div>
+  </section>
+
+  <!-- 7. A→B -->
+  <section class="slide">
+    <div class="top"><span class="kicker">03 · Case kinh điển · <span class="pageno">07 / 12</span></span><span class="pageno">meet2note</span></div>
+    <div class="body">
+      <h2>Đầu họp A, cuối họp chốt B 🎯</h2>
+      <div class="split">
+        <div class="card"><div class="icon">❌</div><h3>AI tóm tắt thường</h3><p>Liệt kê A và B ngang nhau, mất thứ tự thời gian và người chốt.</p><ul><li>Hệ quả: team thi công nhầm A</li><li>Không biết ai quyết, vì sao đổi</li></ul></div>
+        <div class="card ok"><div class="icon">✅</div><h3>meet2note</h3><p>Chỉ tồn tại <b>một</b> quyết định cuối: <b>B</b> <span class="badge-g">final</span>.</p><ul><li>A → <span class="badge-r">discarded</span>, giữ vết <i>supersedes</i></li><li>Bấm vào vẫn thấy: ai đề xuất A, ai chốt B, câu nói phút nào</li></ul></div>
+      </div>
+    </div>
+    <div class="bridge"><span>← Trước: <b>màn hình review</b></span><span>Tiếp: <b>vì sao dám tin AI? →</b></span></div>
+  </section>
+
+  <!-- 8. Trust -->
+  <section class="slide">
+    <div class="top"><span class="kicker">04 · Niềm tin · <span class="pageno">08 / 12</span></span><span class="pageno">meet2note</span></div>
+    <div class="body">
+      <h2>Không bắt bạn tin AI — cho bạn tự kiểm 🔍</h2>
+      <div class="grid3">
+        <div class="card"><div class="icon">🔗</div><h3>Evidence-first</h3><p>Mọi item bấm tới câu gốc + timestamp + speaker. Quote viết lại → gắn cờ <i>evidence_mismatch</i>, sai timestamp → sửa về turn khớp thật.</p></div>
+        <div class="card"><div class="icon">🔒</div><h3>Gate R6 + 8 rules cứng</h3><p>Cấm bịa owner/deadline (R1) · cấm đoán ngày (R2) · họp không chốt → Open Issue (R3) · còn thẻ <span class="badge-r">đỏ</span> → export khóa cứng UI lẫn API.</p></div>
+        <div class="card"><div class="icon">🤝</div><h3>Trung thực mặc định</h3><p>Không suy ra được → <b>TBD</b> + hiện <i>known_limitations</i> trên UI. Ca khó A→B→A thì flag cho host thay vì tự chọn bừa.</p></div>
+      </div>
+    </div>
+    <div class="bridge"><span>← Trước: <b>case A→B</b></span><span>Tiếp: <b>chạy bằng gì, dữ liệu ở đâu? →</b></span></div>
+  </section>
+
+  <!-- 9. Tech -->
+  <section class="slide">
+    <div class="top"><span class="kicker">05 · Kỹ thuật · <span class="pageno">09 / 12</span></span><span class="pageno">meet2note</span></div>
+    <div class="body">
+      <h2>Chạy local, dữ liệu không đi đâu 🔐</h2>
+      <div class="split">
+        <div>
+          <p class="sub">
+            <span class="tag">Python + Pydantic v2</span><span class="tag">FastAPI + JWT</span>
+            <span class="tag">Postgres 16</span><span class="tag">React + Tailwind + shadcn</span>
+            <span class="tag">Ollama local</span>
+          </p>
+          <div class="card" style="margin-top:14px"><h3>Multi-user thật</h3><p>Access 60 phút + refresh httpOnly 7 ngày. Mỗi user chỉ thấy meeting của mình — sai chủ trả 404 như không tồn tại.</p></div>
+        </div>
+        <div class="card hl"><h3>Pipeline extract → resolve → verify</h3><p>LLM chỉ đề xuất JSON thô, còn lại code lo:</p><ul><li>Ngày tháng tính lại bằng Python từ ngày họp</li><li>Quote phải khớp transcript (fuzzy match)</li><li>Đảo quyết định phải giữ vết supersedes</li><li>LLM sai → code đỡ, host chốt</li></ul></div>
+      </div>
+    </div>
+    <div class="bridge"><span>← Trước: <b>niềm tin</b></span><span>Tiếp: <b>đo lường bằng gì? →</b></span></div>
+  </section>
+
+  <!-- 10. Eval -->
+  <section class="slide">
+    <div class="top"><span class="kicker">05 · Kiểm chứng · <span class="pageno">10 / 12</span></span><span class="pageno">meet2note</span></div>
+    <div class="body">
+      <h2>5 ca eval, đo thật không đo miệng 📊</h2>
+      <div class="split">
+        <div>
+          <table>
+            <tr><th>Ca</th><th>Kịch bản</th><th>Kết quả</th></tr>
+            <tr><td>tc1</td><td>Planning + chốt giả</td><td class="ok">Đạt</td></tr>
+            <tr><td>tc2 ⭐</td><td>Đảo A→B</td><td class="ok">Đạt</td></tr>
+            <tr><td>tc3</td><td>Vòng vo, không chốt</td><td class="ok">Đạt</td></tr>
+            <tr><td>tc4</td><td>Entity người + ngày</td><td class="ok">Đạt</td></tr>
+            <tr><td>tc5</td><td>A→B→A</td><td class="ok">Trung thực</td></tr>
+          </table>
+        </div>
+        <div>
+          <div class="card"><h3>Không đo ROUGE</h3><p>Đo 4 chỉ số dùng được: Decision Accuracy · Task Usability · Time-to-value &lt;5 phút · Adoption.</p></div>
+          <div class="card" style="margin-top:12px"><h3>262 tests xanh</h3><p>Schema → API → auth → download. Eval fixture 5/5, live LLM 5/5. Chi tiết: <i>eval/report.md</i>.</p></div>
+        </div>
+      </div>
+    </div>
+    <div class="bridge"><span>← Trước: <b>stack kỹ thuật</b></span><span>Tiếp: <b>đi đâu tiếp theo? →</b></span></div>
+  </section>
+
+  <!-- 11. Roadmap -->
+  <section class="slide">
+    <div class="top"><span class="kicker">05 · Lộ trình · <span class="pageno">11 / 12</span></span><span class="pageno">meet2note</span></div>
+    <div class="body">
+      <h2>Biết mình đang ở đâu trên bản đồ 🗺️</h2>
+      <div class="grid3">
+        <div class="card ok"><div class="icon">✅</div><h3>Đã xong (MVP)</h3><p>Pipeline + review 2 phút + export + multi-user + link demo chạy thật.</p></div>
+        <div class="card hl"><div class="icon">🧪</div><h3>Pilot họp thật</h3><p>20–30 họp, 5 team: đo Decision Accuracy &gt;95%, Task Usability &gt;85%, Time-to-value &lt;5 phút.</p></div>
+        <div class="card"><div class="icon">🚀</div><h3>Sau MVP</h3><p>Sync Jira/Slack 1-chiều · tìm kiếm + hỏi-đáp xuyên họp · template theo loại họp · SSO + redaction PII.</p></div>
+      </div>
+    </div>
+    <div class="bridge"><span>← Trước: <b>eval 5 ca</b></span><span>Tiếp: <b>mời dùng thử →</b></span></div>
+  </section>
+
+  <!-- 12. CTA -->
+  <section class="slide">
+    <div class="top"><span class="kicker">05 · Bắt đầu · <span class="pageno">12 / 12</span></span><span class="pageno">meet2note</span></div>
+    <div class="body" style="flex-direction:row; gap:36px; align-items:center;">
+      <div style="flex:1.2">
+        <h1>Dùng thử 2 phút,<br />hiểu ngay 💡</h1>
+        <p class="cta">🌐 <a href="https://meet2note.vercel.app" target="_blank">meet2note.vercel.app</a></p>
+        <p><span class="cred">demo@meet2note.app</span><span class="cred">Demo1234</span></p>
+      </div>
+      <div style="flex:1">
+        <div class="card ok"><h3>Nhớ mang về 3 ý</h3><p>① Vấn đề là <b>mất trạng thái cuối</b>, không phải thiếu biên bản<br />② Giải pháp là <b>state + evidence + host chốt 2 phút</b><br />③ Trung thực mặc định: <b>thà TBD còn hơn bịa</b></p></div>
+        <p class="sub" style="margin-top:16px">Cảm ơn! Mời câu hỏi. 🙌</p>
+      </div>
+    </div>
+    <div class="bridge"><span>← Trước: <b>lộ trình</b></span><span>Hết · <b>←</b> quay lại xem tiếp</span></div>
+  </section>
+
+</div>
+<div class="nav"><b>←</b> <b>→</b> chuyển slide · <b>Space</b> tiếp · <b>F</b> toàn màn hình · <span id="cnt"></span></div>
+<script>
+  const slides = [...document.querySelectorAll('.slide')];
+  let i = 0;
+  const cnt = document.getElementById('cnt');
+  const bar = document.getElementById('progress');
+  function show(n) {
+    i = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach((s, k) => s.classList.toggle('active', k === i));
+    cnt.textContent = (i + 1) + ' / ' + slides.length;
+    bar.style.width = ((i + 1) / slides.length * 100) + '%';
+  }
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); show(i + 1); }
+    if (e.key === 'ArrowLeft') show(i - 1);
+    if (e.key.toLowerCase() === 'f') document.documentElement.requestFullscreen?.();
+  });
+  document.querySelector('.deck').addEventListener('click', (e) => {
+    if (e.target.closest('a')) return; // bấm link thì mở link, không qua slide
+    show(i + 1);
+  });
+  show(0);
+</script>
+</body>
+</html>

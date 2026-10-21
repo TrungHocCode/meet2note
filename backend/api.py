@@ -163,11 +163,16 @@ app = FastAPI(
 
 # CORS: React dev local + domain demo (Vercel) qua env CORS_ORIGINS
 # (phân tách phẩy). allow_credentials=True để gửi refresh cookie.
-_CORS_ORIGINS = [
-    o.strip()
-    for o in os.environ.get("CORS_ORIGINS", "http://localhost:5173").split(",")
-    if o.strip()
-]
+_CORS_ORIGINS = list(
+    dict.fromkeys(
+        ["http://localhost:5173"]
+        + [
+            o.strip()
+            for o in os.environ.get("CORS_ORIGINS", "").split(",")
+            if o.strip()
+        ]
+    )
+)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_CORS_ORIGINS,

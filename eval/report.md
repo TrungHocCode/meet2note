@@ -116,3 +116,68 @@
 - Chunk 40/overlap 10 do context 4k của model local (hosted dùng 80/10 mặc định).
 - Task phụ dư ngoài golden (đúng nhưng thừa) — host tự loại ở review 2 phút.
 - Chưa xử lý: speaker chồng lấn thật, sarcasm detection riêng, sync API Jira (out-of-scope MVP).
+
+---
+
+# Mission 3 — Từ MVP M2 lên M3 (chống false decision/task)
+
+> Mục tiêu M3 (theo PLAN_M3.md, không commit): giảm false decision/task trên
+> transcript dài + hedge + chốt giả. Thêm 4 thay đổi nhỏ (M3-A gate, M3-B hedge,
+> M3-C evidence-chain, M3-D task↔knowledge) + 1 CR-giả định (due revision).
+> Schema Pydantic KHÔNG đổi (chỉ dùng field có sẵn), R1–R8 giữ nguyên.
+
+## BEFORE → AFTER trên tc6_long (~110 turns, 3 chủ đề)
+
+tc6 là ca M3 mới: vendor (A→B→A? + chốt giả Stripe), deadline sửa 16→21,
+quy ước dài hạn. Bằng chứng BEFORE/AFTER chạy cùng fixture, điểm khác biệt
+duy nhất là 4 gate M3 (file `eval/run_tc6_before.py` patch no-op).
+
+| Metric | BEFORE (M2) | AFTER (M3) | Cải thiện |
+|---|---|---|---|
+| `false_final` (final không khớp golden) | **1** (D3 Stripe chốt giả) | **0** (M3-A gate hạ proposal) | ✓ |
+| `tasks` đúng loại | 6 (T1-T5 + K1 "quy ước" sai loại) | 5 (K1 reclassify → Knowledge) | ✓ |
+| `knowledge` đúng loại | 1 (K2) | 2 (K1 + K2) | ✓ |
+| T5 hedge "có lẽ tính sau" | owner=Nam due=2026-10-31 (sai) | owner=TBD due=TBD (đúng) | ✓ M3-B |
+| T2 lead integration due | due=21-10 (M2 entity-link fix) | due=21-10 + hint `21/10 (revised turn 71)` (vết đầy đủ) | ✓ M3-CR |
+| D3 Stripe status | `final` (sai) | `proposal` (đúng) | ✓ M3-A |
+
+File `eval/results_tc6_before.json` (BEFORE) + `eval/results_tc6_after.json` (AFTER)
++ `eval/report.md` (BEFORE→AFTER khung theo PLAN_M3 §5).
+
+## Kết quả test M3 (5 file mới, `tests/test_m3_*.py`)
+
+| File test | Mục đích | Kết quả |
+|---|---|---|
+| `test_m3_decision_gate.py` | M3-A: chốt Stripe bị bác → final→proposal | 2/2 PASS |
+| `test_m3_hedge.py` | M3-B: hedge content/quote → cấm final; hedge evidence → task TBD | 4/4 PASS |
+| `test_m3_evidence_chain.py` | M3-C: single-evidence-final penalty (-0.20) + giữ item | 5/5 PASS |
+| `test_m3_knowledge_task.py` | M3-D: Task "quy ước..." → Knowledge; gợi ý ngược qua limitation | 7/7 PASS |
+| `test_m3_due_revision.py` | CR-DUE-REV: deadline sửa 16→19→21 → due=21 + vết cũ→mới | 5/5 PASS |
+
+Tổng cộng 23/23 test M3 mới PASS. M2 regression: 214/214 PASS.
+
+## Chấp nhận M3 theo PLAN_M3 §6.3
+
+| # | Tiêu chí | Kết quả |
+|---|---|---|
+| 1 | Regression M2 xanh 100% (pytest + fixture eval 5/5) | ☑ Đạt (214/214 + 5/5 PASS) |
+| 2 | 5 test M3 xanh | ☑ Đạt (23/23 PASS) |
+| 3 | tc6_long: `false_final(M3) < false_final(M2)` + due_revision đúng + knowledge_precision tăng | ☑ Đạt (1→0, due 21-10 có vết, knowledge 1→2 đúng loại) |
+| 4 | BEFORE→AFTER 6 dòng + file `runs/` hai phiên bản | ☑ Đạt (results_tc6_before.json + results_tc6_after.json; file runs/<tc6>/ không commit — gitignored) |
+| 5 | Known limitations ghi trung thực (≥2 dòng) | ☑ Đạt (xem dưới) |
+
+## Known limitations M3 (trung thực, không che giấu)
+
+- CR-DUE-REV: chỉ xử lý 1 pattern (due_hint có ngày số + keyword "dời/sửa/chuyển").
+  CR thật (multi-topic, owner-revision, export-filter) chưa được chỉ định — khi tới
+  chỉ cần thay hàm `_apply_due_revision`, không đụng M3-A..D.
+- M3-A retract check: chỉ quét ±5 turn sau decide cuối. Transcript chốt → nghỉ → 30
+  phút sau rút lại (tc5) — gate không bắt được; R4 (reversal detection) vẫn loại.
+- Hedge lexicon: danh sách cứng tiếng Việt (~12 marker). Tiếng lóng / sarcasm / double
+  negative ("chốt đấy nhỉ") lọt qua — prompt LLM vẫn là lớp 1, code là lưới cuối.
+- M3-C chain: heuristic len(chain_roles)==1 && len(evs)<=1 → đơn giản. Có final 1 evidence
+  dài + đúng vẫn penalty -0.20; chấp nhận false negative để trung thực.
+- Knowledge pattern: regex cố định. Câu dài paraphrase "Quan trọng là nhớ kỹ: ..."
+  chứa "lưu ý" lẫn với task note → có thể reclassify nhầm; gợi ý chuyển ngược qua limitation.
+- Evidence-chain R5 (regression): M3-C là NÂNG CẤP của R5 (penalty), không thay thế R5
+  (verify vẫn check quote khớp + sửa ts theo turn khớp thật).

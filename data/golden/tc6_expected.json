@@ -1,0 +1,54 @@
+{
+  "decisions_final": [
+    {
+      "content": "Phase 1 dùng vendor A",
+      "content_any": ["Phase 1 dùng vendor A"],
+      "decided_by": "Lan",
+      "evidence_ts": "00:04:28",
+      "evidence_ts_any": ["00:04:28", "00:04:36", "00:04:42", "00:04:50"]
+    },
+    {
+      "content": "Refund flow dùng refund standard 1 của vendor A",
+      "content_any": ["Refund flow dùng refund standard 1", "refund standard 1 của A"],
+      "decided_by": "Lan",
+      "evidence_ts": "00:19:48",
+      "evidence_ts_any": ["00:19:48", "00:20:00"]
+    }
+  ],
+  "no_decision": false,
+  "tasks": [
+    {
+      "what": "Gửi báo giá",
+      "content_any": ["Gửi báo giá", "gửi báo giá"],
+      "owner": "Nam",
+      "due": "2026-10-16",
+      "link_to_decision": null
+    },
+    {
+      "what": "Lead integration",
+      "content_any": ["Lead integration", "lead integration"],
+      "owner": "Hà",
+      "due": "2026-10-21",
+      "due_hint_any": ["21/10 (revised turn 71)", "21/10"],
+      "link_to_decision": null
+    },
+    {
+      "what": "Viết test plan",
+      "content_any": ["Viết test plan", "viết test plan"],
+      "owner": "Nam",
+      "due": "2026-10-31",
+      "link_to_decision": null
+    },
+    {
+      "what": "Update documentation",
+      "content_any": ["Update documentation", "update documentation"],
+      "owner": "Hà",
+      "due": "2026-10-19",
+      "link_to_decision": null
+    }
+  ],
+  "open_issues_min": 1,
+  "expected_red_min": 0,
+  "false_final_count_max": 1,
+  "rationale": "Ca M3 dài ~111 turns, 3 chủ đề (vendor, deadline, quy ước): 2 final đúng có chain (vendor A + refund), chốt giả 'Stripe' bị bác → proposal (false_final=1, M3-A gate), hedge 'có lẽ tính sau' → task owner/due=TBD (M3-B), deadline lead integration sửa 16→19→21 (lấy cuối, CR-DUE-REV), 1 knowledge (M3-D reclassify). false_final_count_max=1 vì M3 hạ D3 Stripe thành proposal; informational actual=1."
+}

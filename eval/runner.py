@@ -25,6 +25,9 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+
 from pipeline.extract import extract
 from pipeline.ingest import parse_transcript
 from pipeline.resolve import resolve
@@ -41,6 +44,17 @@ _FIXTURE_FOR = {
     "tc4": "data/fixtures/tc4_llm.json",
     "tc5": "data/fixtures/tc5_llm.json",
 }
+
+# Optional M3 transcript: ca dài 110 turns cho BEFORE/AFTER Mission 3.
+# Theo PLAN_M3 §4.4: tc6 test 2 final ca đạt chain, 0 false final từ chốt giả,
+# 1 knowledge đúng loại, due revision đúng.
+_M3_CASES = ["tc6"]
+_M3_FIXTURE_FOR = {
+    "tc6": "data/fixtures/tc6_llm.json",
+}
+
+ALL_CASES = CASES + _M3_CASES
+ALL_FIXTURE_FOR = {**_FIXTURE_FOR, **_M3_FIXTURE_FOR}
 
 
 def _norm(s: str) -> str:
@@ -96,7 +110,11 @@ def run_case(
     turns, ingest_lims = parse_transcript(transcript)
     llm_fn = None
     if not live:
-        llm_fn = _make_fixture_llm(root / _FIXTURE_FOR[tc_id])
+        # Chọn fixture từ M3 set nếu có, không thì M2 set.
+        fixture_path = ALL_FIXTURE_FOR.get(tc_id) or _FIXTURE_FOR.get(tc_id)
+        if fixture_path is None:
+            raise FileNotFoundError(f"no fixture for {tc_id}")
+        llm_fn = _make_fixture_llm(root / fixture_path)
 
     extraction = extract(
         meta, turns, log_path=None, llm_fn=llm_fn,
@@ -119,7 +137,8 @@ def run_case(
         source_file=str(transcript),
         pipeline_version="eval",
     )
-    resolution = resolve(meta, extraction["chunk_items"], llm_fn=None)
+    resolution = resolve(meta, extraction["chunk_items"], llm_fn=None,
+                        turns=turns)
     state = verify_state(
         meeting=meeting,
         items_raw=resolution["items"],
@@ -218,7 +237,16 @@ def compare(tc_id: str, state, golden: dict[str, Any]) -> dict[str, Any]:
                 match = t.link_to_decision == gt["link_to_decision"]
                 ok &= match
                 notes.append(f"link={t.link_to_decision} (expect {gt['link_to_decision']})")
-            if gt.get("due_hint") is not None:
+            # due_hint: hỗ trợ cả "due_hint" (exact) và "due_hint_any" (list of variants)
+            if gt.get("due_hint_any") is not None:
+                want_hints = list(gt["due_hint_any"])
+                actual_hint = t.due_hint or ""
+                match = any(_contains(h, actual_hint) for h in want_hints if h)
+                ok &= match
+                notes.append(
+                    f"due_hint~{actual_hint!r} (expect~một trong {want_hints})"
+                )
+            elif gt.get("due_hint") is not None:
                 match = _contains(gt["due_hint"], t.due_hint or "")
                 ok &= match
                 notes.append(f"due_hint~{t.due_hint!r} (expect~{gt['due_hint']!r})")
@@ -282,6 +310,38 @@ def compare(tc_id: str, state, golden: dict[str, Any]) -> dict[str, Any]:
         reds = sum(1 for i in items if _badge(float(i.confidence)) == "red")
         put("red_count", reds >= red_min,
             f"red={reds} (expect≥{red_min})")
+
+    # M3: false_final_count — số Decision final KHÔNG match content nào trong golden.
+    # Đếm từ `finals` survivors (đã verify xong). Mục tiêu = 0 nếu golden có
+    # decisions_final; nếu golden trống thì 0 final cũng đạt.
+    expected_finals_in_golden = len(golden.get("decisions_final", []))
+    matched_final_ids: set[str] = set()
+    for gd in golden.get("decisions_final", []):
+        variants = [gd.get("content", "")] + list(gd.get("content_any", []))
+        for f in finals:
+            if f.id in matched_final_ids:
+                continue
+            if any(_contains(v, f.content or "") for v in variants if v):
+                matched_final_ids.add(f.id)
+                break
+    false_finals = [f for f in finals if f.id not in matched_final_ids]
+    # Chỉ fail khi golden kỳ vọng có final mà có extra. Nếu golden kỳ vọng
+    # KHÔNG có final (vd tc3), false_finals có thể > 0 do final cũ bị trả.
+    # Bài test M3 trên tc6: 2 final expected, M3-A hạ Stripe → false = 2? đếm
+    # xem có khớp expected không.
+    false_final_max = golden.get("false_final_count_max")
+    if false_final_max is not None:
+        put("false_final_count", len(false_finals) <= false_final_max,
+            f"false_final={len(false_finals)} (expect≤{false_final_max}, "
+            f"matched={len(matched_final_ids)}, golden_finals={expected_finals_in_golden})")
+    # Always log false_final as informational metric (không tính fail).
+    checks.setdefault("_info_false_final", {
+        "pass": True,
+        "detail": (
+            f"false_final={len(false_finals)} (info-only); "
+            f"ids={[f.id for f in false_finals]}"
+        ),
+    })
 
     # brief (taxonomy §8): có thì outcomes phải trỏ ID tồn tại (verify đã enforce).
     # Golden chưa có brief → chỉ ghi nhận thông tin, không tính fail.
