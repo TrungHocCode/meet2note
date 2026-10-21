@@ -2,7 +2,7 @@
 
 # meet2note
 
-**Biến transcript cuộc họp thành dữ liệu dùng được** — quyết định cuối, công việc có owner/deadline, vướng mắc — kèm evidence truy vết tới từng câu nói.
+**Turn raw meeting transcripts into actionable, verifiable state** — final decisions, owned tasks with deadlines, and blockers — backed by verbatim evidence linked to every turn.
 
 [![Python 3.11](https://img.shields.io/badge/python-3.11-blue?logo=python)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.110-009688?logo=fastapi)](backend/api.py)
@@ -10,183 +10,170 @@
 [![Postgres 16](https://img.shields.io/badge/Postgres-16-336791?logo=postgresql)](docker-compose.yml)
 [![Ollama](https://img.shields.io/badge/LLM-Ollama%20local-black)](docs/runbook/local-dev.md)
 [![Tests](https://img.shields.io/badge/tests-287%20passed-brightgreen)](tests/)
-[![PRs welcome](https://img.shields.io/badge/PRs-welcome-blue)](https://github.com/TrungHocCode/meet2note/pulls)
 
-*Triết lý: **LLM đề xuất, code kiểm chứng, con người chốt.***
+*Core philosophy: **LLM proposes, deterministic code verifies, human confirms.***
 
 </div>
 
 ---
 
-## Vấn đề
+## The Problem
 
-Một cuộc họp 60 phút thường chỉ còn lại 3–5 quyết định và 5–8 task — nhưng biên bản tay
-hoặc AI tóm tắt naive gây ra 3 nỗi đau đắt nhất:
+A 60-minute meeting usually produces only 3–5 final decisions and 5–8 tasks — yet manual notes or naive AI summaries fail in three costly ways:
 
-| Nỗi đau | Hậu quả |
+| Pain Point | Impact |
 |---|---|
-| **Sai / trôi quyết định cuối** — đầu họp đề xuất A, cuối họp chốt B, biên bản liệt kê ngang nhau | Team thi công nhầm A, chi phí sửa gấp 10–50 lần chi phí ghi |
-| **Task mồ côi** — "anh em triển khai nhé", "sớm nhé" | Không owner, không deadline → việc rơi vào khoảng trống, phải họp lại |
-| **Mất ngữ cảnh** — vì sao đổi A→B, ai phản đối? | Người nghỉ việc mang theo lý do, công ty trả tiền học lại |
+| **Drifting / Reversed Decisions** — Option A is proposed early, Option B is finalized at the end, but summaries list both equally | Teams implement the wrong decision (Option A), costing 10–50× more to fix later |
+| **Orphaned Tasks** — *"let's roll this out soon"*, *"someone check this"* | Missing owner or deadline causes action items to fall through the cracks |
+| **Lost Context & Rationale** — Why did we switch from A to B? Who raised objections? | Institutional knowledge disappears when team members leave |
 
-## Giải pháp
+## The Solution
 
-Luồng 4 bước, dưới 5 phút:
+A 4-step workflow completed in under 5 minutes:
 
 ```
-Upload transcript → AI trích state → Host review 2 phút → Export minutes + Jira CSV
+Upload transcript → AI extracts state → 2-minute human review → Export minutes.md + Jira CSV
 ```
 
-- **State, not summary**: 6 loại item (Decision / Task / Blocker / Requirement / Open Issue / Knowledge), không phải đoạn văn tóm tắt.
-- **Evidence-first**: mọi item bấm vào thấy câu gốc + timestamp + speaker trong transcript.
-- **Human-confirm trước khi sync**: gate R6 khóa export đến khi hết thẻ đỏ 🔴.
-- **Trung thực mặc định**: không suy ra được → `TBD` + `known_limitations`, không bịa.
+- **State, not summary**: Extracts 6 structured item types (`Decision`, `Task`, `Blocker`, `Requirement`, `Open Issue`, `Knowledge`) instead of prose paragraphs.
+- **Evidence-first**: Every item links directly to verbatim quotes, timestamps, and speakers in the transcript.
+- **Human-in-the-loop Gate (R6)**: Export is locked both in the UI and backend API until all low-confidence (`🔴 < 0.50`) items are resolved.
+- **Honest by default**: Missing owners or ambiguous dates are explicitly marked as `TBD` with `known_limitations` — never hallucinated.
 
 <p align="center">
   <img src="docs/images/demo.png" alt="meet2note review UI" width="800" />
-  <br /><em>Giao diện review: 4 cột + badge confidence + drawer transcript</em>
+  <br /><em>Review Workspace: 4-column Kanban + confidence badges + interactive state graph + transcript drawer</em>
 </p>
 
-## Tính năng
+## Key Features
 
-| # | Tính năng | Mô tả |
+| # | Feature | Description |
 |---|---|---|
-| 1 | Upload + chạy pipeline | `.txt` / `.srt` / `.docx` → trích xuất qua Ollama local, state hiện ngay để review |
-| 2 | Review 2 phút | Kanban 4 cột, badge 🔴<0.50 / 🟡0.50–0.75 / 🟢≥0.75, Đồng ý / Sửa / Loại từng thẻ |
-| 3 | Truy vết evidence | Bấm timestamp → drawer transcript ±4 turns quanh câu gốc |
-| 4 | Xử lý đảo ngược A→B→A | Giữ vết `supersedes`, quyết định bị lật thành `discarded`, mâu thuẫn không giải được → flag + Open Issue |
-| 5 | Gate R6 | Còn thẻ đỏ chưa xử lý → export bị khóa cả ở UI lẫn API |
-| 6 | Export + tải về | `minutes.md` + `tasks_jira.csv`, nút tải trực tiếp về máy |
-| 7 | Multi-user | JWT (access 60p + refresh httpOnly 7 ngày), mỗi user chỉ thấy meeting của mình |
-| 8 | Danh sách meeting | Bấm xem lại kết quả cũ, không cần nhớ id |
-| 9 | Cổng kiểm chứng M3 (`gates.py`) | Chống chốt giả 3 điều kiện (M3-A), chặn câu hedge mơ hồ (M3-B), phạt thiếu chuỗi diễn biến (M3-C), tự phân loại lại Task ↔ Knowledge (M3-D), cập nhật deadline/owner sửa giữa họp kèm vết (CR) |
+| 1 | **Multi-format Ingestion** | Upload `.txt`, `.srt`, or `.docx` transcripts → run the extraction pipeline via local Ollama or OpenAI-compatible endpoints |
+| 2 | **2-Minute Review Workspace** | 4-column Kanban board, confidence badges (`🔴 <0.50` / `🟡 0.50–0.75` / `🟢 ≥0.75`), 1-click batch green approval, and keyboard navigation (`j/k/a/e/x`) |
+| 3 | **Interactive State Graph** | Bi-directional navigation between Decisions (`D1`), linked Tasks (`T1`), and Meeting Brief outcome references |
+| 4 | **Verbatim Evidence Drawer** | Click any `[HH:MM:SS]` timestamp to inspect `±4` surrounding turns or search the full meeting transcript |
+| 5 | **Decision Reversal Tracking (`A → B → A`)** | Preserves `supersedes` history and `discarded` proposals; flags unresolved reversals (`unresolved_reversal`) for host arbitration |
+| 6 | **Deterministic M3 Gates (`gates.py`)** | 3-condition Decision Gate (M3-A), Hedge Lexicon Gate (M3-B), Evidence-Chain Penalty (M3-C), Task ↔ Knowledge Reclassification (M3-D), and Mid-Meeting Due/Owner Revision tracking (CR) |
+| 7 | **Export Gate (R6) & Download** | Blocks export while red items remain; generates `minutes.md` and `tasks_jira.csv` for direct download |
+| 8 | **Multi-User Isolation** | JWT authentication (60m access token + 7d `httpOnly` refresh cookie) with strict per-owner meeting isolation |
 
-## Ví dụ Input → Output
+## Example: Input → Output
 
-**Input** (`[00:10:12] Nam: đề xuất phương án A` … `[00:45:30] Lan: A rủi ro chi phí, chốt B, cả team đồng ý`):
+**Input** (`[00:10:12] Nam: I propose Option A` … `[00:45:30] Lan: Option A has a 30% cost overrun risk, let's finalize Option B`):
 
 ```markdown
-## Quyết định
-- ✅ **Chốt phương án B** (thay A) — người chốt: Lan
-  supersedes: A · evidence: [00:45:30] Lan · confidence: 0.90 🟢
+## Decisions
+- ✅ **Finalize Option B** (replaces Option A) — decided by: Lan
+  supersedes: D0 · evidence: [00:45:30] Lan · confidence: 0.90 🟢
 
-## Công việc
-- [ ] Nam gửi báo giá B trước 12/10 → link tới Quyết định B
+## Tasks
+- [ ] Nam: Send Option B quotation to client by 2026-10-12 → linked to Decision D1
 ```
 
-## Tech stack
+## Tech Stack
 
-| Lớp | Công nghệ |
+| Layer | Technology |
 |---|---|
-| Pipeline lõi | Python 3.11, Pydantic v2, rules R1–R8 kiểm chứng bằng code |
-| LLM | Ollama local (`qwen3:4b-instruct-2507-q4_K_M`), JSON mode + constrained decoding, fallback tên `OPENAI_*` |
-| API | FastAPI, JWT HS256 + refresh opaque, SQLAlchemy + Alembic |
-| DB | Postgres 16 (Docker, port host `5434`), 5 bảng metadata — file vẫn nằm trên disk |
-| UI | React 18, Vite, Tailwind v4, shadcn, localStorage token + refresh cookie |
+| Core Pipeline | Python 3.11, Pydantic v2, deterministic verification rules R1–R8 + M3 gates |
+| LLM Integration | Ollama local (`qwen3:4b-instruct-2507-q4_K_M`) or OpenAI-compatible API, JSON mode + constrained decoding |
+| Backend API | FastAPI, JWT HS256 + rotating refresh tokens, SQLAlchemy 2.0 + Alembic |
+| Database | PostgreSQL 16 (Docker, host port `5434`) for metadata & auth; versioned state artifacts on disk (`runs/`) |
+| Frontend UI | React 18, Vite, Tailwind CSS v4, Radix UI / shadcn components |
 
-## Chạy nhanh
+## Quick Start
 
 ```powershell
-# 0. Yêu cầu: Python 3.11+, Node 18+, Docker, Ollama + model qwen3:4b-instruct-2507-q4_K_M
-cd meet2note   # thư mục repo vừa clone
-# Windows dùng .\.venv\Scripts\python.exe, Linux/Mac dùng .venv/bin/python
-# (các lệnh dưới viết theo Windows — đổi tương ứng khi dùng hệ khác)
+# Prerequisites: Python 3.11+, Node 18+, Docker, Ollama + qwen3:4b-instruct-2507-q4_K_M
+cd meet2note
+# On Windows use .\.venv\Scripts\python.exe; on Linux/macOS use .venv/bin/python
 
-Copy-Item .env.example .env   # điền LLM_BASE_URL, LLM_MODEL, JWT_SECRET (xem § Cấu hình)
+Copy-Item .env.example .env   # Configure LLM_BASE_URL, LLM_MODEL, JWT_SECRET
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
 
 docker compose up -d db
 .\.venv\Scripts\python.exe -m backend.db_cli migrate
-.\.venv\Scripts\python.exe -m backend.db_cli create-admin --email <email> --password <pass-8+kt>
+.\.venv\Scripts\python.exe -m backend.db_cli create-admin --email <email> --password <password-8+chars>
 
-# 2 terminal riêng:
+# Run in 2 separate terminals:
 .\.venv\Scripts\python.exe -m uvicorn backend.api:app --port 8000
 cd frontend; npm install; npm run dev     # http://localhost:5173
 ```
 
-Đăng nhập → Upload transcript → Review → Export → Tải file. Chi tiết từng lớp: [`docs/runbook/local-dev.md`](docs/runbook/local-dev.md).
+Log in → Upload a transcript → Review items → Export → Download files. See [`docs/runbook/local-dev.md`](docs/runbook/local-dev.md) for detailed instructions.
 
-## Cấu hình (`.env`)
+## Configuration (`.env`)
 
-| Biến | Bắt buộc | Mặc định | Mô tả |
+| Variable | Required | Default | Description |
 |---|---|---|---|
-| `LLM_BASE_URL` | ✓ | `http://localhost:11434/v1` | Endpoint OpenAI-compatible (Ollama local) |
-| `LLM_MODEL` | ✓ | `qwen3:4b-instruct-2507-q4_K_M` | Model trích xuất |
-| `LLM_TIMEOUT` / `LLM_NUM_CTX` / `LLM_JSON_MODE` | – | `300` / `8192` / `1` | Timeout, context, ép JSON |
-| `JWT_SECRET` | ✓ (khi chạy API) | – | Chuỗi ngẫu nhiên dài, **không commit** |
-| `DATABASE_URL` | – | `…@localhost:5434/meet2note` | Đổi khi dùng PG khác |
+| `LLM_BASE_URL` | ✓ | `http://localhost:11434/v1` | OpenAI-compatible endpoint (local Ollama) |
+| `LLM_MODEL` | ✓ | `qwen3:4b-instruct-2507-q4_K_M` | Extraction model name |
+| `LLM_TIMEOUT` / `LLM_NUM_CTX` / `LLM_JSON_MODE` | – | `300` / `8192` / `1` | Request timeout, context window, and JSON mode enforcement |
+| `JWT_SECRET` | ✓ (API) | – | Random secret string (≥32 chars, **never commit**) |
+| `DATABASE_URL` | – | `…@localhost:5434/meet2note` | PostgreSQL connection URL |
 
-## API tổng quan
+## API Overview
 
-Đầy đủ: [`docs/spec/api-contract.md`](docs/spec/api-contract.md).
+Full specification: [`docs/spec/api-contract.md`](docs/spec/api-contract.md).
 
-| Method | Path | Auth | Mô tả |
+| Method | Path | Auth | Description |
 |---|---|---|---|
-| `POST` | `/auth/register` · `/auth/login` · `/auth/refresh` · `/auth/logout` | Mở / cookie | Vòng đời tài khoản + phiên |
-| `GET` | `/auth/me` | Bearer | Thông tin user |
-| `GET` | `/api/v1/meetings` | Bearer | Danh sách meeting của mình |
-| `GET` / `PUT` | `/api/v1/review?meeting=` | Bearer + owner | Đọc / chốt state (+ `changes` audit) |
-| `POST` | `/api/v1/export?meeting=` | Bearer + owner | Gate R6 → sinh files |
-| `GET` | `/api/v1/export/file?meeting=&name=` | Bearer + owner | Tải `minutes.md` / `tasks_jira.csv` |
-| `GET` | `/api/v1/transcript?meeting=` | Bearer + owner | Turns transcript cho drawer |
-| `POST` | `/api/v1/meetings/upload` | Bearer | Upload + chạy pipeline + ghi DB |
+| `POST` | `/auth/register` · `/auth/login` · `/auth/refresh` · `/auth/logout` | Public / Cookie | Account & session lifecycle |
+| `GET` | `/auth/me` | Bearer | Current authenticated user profile |
+| `GET` | `/api/v1/meetings` | Bearer | List meetings owned by the current user |
+| `GET` / `PUT` | `/api/v1/review?meeting=` | Bearer + Owner | Load state / confirm review changes (+ audit log) |
+| `POST` | `/api/v1/export?meeting=` | Bearer + Owner | Enforce Gate R6 → generate `minutes.md` & `tasks_jira.csv` |
+| `GET` | `/api/v1/export/file?meeting=&name=` | Bearer + Owner | Download exported `minutes.md` or `tasks_jira.csv` |
+| `GET` | `/api/v1/transcript?meeting=` | Bearer + Owner | Fetch parsed transcript turns for the evidence drawer |
+| `POST` | `/api/v1/meetings/upload` | Bearer | Upload transcript + run pipeline + persist metadata |
 
-## Test cases
+## Evaluation & Test Suite
 
-6 ca synthetic (`data/transcripts/` + `data/golden/`), chấm chi tiết trong [`eval/report.md`](eval/report.md):
+6 synthetic Vietnamese test cases (`data/transcripts/` + `data/golden/`), documented in [`eval/report.md`](eval/report.md):
 
-| Ca | Kịch bản | Kỳ vọng |
+| Case | Scenario | Expected Outcome |
 |---|---|---|
-| **tc1** sprint planning | Ngày vui vẻ + chốt giả ("chốt nghỉ trưa"), decoy | D.final đúng người chốt, 3 task đủ owner+due, chốt giả bị loại |
-| **tc2** đảo A→B ⭐ | Kill-criterion: đề xuất A, cuối chốt B | `D1.final=B`, `supersedes=[D0]`, task link D1 |
-| **tc3** brainstorm vòng vo | Không chốt gì + bẫy "chốt luôn" bị bác ngay | `no_decision=true`, Open Issue có next_step, không bịa Decision |
-| **tc4** entity-linking | Đại từ ("em", "anh") + ngày tương đối | owner/due đúng ISO; không suy được → `TBD` |
-| **tc5** đảo A→B→A | Mâu thuẫn không giải được | Flag `unresolved_reversal` + Open Issue — trung thực hơn đúng |
-| **tc6** họp dài 3 chủ đề (M3) | ~110 turns: chốt giả bị bác + hedge + sửa deadline `16→21/10` + quy ước dài hạn | `false_final=0`, due lấy lần sửa cuối có vết, Task quy ước → Knowledge |
+| **tc1** Sprint Planning | Clear decision + false-decision noise (*"let's finalize lunch"*) | Correct `D.final` & decider, 3 tasks with owner+due, joke decision filtered out |
+| **tc2** A→B Reversal ⭐ | Core kill-criterion: Option A proposed early, Option B finalized late | `D1.final=B`, `supersedes=[D0]`, `D0=discarded`, task linked to `D1` |
+| **tc3** Vague Brainstorm | No final decision + retracted false proposal (*"let's just pick Stripe"*) | `no_decision=true`, Open Issues with `next_step`, zero hallucinated Decisions |
+| **tc4** Entity-Linking | Pronouns + relative dates (*"next Friday"*, *"end of month"*) | Resolved canonical owners & deterministic ISO dates; unparseable dates → `TBD` |
+| **tc5** A→B→A Conflict | Unresolved multi-way reversal & sarcasm | Flags `unresolved_reversal` + creates host Open Issue — prioritizes honesty |
+| **tc6** Long Multi-Topic (M3) | ~110 turns: retracted proposal + hedges + deadline revisions (`16→21/10`) + long-term policy | `false_final=0`, latest revised due date preserved with audit trail, policy reclassified to `Knowledge` |
 
 ```powershell
-.\.venv\Scripts\python.exe -m pipeline.cli eval --cases tc1,tc2,tc3,tc4,tc5,tc6  # fixture → 6/6 PASS
-.\.venv\Scripts\python.exe -m pipeline.cli eval --live                           # LLM thật so golden → 5/5 PASS
+.\.venv\Scripts\python.exe -m pipeline.cli eval --cases tc1,tc2,tc3,tc4,tc5,tc6  # Deterministic fixture eval → 6/6 PASS
+.\.venv\Scripts\python.exe -m pipeline.cli eval --live                           # Live LLM eval → 5/5 PASS
 .\.venv\Scripts\python.exe -m pytest tests -q                                    # 287 passed, 1 skipped
-cd frontend; npm run build                                                       # verify UI
+cd frontend; npm run build                                                       # Verify production UI bundle
 ```
 
-Chi tiết 8 quy tắc cứng R1–R8: [`AGENTS.md`](AGENTS.md) §4.
-
-## Cấu trúc repo
+## Repository Structure
 
 ```
-pipeline/   ingest → extract → resolve (+ gates M3) → verify → export → service → cli (lõi độc lập)
-backend/    api.py (lớp mỏng) · auth.py (JWT) · db/ (models/session) · db_cli.py (migrate/seed/sync)
-frontend/   review 4 cột + brief + drawer transcript + upload + login
-prompts/    system_extract / resolve / brief + fewshot (tách khỏi code)
-data/       transcripts/ meta/ golden/ — BẮT BUỘC synthetic (repo public)
+pipeline/   ingest → extract → resolve (+ M3 gates) → verify → export → service → cli (standalone core)
+backend/    api.py (thin FastAPI adapter) · auth.py (JWT) · db/ (models/session) · db_cli.py (migrate/seed/sync)
+frontend/   React Review Workspace (4-column Kanban + brief + transcript drawer + upload + auth)
+prompts/    system_extract / resolve / brief + fewshot templates (decoupled from code)
+data/       transcripts/ meta/ golden/ — strictly synthetic datasets for public repo
 eval/       runner.py + report.md + results_fixture/live/tc6_*.json
-tests/      pytest trên sqlite tmp (không chạm PG local)
-docs/       c4/ (kiến trúc) · adr/ (quyết định) · spec/ (hợp đồng) · runbook/ · slides/ · images/
-runs/       output versioned — gitignored
+tests/      pytest suite running against isolated temporary SQLite databases
+docs/       c4/ (architecture) · adr/ (decisions) · spec/ (contracts) · runbook/ · slides/ · images/
+runs/       versioned pipeline outputs — gitignored
 ```
 
-## Lộ trình
+## Roadmap
 
-- [x] P0–P4: pipeline + API + review UI + eval MVP
-- [x] P5: upload + transcript viewer + `.docx`
-- [x] P6: Postgres metadata + JWT multi-user + owner isolation
-- [x] UI polish: empty state, meeting list, download, chống giãn layout
-- [x] Mission 3 (M3): Decision Gate 3ĐK + Hedge Gate + Evidence-chain + Task↔Knowledge + CR sửa deadline/owner (`tc6_long`)
-- [ ] Pilot họp thật: đo Decision Accuracy >95%, Task Usability >85%, Time-to-value <5 phút
-- [ ] Sau MVP: templates theo loại họp, sync Jira/Slack 1-chiều, Decision Search / Q&A xuyên họp, SSO + redaction PII
+- [x] P0–P4: Core pipeline + FastAPI adapter + React review UI + 5-case evaluation
+- [x] P5: Transcript upload (`.txt` / `.srt` / `.docx`) + interactive transcript viewer
+- [x] P6: PostgreSQL metadata persistence + JWT multi-user auth + owner isolation
+- [x] Mission 3 (M3): 3-condition Decision Gate + Hedge Gate + Evidence-Chain penalty + Task↔Knowledge reclassification + Due/Owner revision tracking (`tc6_long`)
+- [x] UI/UX Redesign: Split-screen hero login, 1-click demo access, batch green approval, interactive state graph navigation
+- [ ] Real-world Pilot: Measure Decision Accuracy (>95%), Task Usability (>85%), and Time-to-Value (<5 min) across live team meetings
+- [ ] Post-MVP: Meeting-type templates, one-way Jira/Slack sync, cross-meeting Decision Search & Q&A, Enterprise SSO + PII redaction
 
-## Đóng góp
+## Known Limitations
 
-GitHub Flow: `main` luôn xanh — mọi thay đổi qua branch `feat/*` + PR (squash-merge),
-không push thẳng `main`. Quy ước chi tiết: [`AGENTS.md`](AGENTS.md).
-
-**Không bao giờ commit**: `.env`, transcript thật, `docs/private/`, `runs/`, file log server.
-
-## Known limitations
-
-- Model local nhỏ paraphrase + variance theo input (lưới R1–R8 + M3 gates đỡ, không che) — xem `eval/report.md`.
-- Cổng M3-A quét câu rút lại trong cửa sổ ±5 turns sau câu chốt; bộ từ khóa hedge tiếng Việt là danh sách cố định (tiếng lóng/sarcasm mới cần người review ở bước cuối).
-- Transcript thật chỉ nằm ở `data/uploads/` (gitignored); `data/` luôn synthetic.
-- Chưa có: bot auto-join, realtime, ASR/audio clips 15s, sync API Jira/Slack, SSO.
+- Small local LLMs can paraphrase or vary across runs; deterministic rules R1–R8 and M3 gates catch structural errors and log them in `known_limitations` (see `eval/report.md`).
+- The M3-A retraction check scans a `±5` turn window after a decision turn; the Vietnamese hedge lexicon is a fixed rule set (subtle sarcasm still relies on the 2-minute human review).
+- Real user transcripts are stored locally under `data/uploads/` (gitignored); `data/` contains only synthetic transcripts.
+- Out of scope for MVP: auto-join meeting bots, real-time streaming ASR, audio clip playback, two-way Jira/Slack API sync, and SSO.
