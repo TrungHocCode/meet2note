@@ -483,7 +483,7 @@ function ItemCard({
       data-testid={`card-${item.id}`}
       aria-label={`${TYPE_LABEL[item.type] ?? item.type} ${item.id}, confidence ${item.confidence}, mức ${LEVEL_VN[level]}`}
       className={[
-        'group relative flex flex-col justify-between break-words p-3.5 transition-all duration-150 ease-out hover:shadow-card-hover hover:-translate-y-0.5',
+        'group relative flex min-w-0 flex-col justify-between overflow-hidden break-words p-3 transition-all duration-150 ease-out hover:shadow-card-hover hover:-translate-y-0.5',
         'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
         focused ? 'ring-2 ring-primary ring-offset-2 shadow-card-hover' : 'shadow-card',
         red ? 'border-conf-red/40 border-l-4 bg-conf-red-bg/35' : '',
@@ -492,7 +492,7 @@ function ItemCard({
         confirmed ? 'border-conf-green/60 bg-conf-green-bg/20' : '',
       ].join(' ')}
     >
-      <div>
+      <div className="min-w-0">
         <div className="flex flex-wrap items-center justify-between gap-1.5">
           <div className="flex flex-wrap items-center gap-1.5">
             <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs font-semibold text-foreground">
@@ -667,54 +667,62 @@ function ItemCard({
               </div>
             )}
           </div>
-          <div className="flex gap-2 pt-1">
+          <div className="grid grid-cols-2 gap-1.5 pt-1">
             <Button
-              size="sm"
-              className="flex-1"
+              size="xs"
+              className="min-w-0 w-full"
               onClick={() => {
                 onEdit(item, draft)
                 setEditing(false)
               }}
             >
-              <Check className="size-4" /> Lưu thay đổi
+              <Check className="size-3.5" /> Lưu
             </Button>
-            <Button size="sm" variant="outline" onClick={() => setEditing(false)}>
-              <X className="size-4" /> Huỷ (Esc)
+            <Button
+              size="xs"
+              variant="outline"
+              className="min-w-0 w-full"
+              onClick={() => setEditing(false)}
+            >
+              <X className="size-3.5" /> Huỷ
             </Button>
           </div>
         </div>
       ) : (
-        <div className="mt-3 flex items-center gap-1.5 border-t border-border/60 pt-2.5">
+        <div className="mt-3 grid grid-cols-3 gap-1 border-t border-border/60 pt-2.5">
           <Button
-            size="sm"
+            size="xs"
             variant={confirmed ? 'secondary' : 'outline'}
             onClick={() => onAgree(item)}
             data-testid={`card-${item.id}-agree`}
-            className={`h-8 flex-1 text-xs ${
+            className={`min-w-0 w-full px-1.5 text-[11px] ${
               confirmed
                 ? 'border-conf-green/40 bg-conf-green-bg text-conf-green hover:bg-conf-green-bg/80'
                 : 'hover:border-conf-green hover:text-conf-green'
             }`}
           >
-            <Check className="size-3.5" /> {confirmed ? 'Đã duyệt' : 'Đồng ý'}
+            <Check className="size-3 shrink-0" />
+            <span className="truncate">{confirmed ? 'Đã duyệt' : 'Đồng ý'}</span>
           </Button>
           <Button
-            size="sm"
+            size="xs"
             variant="outline"
             onClick={openEdit}
             data-testid={`card-${item.id}-edit`}
-            className="h-8 flex-1 text-xs hover:border-primary hover:text-primary"
+            className="min-w-0 w-full px-1.5 text-[11px] hover:border-primary hover:text-primary"
           >
-            <Pencil className="size-3.5" /> Sửa
+            <Pencil className="size-3 shrink-0" />
+            <span className="truncate">Sửa</span>
           </Button>
           <Button
-            size="sm"
+            size="xs"
             variant="outline"
             onClick={() => onRemove(item)}
-            className="h-8 px-2.5 text-xs text-destructive hover:border-destructive hover:bg-conf-red-bg"
+            className="min-w-0 w-full px-1.5 text-[11px] text-destructive hover:border-destructive hover:bg-conf-red-bg"
             title="Loại khỏi biên bản (vẫn lưu vết audit)"
           >
-            <Trash2 className="size-3.5" /> Loại
+            <Trash2 className="size-3 shrink-0" />
+            <span className="truncate">Loại</span>
           </Button>
         </div>
       )}
@@ -790,7 +798,7 @@ function DiscardedList({ items, onShowEvidence }) {
 function Column({ title, subtitle, items, render, emptyHint }) {
   const redCount = items.filter((i) => levelOf(i.confidence) === 'red').length
   return (
-    <section className="flex min-w-0 flex-col gap-2.5 rounded-xl border border-border/80 bg-muted/35 p-3">
+    <section className="flex min-w-0 flex-col gap-2.5 rounded-xl border border-border/80 bg-muted/35 p-2.5">
       <div className="flex items-center justify-between gap-2 border-b border-border/70 pb-2">
         <div className="min-w-0">
           <h3 className="font-heading text-sm font-bold text-foreground truncate">{title}</h3>
@@ -1824,7 +1832,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-background font-sans text-sm text-foreground">
       <Toaster />
-      <div className="grid min-h-screen xl:grid-cols-[300px_1fr]">
+      <div className="grid min-h-screen xl:grid-cols-[276px_1fr]">
         {/* ─── Sidebar ──────────────────────────────────────────── */}
         <aside className="flex min-w-0 flex-col gap-4 overflow-x-hidden border-b border-border bg-card p-4 xl:h-screen xl:overflow-y-auto xl:border-r xl:border-b-0">
           {/* Brand Header */}
