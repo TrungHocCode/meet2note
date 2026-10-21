@@ -476,9 +476,9 @@ def test_badge_green_75_and_above() -> None:
 def test_verify_state_tc2_happy_path() -> None:
     """Verify state với D0 (discarded) + D1 (final, substring match) + T1.
 
-    Expected theo taxonomy §5:
+    Expected theo taxonomy §5 + M3-C (Mission 3 evidence-chain penalty):
     - D0: confidence ≈ 0.7 + 0.10 = 0.80 (quote match, no TBD)
-    - D1: confidence ≈ 0.9 + 0.10 = 1.0 (substring match)
+    - D1: có chuỗi diễn biến (propose + decide + confirm) → 0.9 + 0.10 = 1.0
     - T1: confidence ≈ 0.85 + 0.10 = 0.95 (exact match)
     - no_decision = False (có D1 final)
     - stats: decision=2, task=1, items_total=3
@@ -500,11 +500,18 @@ def test_verify_state_tc2_happy_path() -> None:
             "reason": "A rủi ro vượt 30%", "supersedes": ["D0"],
             "objections": [], "confidence": 0.9,
             "confidence_reason": "chốt rõ",
-            "evidence": [{
-                "quote": "Vậy chốt B nhé, cả team đồng ý không?",
-                "timestamp": "00:45:30", "speaker": "Lan",
-                "turn": 3, "role_in_discussion": "decide",
-            }],
+            # M3-C: chain propose → decide → confirm để tránh single-evidence penalty
+            "evidence": [
+                {"quote": "Em đề xuất phương án A, bên X rẻ hơn 20%.",
+                 "timestamp": "00:00:42", "speaker": "Nam",
+                 "turn": 2, "role_in_discussion": "propose"},
+                {"quote": "Vậy chốt B nhé, cả team đồng ý không?",
+                 "timestamp": "00:45:30", "speaker": "Lan",
+                 "turn": 3, "role_in_discussion": "decide"},
+                {"quote": "Dạ em đồng ý.",
+                 "timestamp": "00:46:05", "speaker": "Nam",
+                 "turn": 4, "role_in_discussion": "confirm"},
+            ],
         },
         {
             "id": "T1", "type": "task",
@@ -536,6 +543,8 @@ def test_verify_state_tc2_happy_path() -> None:
              "text": "A rủi ro vượt 30% nếu phát sinh. Vậy chốt B nhé, cả team đồng ý không?"},
             {"turn": 4, "t_start": "00:46:05", "t_end": "00:46:05",
              "speaker": "Nam", "text": "Dạ em gửi báo giá B cho khách trước 12/10."},
+            {"turn": 5, "t_start": "00:46:11", "t_end": "00:46:11",
+             "speaker": "Nam", "text": "Dạ em đồng ý."},
         ],
     )
 
@@ -550,7 +559,7 @@ def test_verify_state_tc2_happy_path() -> None:
     # Verify confidence từng item
     by_id = {i.id: i for i in state.items}
     assert by_id["D0"].confidence == pytest.approx(0.80)  # 0.7 + 0.10
-    assert by_id["D1"].confidence == pytest.approx(1.00)  # 0.9 + 0.10, clamped
+    assert by_id["D1"].confidence == pytest.approx(1.00)  # 0.9 + 0.10, clamped (chain OK)
     assert by_id["T1"].confidence == pytest.approx(0.95)  # 0.85 + 0.10
 
 
@@ -618,24 +627,28 @@ def test_verify_state_evidence_mismatch_flagged() -> None:
     """Quote không khớp transcript → evidence_mismatch + badge đỏ + limitation.
 
     Dùng conf_llm=0.7 để sau -0.30 = 0.4 → badge đỏ (<0.50).
+    M3-C: thêm propose evidence để tránh single-evidence-final penalty
+    (test này về R5, không phải về M3-C).
     """
     raw_items = [{
         "id": "D1", "type": "decision",
         "content": "Chốt B",
         "status": "final", "decided_by": "Lan",
         "confidence": 0.7, "confidence_reason": "rõ",
-        "evidence": [{
-            "quote": "Câu hoàn toàn không có trong transcript xyzzy",
-            "timestamp": "00:00:05", "speaker": "Lan",
-            "turn": 1, "role_in_discussion": "decide",
-        }],
+        "evidence": [
+            {"quote": "Em đề xuất phương án B.", "timestamp": "00:00:05",
+             "speaker": "Lan", "turn": 1, "role_in_discussion": "propose"},
+            {"quote": "Câu hoàn toàn không có trong transcript xyzzy",
+             "timestamp": "00:00:10", "speaker": "Lan",
+             "turn": 2, "role_in_discussion": "decide"},
+        ],
     }]
     state = verify_state(
         meeting=_meeting(),
         items_raw=raw_items,
         conf_llm_map={"D1": 0.7},
         turns=[{"turn": 1, "t_start": "00:00:05", "t_end": "00:00:05",
-                "speaker": "Lan", "text": "Chào cả nhóm."}],
+                "speaker": "Lan", "text": "Em đề xuất phương án B."}],
     )
     assert state.stats.by_badge["red"] == 1
     assert state.stats.by_badge.get("green", 0) == 0
@@ -773,27 +786,35 @@ def test_verify_state_role_normalized_to_info() -> None:
 
 
 def test_verify_state_contradiction_two_finals_flagged() -> None:
-    """2 Decision status=final → contradiction penalty (-0.20 mỗi final)."""
+    """2 Decision status=final → contradiction penalty (-0.20 mỗi final).
+
+    M3-C: mỗi final có chain propose+decide (≥2 role) để tránh single-evidence
+    penalty chồng với contradiction test. Mục đích test = R4 contradiction.
+    """
     raw_items = [
         {
             "id": "D1", "type": "decision",
             "content": "Chốt A",
             "status": "final", "decided_by": "Lan",
             "confidence": 0.8, "confidence_reason": "rõ",
-            "evidence": [{
-                "quote": "Chào.", "timestamp": "00:00:05",
-                "speaker": "Lan", "turn": 1, "role_in_discussion": "decide",
-            }],
+            "evidence": [
+                {"quote": "Chào.", "timestamp": "00:00:05",
+                 "speaker": "Lan", "turn": 1, "role_in_discussion": "propose"},
+                {"quote": "Chào.", "timestamp": "00:00:05",
+                 "speaker": "Lan", "turn": 1, "role_in_discussion": "decide"},
+            ],
         },
         {
             "id": "D2", "type": "decision",
             "content": "Chốt B",
             "status": "final", "decided_by": "Nam",
             "confidence": 0.8, "confidence_reason": "rõ",
-            "evidence": [{
-                "quote": "Đồng ý.", "timestamp": "00:00:11",
-                "speaker": "Nam", "turn": 2, "role_in_discussion": "decide",
-            }],
+            "evidence": [
+                {"quote": "Đồng ý.", "timestamp": "00:00:11",
+                 "speaker": "Nam", "turn": 2, "role_in_discussion": "propose"},
+                {"quote": "Đồng ý.", "timestamp": "00:00:11",
+                 "speaker": "Nam", "turn": 2, "role_in_discussion": "decide"},
+            ],
         },
     ]
     state = verify_state(

@@ -1,0 +1,112 @@
+[00:00:05] Lan: Chào cả nhóm, hôm nay mình họp dài về dự án tích hợp thanh toán cho phase 2 nhé.
+[00:00:14] Nam: Em chào chị Lan, em đã chuẩn bị deck rồi ạ.
+[00:00:22] Hà: Em chào chị, em cũng có research về 3 vendor ạ.
+[00:00:32] Lan: Ok, mục tiêu hôm nay: chốt vendor, chốt deadline giai đoạn 1, ghi nhận quy ước dài hạn.
+[00:00:46] Nam: Em xin phép trình bày 3 vendor: A, B và Z ạ.
+[00:00:58] Nam: Bên A giá rẻ nhất, có SLA 99% và support email tiếng Anh.
+[00:01:14] Nam: Bên B giá cao hơn A 25%, SLA 99.9% và support tiếng Việt 24/7.
+[00:01:30] Nam: Bên Z giá ngang B nhưng track record mỏng, em không khuyến nghị.
+[00:01:46] Lan: Hà em có kinh nghiệm với bên nào không?
+[00:01:54] Hà: Em đã làm bên A 6 tháng ở dự án cũ, API ổn nhưng rate limit thấp ạ.
+[00:02:08] Hà: Bên B em chưa làm, nghe bạn em khen support tốt.
+[00:02:22] Lan: Bên A có downtime cam kết không em?
+[00:02:32] Nam: Dạ bên A chỉ cam kết best-effort, không có con số cụ thể ạ.
+[00:02:46] Lan: Bên B có local team không?
+[00:02:54] Nam: Dạ có, có 2 account manager ở HCM và HN ạ.
+[00:03:08] Lan: Ok, mình chốt loại bỏ Z, chỉ bàn A vs B nhé.
+[00:03:18] Nam: Em thiên về A vì tiết kiệm 25% tức khoảng 15 triệu/năm.
+[00:03:34] Lan: A rate limit thấp nếu peak thì sao?
+[00:03:42] Hà: Dạ lúc peak dự án cũ em phải custom middleware mất 5 ngày dev.
+[00:03:58] Lan: 5 ngày dev tương đương 10 triệu, cộng vào A không còn rẻ hơn nhiều.
+[00:04:14] Nam: Dạ em ghi nhận, em tính thêm chi phí middleware ạ.
+[00:04:28] Lan: Mình chốt phase 1 dùng A để tiết kiệm nhé.
+[00:04:36] Nam: Dạ em đồng ý phase 1 dùng A ạ.
+[00:04:42] Hà: Em cũng đồng ý ạ.
+[00:04:50] Lan: Phase 1 dùng A. Deadline phase 1 thứ Sáu tuần này 16/10 nhé.
+[00:05:02] Nam: Dạ em note, deadline 16/10 ạ.
+[00:05:14] Lan: Tiếp theo, sang tháng sẽ migrate sang B khi có budget, đúng không?
+[00:05:24] Nam: Dạ đúng ạ, em sẽ migrate sang B sau ạ.
+[00:05:36] Lan: Ok, sau ký phase 1 trên bảo A sẽ migrate sang B.
+[00:05:46] Nam: Dạ em note, phase 2 sẽ dùng B ạ.
+[00:05:58] Lan: Sang phần deadline. Deadline báo giá là khi nào em?
+[00:06:10] Nam: Em nghĩ deadline báo giá là thứ Sáu tuần này 16/10 chị ạ.
+[00:06:24] Lan: Ừ deadline báo giá 16/10.
+[00:06:32] Nam: Dạ em note, 16/10 ạ.
+[00:06:42] Lan: Em Hà làm lead integration, deadline thứ 6 tuần này nhé.
+[00:06:54] Hà: Dạ em làm lead, deadline 16/10 ạ.
+[00:07:08] Lan: Em Nam viết test plan, deadline cuối tháng 31/10 nhé.
+[00:07:18] Nam: Dạ em viết test plan, 31/10 ạ.
+[00:07:28] Lan: Em Hà update docs, deadline thứ 2 tuần sau 19/10 nhé.
+[00:07:38] Hà: Dạ em update docs, 19/10 ạ.
+[00:07:48] Lan: Tóm lại deadline báo giá + lead integration 16/10, test plan 31/10, docs 19/10.
+[00:08:02] Nam: Dạ em hiểu ạ.
+[00:08:08] Hà: Em cũng hiểu ạ.
+[00:08:18] Lan: Giờ mình brainstorm thêm phần brainstorm có cần cập nhật gì không nhé.
+[00:08:30] Hà: Em nghĩ có lẽ nên tính sau vụ SLA chi tiết ạ.
+[00:08:42] Nam: Em đồng ý, có thể chốt giá sau nếu cần.
+[00:08:54] Lan: Ừ, mình cứ tính sau nhé.
+[00:09:04] Nam: Dạ có lẽ cần xem xét thêm phần refund flow.
+[00:09:16] Hà: Em sẽ research thêm phần refund ạ.
+[00:09:28] Lan: Ok phần refund cứ để sau, mình xem xét sau nhé.
+[00:09:40] Nam: Dạ sớm nhé, em sẽ triển khai nhé.
+[00:09:52] Hà: Em cũng triển khai nhé.
+[00:10:04] Lan: À mà này, hay mình chốt luôn Stripe đi cho nhanh nhỉ?
+[00:10:16] Nam: Dạ... chốt Stripe luôn ạ?
+[00:10:28] Hà: Khoan chị, em chưa có số liệu Stripe, chốt bây giờ rủi ro lắm ạ.
+[00:10:42] Lan: Ừ nhỉ, chị nói vậy thôi chứ chưa đủ dữ liệu. Thôi chưa chốt Stripe nhé.
+[00:10:54] Nam: Dạ chưa chốt ạ.
+[00:11:04] Hà: Em đồng ý, không nên vội ạ.
+[00:11:16] Lan: Chốt là chưa chốt Stripe nhé, cần thêm dữ liệu.
+[00:11:28] Nam: Dạ em hiểu.
+[00:11:38] Hà: Em cũng hiểu.
+[00:11:50] Lan: Tiếp theo, mình bàn việc sửa deadline lead integration sang thứ 2 tuần sau nhé.
+[00:12:02] Lan: KH 4 công ty bên em thấy cần dời deadline vì vendor A chưa trả key test.
+[00:12:16] Nam: Dạ em nghe, deadline lead integration dời sang 19/10 nhé.
+[00:12:28] Hà: Em đồng ý dời sang 19/10.
+[00:12:40] Lan: Vậy lead integration deadline là 19/10 nhé, cập nhật lại.
+[00:12:52] Nam: Dạ em note, deadline mới 19/10 ạ.
+[00:13:04] Hà: Dạ em update ạ.
+[00:13:14] Lan: Khoan, thứ Hà vừa nói dời sang thứ 2 nhưng KH 4 sẽ demo thứ 4, deadline báo giá vẫn giữ 16/10.
+[00:13:28] Nam: Dạ em nghe, deadline báo giá vẫn 16/10 ạ.
+[00:13:40] Lan: Lead integration thì dời sang thứ 2 tuần sau 21/10 nhé, đỡ phải rush.
+[00:13:54] Nam: Dạ em đồng ý, lead integration deadline 21/10 ạ.
+[00:14:06] Hà: Em cũng đồng ý 21/10.
+[00:14:16] Lan: Vậy thì lead integration deadline 21/10 nhé.
+[00:14:28] Nam: Dạ em update, deadline mới 21/10.
+[00:14:40] Hà: Em update ạ.
+[00:14:50] Lan: Em Nam, em confirm lại lead integration deadline là ngày nào nhé?
+[00:15:02] Nam: Dạ deadline lead integration 21/10 ạ.
+[00:15:14] Lan: Đúng rồi, 21/10 nhé.
+[00:15:22] Hà: Em cũng confirm 21/10.
+[00:15:34] Lan: Ok. Test plan deadline vẫn là 31/10, docs vẫn 19/10.
+[00:15:46] Dạ deadline test plan 31/10, deadline docs 19/10 ạ.
+[00:15:58] Hà: Em cũng note ạ.
+[00:16:10] Lan: Tóm lại: báo giá 16/10, lead integration 21/10, test plan 31/10, docs 19/10.
+[00:16:24] Nam: Dạ em hiểu ạ.
+[00:16:32] Hà: Em hiểu ạ.
+[00:16:42] Lan: Sang phần quy ước dài hạn cho team nhé.
+[00:16:54] Nam: Em nghĩ nên có quy ước discount cho team sales.
+[00:17:06] Lan: Ừ quy ước discount thì sao?
+[00:17:14] Nam: Em đề xuất discount >10% phải qua Lan duyệt.
+[00:17:26] Lan: Ừ, quy ước discount >10% phải qua Lan duyệt. Ghi vào policy team nhé.
+[00:17:40] Nam: Dạ em ghi vào wiki ạ.
+[00:17:50] Hà: Em đồng ý quy ước discount >10% qua Lan duyệt.
+[00:18:02] Lan: Một quy ước nữa, lần sau về vendor mới phải qua team review.
+[00:18:14] Nam: Dạ em ghi nhận, lần sau vendor mới phải review.
+[00:18:26] Hà: Em đồng ý, quy ước lần sau.
+[00:18:38] Lan: Ok, ghi 2 quy ước: discount >10% qua Lan, vendor mới qua team review.
+[00:18:52] Nam: Dạ em note ạ.
+[00:19:02] Hà: Em cũng note ạ.
+[00:19:14] Lan: Cuối cùng, vụ refund flow mình tính sao?
+[00:19:24] Nam: Em đề xuất dùng refund standard 1 của A, đỡ phải custom.
+[00:19:36] Hà: Em đồng ý, refund standard 1 của A ổn.
+[00:19:48] Lan: Ok, mình chốt refund flow dùng refund standard 1 của A nhé.
+[00:20:00] Nam: Dạ em note ạ.
+[00:20:08] Hà: Em note ạ.
+[00:20:18] Lan: Còn câu hỏi nào không?
+[00:20:26] Nam: Dạ em hết ạ.
+[00:20:34] Hà: Em cũng hết ạ.
+[00:20:44] Lan: Vậy mình end meeting, cảm ơn cả nhóm.
+[00:20:54] Nam: Cảm ơn chị Lan.
+[00:21:04] Hà: Em cảm ơn ạ.
+[00:21:14] Lan: Bye mọi người.

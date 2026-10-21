@@ -1,5 +1,5 @@
 """
-resolve.py — Pass-2: trọng tài xuyên chunk + entity-link deterministic.
+resolve.py — Pass-2: trọng tài xuyên chunk + entity-link deterministic + M3 gates.
 
 Triết lý (AGENTS.md §1, taxonomy §6):
 - "LLM đề xuất, code kiểm chứng, con người chốt."
@@ -26,8 +26,18 @@ P2 làm gì (theo kế hoạch `§1 resolve.py`):
    - Owner → tên trong participants (R1); ngoài → TBD.
    - Due tương đối (`thứ 2..CN`, `tuần sau`, `ngày N/M`, `cuối tháng`) → ISO
      từ `meeting.date`; mơ hồ → TBD + `due_hint`.
-7. **LLM pass-2** (optional): dùng `system_resolve.md` qua `llm_fn` mock được;
-   khi thiếu env → vẫn chạy deterministic (test/CI không phụ thuộc key).
+7. **M3-A Decision Gate** (Mission 3): final phải đủ 3 điều kiện (câu chốt +
+   `decided_by ∈ participants` + KHÔNG bị rút trong 5 turns sau) — thiếu → hạ
+   `final→proposal` + limitation. **Triết lý "chốt ≠ nói chơi" thành code.**
+8. **M3-B Hedge Gate**: câu chốt content/quote chứa hedge (`có lẽ`, `xem xét`,
+   `sớm nhé`, ...) → cấm final. Task từ câu hedge → owner/due bắt TBD + hint.
+9. **M3-D Task vs Knowledge reclassify**: code tự sửa khi LLM đặt sai loại +
+   ghi vết (giữ audit, KHÔNG xóa).
+10. **CR-DUE-REV (Change Request giả định)**: deadline sửa giữa họp → lấy
+    lần chốt CUỐI, hint giữ vết `cũ→mới`. Module độc lập, có cờ bật/tắt để
+    thay khi CR thật được chỉ định.
+11. **LLM pass-2** (optional): dùng `system_resolve.md` qua `llm_fn` mock được;
+    khi thiếu env → vẫn chạy deterministic (test/CI không phụ thuộc key).
 
 Output:
 - `{"items": list[dict] raw (Pydantic structure OK), "known_limitations": list[str]}`
@@ -50,6 +60,26 @@ from .extract import (
     SYSTEM_PROMPT_FILE as _EXTRACT_PROMPT_FILE,  # noqa: F401  (giữ tương thích)
     fill_meta_placeholders,
     load_prompt,
+)
+from .gates import (
+    ACTION_VERB_RE,
+    DECIDE_VERBS,
+    HEDGE_RE,
+    KNOWLEDGE_RE,
+    RETRACT_RE,
+    _RECAP_RE,
+    _apply_decision_gate,
+    _apply_due_revision,
+    _apply_hedge_gate,
+    _has_decide_verb,
+    _has_hedge,
+    _has_retract_signal,
+    _is_recap,
+    _looks_like_action_task,
+    _looks_like_knowledge,
+    _passes_decision_gate,
+    _reclassify_knowledge_task,
+    _task_has_concrete_owner_or_due,
 )
 from .schema import Participant, TBD_SENTINEL
 
@@ -409,16 +439,6 @@ def _contents_match(a: str, b: str, min_len: int = 12) -> bool:
     if min(len(ta), len(tb)) < 3:
         return False
     return len(ta & tb) / min(len(ta), len(tb)) >= 0.8
-
-
-# Câu tường thuật lại (recap), KHÔNG phải câu chốt — dù model có gán role=decide.
-_RECAP_RE = re.compile(
-    r"note lại|ghi lại|tóm lại|recap|tổng hợp lại|nhắc lại|ghi chép|tóm tắt lại"
-)
-
-
-def _is_recap(quote: str) -> bool:
-    return bool(_RECAP_RE.search(quote or ""))
 
 
 def _merge_same_content_finals(
@@ -886,6 +906,7 @@ def resolve(
     chunk_items: list[list[dict[str, Any]]],
     *,
     llm_fn: Callable[..., str] | None = None,
+    turns: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """Trọng tài xuyên chunk + entity-link deterministic.
 
@@ -896,6 +917,9 @@ def resolve(
                      đã dedup TRONG chunk.
         llm_fn: optional override cho LLM pass-2 call. Signature: (messages) -> str.
                 None → chỉ chạy deterministic rules (đủ cho CI/test).
+        turns: optional list of turn dicts (cùng shape với ingest output) — khi
+                có sẵn, M3-A gate quét được câu rút lại trong 5 turn sau decide.
+                Backward compat: nếu None, gate chỉ check điều kiện 1+2.
 
     Returns:
         dict {
@@ -924,6 +948,25 @@ def resolve(
     # Bước 2c: gộp finals CÙNG nội dung khác id (model đặt D0/D1 cho cùng 1 chốt).
     # Khác nội dung thì giữ nguyên để reversal detection xử (R4).
     _merge_same_content_finals(items_after_conflict, limitations)
+
+    # Bước 2d (M3-A): Decision Gate 3 điều kiện — chốt cần câu chốt +
+    # `decided_by ∈ participants` + KHÔNG bị rút trong 5 turn sau.
+    # Thiếu → hạ final→proposal + limitation (KHÔNG xoá, giữ audit).
+    try:
+        parts_for_gate = [Participant(**p) for p in meta.get("participants", []) or []]
+    except Exception:
+        parts_for_gate = []
+    _apply_decision_gate(items_after_conflict, parts_for_gate, turns, limitations)
+
+    # Bước 2e (M3-B): Hedge lexicon → cấm final + task hedge → TBD.
+    _apply_hedge_gate(items_after_conflict, turns, limitations)
+
+    # Bước 2f (M3-D): Task ↔ Knowledge reclassify bằng code + ghi vết.
+    _reclassify_knowledge_task(items_after_conflict, limitations)
+
+    # Bước 2g (CR-DUE-REV — giả định): deadline sửa giữa họp → lấy lần cuối.
+    # Module độc lập, có cờ để tắt; CR thật chỉ cần thay hàm này.
+    _apply_due_revision(items_after_conflict, meta, limitations)
 
     # Bước 3: nối supersedes xuyên chunk (proposal early + final late, khác id).
     _link_supersedes_xuyen_chunk(items_after_conflict, limitations)
@@ -1073,4 +1116,14 @@ __all__ = [
     "RESOLVE_PROMPT_FILE",
     "parse_relative_date",
     "resolve",
+    # M3 exports
+    "DECIDE_VERBS",
+    "RETRACT_RE",
+    "HEDGE_RE",
+    "KNOWLEDGE_RE",
+    "ACTION_VERB_RE",
+    "_passes_decision_gate",
+    "_has_hedge",
+    "_reclassify_knowledge_task",
+    "_apply_due_revision",
 ]

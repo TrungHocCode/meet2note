@@ -327,7 +327,10 @@ def build_parser() -> argparse.ArgumentParser:
 
     p_eval = sub.add_parser("eval", help="chạy 5 ca → eval/results.json (P4)")
     p_eval.add_argument("--live", action="store_true", help="dùng LLM thật thay vì fixture")
-    p_eval.add_argument("--cases", default="tc1,tc2,tc3,tc4,tc5")
+    p_eval.add_argument(
+        "--cases", default="tc1,tc2,tc3,tc4,tc5",
+        help="comma-separated case ids (default M2 fixture set; thêm tc6 cho M3)",
+    )
     p_eval.add_argument("--chunk-size", type=int, default=40)
     p_eval.add_argument("--overlap", type=int, default=10)
     p_eval.add_argument("--out", default="eval/results.json")

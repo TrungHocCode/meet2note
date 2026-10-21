@@ -1,0 +1,85 @@
+{
+  "mode": "fixture",
+  "chunk_size": 40,
+  "overlap": 10,
+  "results": [
+    {
+      "case": "tc6",
+      "items_total": 12,
+      "badges": {
+        "red": 2,
+        "yellow": 4,
+        "green": 6
+      },
+      "no_decision": false,
+      "limitations": [
+        "txt line 82: malformed, skipped -> '[00:15:46] Dạ deadline test plan 31/10, deadline docs 19/10 '",
+        "same-id conflict id=T2: chọn bản @00:14:16 (1 winner-majority hoặc latest-decide). Bản thua: ['chunk0@00:06:54/decide', 'chunk0@00:12:28/propose'] — giữ không xóa (R4 audit).",
+        "same-id conflict id=O1: chọn bản @00:20:44 (1 winner-majority hoặc latest-decide). Bản thua: ['chunk1@00:11:16/object'] — giữ không xóa (R4 audit).",
+        "M3-A gate: D3 final→proposal (retracted after turn 56: 'Dạ chưa chốt ạ.')",
+        "M3-B hedge: T5 task → owner/due=TBD (câu evidence chứa hedge)",
+        "M3-D: K1 task→knowledge (pattern quy ước/lần sau, không owner/due cụ thể)",
+        "unresolved_reversal: ['D1', 'D4'] — flagged + Open Issue O_REV_1 (host xử lý, R4).",
+        "item D1 (decision): evidence_mismatch (R5)",
+        "item T5 (task): owner tự nhận việc 'TBD' → Hà (inferred)",
+        "item O1 (open_issue): evidence ts 00:20:44 → 00:20:44 (khớp quote tại turn 108)",
+        "item K1 (knowledge): evidence ts 00:17:14 → 00:17:14 (khớp quote tại turn 89)",
+        "item K1 (knowledge): evidence ts 00:17:26 → 00:17:26 (khớp quote tại turn 90)",
+        "item K2 (knowledge): evidence ts 00:18:02 → 00:18:02 (khớp quote tại turn 93)",
+        "item D4 (decision): evidence ts 00:19:24 → 00:19:24 (khớp quote tại turn 100)",
+        "item D4 (decision): evidence ts 00:19:36 → 00:19:36 (khớp quote tại turn 101)",
+        "item D4 (decision): evidence ts 00:19:48 → 00:19:48 (khớp quote tại turn 102)",
+        "R4: 2 Decision final cùng tồn tại — mâu thuẫn tiềm ẩn, mỗi final -0.20"
+      ],
+      "checks": {
+        "no_decision": {
+          "pass": true,
+          "detail": "expected=False actual=False"
+        },
+        "decision[0]": {
+          "pass": true,
+          "detail": "D1 content~ok; decided_by=Lan (expect Lan); evidence_ts~['00:03:18', '00:01:30', '00:03:08', '00:04:28', '00:04:36'] (expect một trong ['00:04:28', '00:04:36', '00:04:42', '00:04:50'] ở ≥1 evidence)"
+        },
+        "decision[1]": {
+          "pass": true,
+          "detail": "D4 content~ok; decided_by=Lan (expect Lan); evidence_ts~['00:19:24', '00:19:36', '00:19:48'] (expect một trong ['00:19:48', '00:20:00'] ở ≥1 evidence)"
+        },
+        "task[0]": {
+          "pass": true,
+          "detail": "T1 what~ok; owner=Nam (expect Nam); due=2026-10-16 (expect 2026-10-16)"
+        },
+        "task[1]": {
+          "pass": true,
+          "detail": "T2 what~ok; owner=Hà (expect Hà); due=2026-10-21 (expect 2026-10-21); due_hint~'21/10 (revised turn 71)' (expect~một trong ['21/10 (revised turn 71)', '21/10'])"
+        },
+        "task[2]": {
+          "pass": true,
+          "detail": "T3 what~ok; owner=Nam (expect Nam); due=2026-10-31 (expect 2026-10-31)"
+        },
+        "task[3]": {
+          "pass": true,
+          "detail": "T4 what~ok; owner=Hà (expect Hà); due=2026-10-19 (expect 2026-10-19)"
+        },
+        "open_issues_min": {
+          "pass": true,
+          "detail": "found=2"
+        },
+        "red_count": {
+          "pass": true,
+          "detail": "red=2 (expect≥0)"
+        },
+        "false_final_count": {
+          "pass": true,
+          "detail": "false_final=0 (expect≤1, matched=2, golden_finals=2)"
+        },
+        "_info_false_final": {
+          "pass": true,
+          "detail": "false_final=0 (info-only); ids=[]"
+        }
+      },
+      "pass": true,
+      "turns": 111
+    }
+  ],
+  "all_pass": true
+}

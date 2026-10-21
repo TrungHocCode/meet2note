@@ -95,7 +95,9 @@ def run_pipeline(
         pipeline_version=pipeline_version,
     )
 
-    resolution = resolve(meta, extraction["chunk_items"], llm_fn=resolve_llm_fn)
+    resolution = resolve(
+        meta, extraction["chunk_items"], llm_fn=resolve_llm_fn, turns=turns
+    )
 
     state = verify_state(
         meeting=meeting,

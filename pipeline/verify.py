@@ -15,6 +15,11 @@ Triết lý (AGENTS.md §1, taxonomy §5):
   phải "TBD" → TBD + due_hint.
 - R4: phát hiện >1 final decision → đánh dấu contradiction (-0.20 mỗi final).
   Reverse graph (A→B→A) thuộc resolve phase — chỉ log limitation ở đây.
+
+Mission 3 (M3-C): Evidence-chain penalty cho final — giữ item (không xóa),
+  trừ điểm confidence + ghi limitation nếu không có chuỗi diễn biến
+  (≥2 role kêu quyết định khác nhau trong evidence) hoặc hedge còn sót trong
+  quote chốt.
 """
 
 from __future__ import annotations
@@ -334,11 +339,21 @@ def compute_confidence(
     quote_matched: bool,
     evidence_mismatch: bool,
     item_dict: dict[str, Any],
+    # M3-C new optional penalties (defaults 0.0 để backward compat)
+    single_evidence_final: bool = False,
+    hedge_final: bool = False,
 ) -> tuple[float, str, list[str]]:
-    """Apply formula: clamp01(conf_llm + quote + tbd + inferred + contradiction).
+    """Apply formula: clamp01(conf_llm + quote + tbd + inferred + m3_c).
 
     quote_matched và evidence_mismatch loại trừ nhau — apply max 1.
     Contradiction (-0.20) được áp riêng bởi verify_state (chỉ áp cho final decisions).
+
+    M3-C extras (chỉ cho Decision final):
+      - single_evidence_final: -0.20 nếu final không có ≥2 role khác nhau
+        trong evidence (propose/object/confirm). Trung thực — KHÔNG xóa, chỉ
+        hạ điểm để host soi.
+      - hedge_final: -0.15 nếu final còn sót hedge marker (có lẽ, xem xét,
+        sớm nhé, ...) — defense in depth nếu resolve._apply_hedge_gate lọt.
 
     Returns: (final_conf, reason_string, notes_list).
     """
@@ -364,9 +379,89 @@ def compute_confidence(
         delta += d
         notes.append(f"inferred ×{inf_n} {d:+.2f}")
 
+    # M3-C: penalties cho evidence-chain & hedge trên final.
+    if single_evidence_final:
+        delta -= 0.20
+        notes.append("single-evidence-final -0.20")
+    if hedge_final:
+        delta -= 0.15
+        notes.append("hedge-final -0.15")
+
     final = max(0.0, min(1.0, conf_llm + delta))
     reason = f"conf_llm={conf_llm:.2f}; " + ("; ".join(notes) if notes else "no adjust")
     return final, reason, notes
+
+
+# ──────────────────────────────────────────────────────────────────────
+# M3-C: Evidence-chain check cho Decision final
+# ──────────────────────────────────────────────────────────────────────
+
+
+# Hedge lexicon (mirror resolve.HEDGE_RE) — defense in depth ở verify
+# nếu resolve._apply_hedge_gate lọt qua vì không có turns hoặc data thiếu.
+_HEDGE_RE = re.compile(
+    r"\bc[óo]\s*l[ẽe]\b|\bc[óo]\s*th[ểe]\b|\bxem\s*x[éé]t\b|"
+    r"\bt[íi]nh\s*sau\b|\bs[ớo]m\s*nh[éh]\b|\bkhi\s*n[àa]o\s*xong\b|"
+    r"\banh\s*em\s*tri[ểe]n\s*khai\s*nh[éh]\b|\bđ[ểe]\s*b[àa]n\s*sau\b|"
+    r"\bch[ưu]a\s*ch[ắa]c\b|\bt[ạa]m\s*th[ờo]i\b",
+    re.IGNORECASE,
+)
+
+# Role chain "diễn biến" — propose/object/confirm đều tính là 1 role khác
+# decide. ≥2 role khác nhau trong evidence = có chuỗi diễn biến.
+_CHAIN_ROLES = frozenset({"propose", "object", "decide", "confirm"})
+
+
+def _has_hedge_text(text: str) -> bool:
+    return bool(_HEDGE_RE.search(text or ""))
+
+
+def _check_evidence_chain_for_final(
+    item_dict: dict[str, Any],
+) -> tuple[bool, bool, str]:
+    """M3-C: kiểm chuỗi diễn biến + hedge cho final.
+
+    Returns: (single_evidence_final, hedge_final, reason_detail).
+    - single_evidence_final=True nếu evidence chỉ có 1 decide + không có
+      role khác (propose/object/confirm) → diễn biến đơn lẻ.
+    - hedge_final=True nếu content hoặc quote chốt còn hedge (defense in depth).
+
+    reason_detail dùng để ghi limitation chi tiết (KHÔNG xóa item, chỉ hạ điểm).
+    """
+    item_type = item_dict.get("type")
+    if item_type != "decision" or item_dict.get("status") != "final":
+        return False, False, ""
+
+    evs = item_dict.get("evidence") or []
+    chain_roles = set()
+    for ev in evs:
+        r = ev.get("role_in_discussion")
+        if r in _CHAIN_ROLES:
+            chain_roles.add(r)
+
+    # single-evidence-final: chỉ 1 role "decide" + không role phụ
+    single = (len(chain_roles) == 1 and "decide" in chain_roles
+              and len(evs) <= 1)
+
+    hedge = False
+    if _has_hedge_text(str(item_dict.get("content") or "")):
+        hedge = True
+    if not hedge:
+        for ev in evs:
+            if (ev.get("role_in_discussion") or "") == "decide":
+                if _has_hedge_text(ev.get("quote", "")):
+                    hedge = True
+                    break
+
+    detail = []
+    if single:
+        detail.append(
+            f"single-evidence-final: chỉ {len(evs)} evidence, "
+            f"role={chain_roles or 'none'}"
+        )
+    if hedge:
+        detail.append("hedge-final: content/quote còn hedge")
+    return single, hedge, "; ".join(detail)
 
 
 # ──────────────────────────────────────────────────────────────────────
@@ -615,11 +710,21 @@ def verify_state(
             item_id,
             float(item_dict.get("confidence", 0.5) or 0.5),
         )
+
+        # M3-C: check evidence-chain + hedge cho Decision final TRƯỚC khi
+        # compute confidence. Kết quả truyền vào compute_confidence làm penalty
+        # và ghi limitation chi tiết (KHÔNG xóa item, chỉ hạ điểm).
+        single_ev_final, hedge_final, m3_detail = (
+            _check_evidence_chain_for_final(item_dict)
+        )
+
         final_conf, conf_reason, _notes = compute_confidence(
             conf_llm=conf_llm,
             quote_matched=quote_matched_any,
             evidence_mismatch=mismatch_any,
             item_dict=item_dict,
+            single_evidence_final=single_ev_final,
+            hedge_final=hedge_final,
         )
         # unresolved_reversal penalty (P2 R4) — đã được resolve flag + O_REV
         if (
@@ -640,6 +745,13 @@ def verify_state(
         if role_normalized:
             limitations.append(
                 f"item {item_id} ({item_type}): role ngoài allowlist → 'info'"
+            )
+
+        # M3-C: ghi limitation chi tiết nếu final thiếu chain / có hedge.
+        # Không xóa item — trung thực, host soi.
+        if m3_detail:
+            limitations.append(
+                f"item {item_id} ({item_type}): M3-C {m3_detail}"
             )
 
         # ─── 4. Pydantic validate cuối ───
