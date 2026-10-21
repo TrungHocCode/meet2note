@@ -8,37 +8,43 @@
 
 @theme {
   /* tầng nền — tương thích shadcn */
-  --color-background: #f8fafc;
-  --color-foreground: #1f2937;
+  --color-background: #f4f6fb;
+  --color-foreground: #0f172a;
   --color-card: #ffffff;
   --color-primary: #3b5bdb;
   --color-primary-foreground: #ffffff;
-  --color-muted: #f1f5f9;
-  --color-muted-foreground: #6b7280;
-  --color-accent: #f1f5f9;
+  --color-muted: #eef2f8;
+  --color-muted-foreground: #64748b;
+  --color-accent: #eef2ff;
   --color-destructive: #dc2626;
-  --color-border: #e5e7eb;
-  --color-input: #e5e7eb;
+  --color-border: #e2e8f0;
+  --color-input: #cbd5e1;
   --color-ring: #3b5bdb;
 
   /* tầng domain — riêng meet2note, ngoài namespace shadcn */
   --color-conf-red: #dc2626;
   --color-conf-red-bg: #fef2f2;
-  --color-conf-amber: #92400e;
+  --color-conf-amber: #b45309;
   --color-conf-amber-bg: #fffbeb;
   --color-conf-green: #047857;
   --color-conf-green-bg: #ecfdf5;
   --color-warn-bg: #fffbeb;
   --color-ok-bg: #ecfdf5;
-  --color-info-bg: #f0f9ff;
-  --color-hl-bg: #fef9c3;
-  --color-hl-border: #facc15;
+  --color-info-bg: #eff6ff;
+  --color-hl-bg: #fef08a;
+  --color-hl-border: #eab308;
   --color-evidence-bg: #f8fafc;
-  --color-evidence-rule: #cbd5e1;
+  --color-evidence-rule: #94a3b8;
+  --color-hero-bg: #0f172a;
+  --color-hero-card: #1e293b;
+  --color-hero-border: #334155;
+  --color-hero-fg: #f8fafc;
+  --color-hero-muted: #94a3b8;
 
-  --radius: 10px;
-  --shadow-card: 0 4px 12px rgb(15 23 42 / 0.08);
-  --shadow-drawer: 0 8px 24px rgb(15 23 42 / 0.12);
+  --radius: 12px;
+  --shadow-card: 0 2px 8px rgb(15 23 42 / 0.05), 0 1px 2px rgb(15 23 42 / 0.04);
+  --shadow-card-hover: 0 10px 24px -4px rgb(59 91 219 / 0.12), 0 4px 8px -2px rgb(15 23 42 / 0.06);
+  --shadow-drawer: 0 16px 36px rgb(15 23 42 / 0.16);
 
   --font-sans: "Inter", system-ui, sans-serif;
   --font-heading: "Be Vietnam Pro", "Inter", system-ui, sans-serif;
