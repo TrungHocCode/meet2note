@@ -9,7 +9,7 @@
 [![React](https://img.shields.io/badge/React-18-61DAFB?logo=react)](frontend/)
 [![Postgres 16](https://img.shields.io/badge/Postgres-16-336791?logo=postgresql)](docker-compose.yml)
 [![Ollama](https://img.shields.io/badge/LLM-Ollama%20local-black)](docs/runbook/local-dev.md)
-[![Tests](https://img.shields.io/badge/tests-261%20passed-brightgreen)](tests/)
+[![Tests](https://img.shields.io/badge/tests-287%20passed-brightgreen)](tests/)
 [![PRs welcome](https://img.shields.io/badge/PRs-welcome-blue)](https://github.com/TrungHocCode/meet2note/pulls)
 
 *Triết lý: **LLM đề xuất, code kiểm chứng, con người chốt.***
@@ -59,6 +59,7 @@ Upload transcript → AI trích state → Host review 2 phút → Export minutes
 | 6 | Export + tải về | `minutes.md` + `tasks_jira.csv`, nút tải trực tiếp về máy |
 | 7 | Multi-user | JWT (access 60p + refresh httpOnly 7 ngày), mỗi user chỉ thấy meeting của mình |
 | 8 | Danh sách meeting | Bấm xem lại kết quả cũ, không cần nhớ id |
+| 9 | Cổng kiểm chứng M3 (`gates.py`) | Chống chốt giả 3 điều kiện (M3-A), chặn câu hedge mơ hồ (M3-B), phạt thiếu chuỗi diễn biến (M3-C), tự phân loại lại Task ↔ Knowledge (M3-D), cập nhật deadline/owner sửa giữa họp kèm vết (CR) |
 
 ## Ví dụ Input → Output
 
@@ -132,7 +133,7 @@ cd frontend; npm install; npm run dev     # http://localhost:5173
 
 ## Test cases
 
-5 ca synthetic (`data/transcripts/` + `data/golden/`), chấm 4 trường/ca trong [`eval/report.md`](eval/report.md):
+6 ca synthetic (`data/transcripts/` + `data/golden/`), chấm chi tiết trong [`eval/report.md`](eval/report.md):
 
 | Ca | Kịch bản | Kỳ vọng |
 |---|---|---|
@@ -141,12 +142,13 @@ cd frontend; npm install; npm run dev     # http://localhost:5173
 | **tc3** brainstorm vòng vo | Không chốt gì + bẫy "chốt luôn" bị bác ngay | `no_decision=true`, Open Issue có next_step, không bịa Decision |
 | **tc4** entity-linking | Đại từ ("em", "anh") + ngày tương đối | owner/due đúng ISO; không suy được → `TBD` |
 | **tc5** đảo A→B→A | Mâu thuẫn không giải được | Flag `unresolved_reversal` + Open Issue — trung thực hơn đúng |
+| **tc6** họp dài 3 chủ đề (M3) | ~110 turns: chốt giả bị bác + hedge + sửa deadline `16→21/10` + quy ước dài hạn | `false_final=0`, due lấy lần sửa cuối có vết, Task quy ước → Knowledge |
 
 ```powershell
-.\.venv\Scripts\python.exe -m pipeline.cli eval          # fixture, deterministic → 5/5
-.\.venv\Scripts\python.exe -m pipeline.cli eval --live   # LLM thật so golden → 5/5
-.\.venv\Scripts\python.exe -m pytest tests -q            # 261 passed, 1 skipped
-cd frontend; npm run build                                # verify UI
+.\.venv\Scripts\python.exe -m pipeline.cli eval --cases tc1,tc2,tc3,tc4,tc5,tc6  # fixture → 6/6 PASS
+.\.venv\Scripts\python.exe -m pipeline.cli eval --live                           # LLM thật so golden → 5/5 PASS
+.\.venv\Scripts\python.exe -m pytest tests -q                                    # 287 passed, 1 skipped
+cd frontend; npm run build                                                       # verify UI
 ```
 
 Chi tiết 8 quy tắc cứng R1–R8: [`AGENTS.md`](AGENTS.md) §4.
@@ -154,14 +156,14 @@ Chi tiết 8 quy tắc cứng R1–R8: [`AGENTS.md`](AGENTS.md) §4.
 ## Cấu trúc repo
 
 ```
-pipeline/   ingest → extract → resolve → verify → export → service → cli (lõi độc lập)
+pipeline/   ingest → extract → resolve (+ gates M3) → verify → export → service → cli (lõi độc lập)
 backend/    api.py (lớp mỏng) · auth.py (JWT) · db/ (models/session) · db_cli.py (migrate/seed/sync)
 frontend/   review 4 cột + brief + drawer transcript + upload + login
 prompts/    system_extract / resolve / brief + fewshot (tách khỏi code)
 data/       transcripts/ meta/ golden/ — BẮT BUỘC synthetic (repo public)
-eval/       runner.py + report.md + results_fixture/live.json
+eval/       runner.py + report.md + results_fixture/live/tc6_*.json
 tests/      pytest trên sqlite tmp (không chạm PG local)
-docs/       c4/ (kiến trúc) · adr/ (quyết định) · spec/ (hợp đồng) · runbook/ · images/
+docs/       c4/ (kiến trúc) · adr/ (quyết định) · spec/ (hợp đồng) · runbook/ · slides/ · images/
 runs/       output versioned — gitignored
 ```
 
@@ -171,6 +173,7 @@ runs/       output versioned — gitignored
 - [x] P5: upload + transcript viewer + `.docx`
 - [x] P6: Postgres metadata + JWT multi-user + owner isolation
 - [x] UI polish: empty state, meeting list, download, chống giãn layout
+- [x] Mission 3 (M3): Decision Gate 3ĐK + Hedge Gate + Evidence-chain + Task↔Knowledge + CR sửa deadline/owner (`tc6_long`)
 - [ ] Pilot họp thật: đo Decision Accuracy >95%, Task Usability >85%, Time-to-value <5 phút
 - [ ] Sau MVP: templates theo loại họp, sync Jira/Slack 1-chiều, Decision Search / Q&A xuyên họp, SSO + redaction PII
 
@@ -183,6 +186,7 @@ không push thẳng `main`. Quy ước chi tiết: [`AGENTS.md`](AGENTS.md).
 
 ## Known limitations
 
-- Model local nhỏ paraphrase + variance theo input (lưới R1–R8 đỡ, không che) — xem `eval/report.md`.
+- Model local nhỏ paraphrase + variance theo input (lưới R1–R8 + M3 gates đỡ, không che) — xem `eval/report.md`.
+- Cổng M3-A quét câu rút lại trong cửa sổ ±5 turns sau câu chốt; bộ từ khóa hedge tiếng Việt là danh sách cố định (tiếng lóng/sarcasm mới cần người review ở bước cuối).
 - Transcript thật chỉ nằm ở `data/uploads/` (gitignored); `data/` luôn synthetic.
 - Chưa có: bot auto-join, realtime, ASR/audio clips 15s, sync API Jira/Slack, SSO.

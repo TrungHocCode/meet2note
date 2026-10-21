@@ -28,6 +28,7 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 from pipeline.resolve import (
     _apply_due_revision,
+    _apply_owner_revision,
     resolve,
 )
 
@@ -182,3 +183,28 @@ def test_m3_due_revision_skips_non_task() -> None:
     assert items[1]["type"] == "knowledge"
     # Không có CR-DUE-REV limitation cho non-task
     assert not any("CR-DUE-REV" in lim for lim in limitations)
+
+
+def test_m3_owner_revision_keeps_last_owner() -> None:
+    """CR-OWNER-REV: đổi owner giữa họp (Hà → Lan) → lấy người cuối + ghi vết."""
+    items = [{
+        "id": "T1", "type": "task",
+        "what": "Review hợp đồng thanh toán",
+        "owner": "Hà", "owner_source": "explicit",
+        "due": "2026-10-16", "due_source": "explicit",
+        "due_hint": None, "link_to_decision": None,
+        "confidence": 0.9, "confidence_reason": "giao rõ",
+        "evidence": [
+            {"quote": "Hà review hợp đồng thanh toán trước thứ 6 nhé.",
+             "timestamp": "00:01:00", "speaker": "Lan",
+             "turn": 15, "role_in_discussion": "decide"},
+            {"quote": "Phần hợp đồng này chuyển cho Lan phụ trách luôn nhé.",
+             "timestamp": "00:05:00", "speaker": "Hà",
+             "turn": 45, "role_in_discussion": "decide"},
+        ],
+    }]
+    limitations: list[str] = []
+    _apply_owner_revision(items, _meta(), limitations)
+    assert items[0]["owner"] == "Lan"
+    assert "owner revised Hà→Lan" in items[0]["confidence_reason"]
+    assert any("CR-OWNER-REV" in lim and "Hà → Lan" in lim for lim in limitations)
